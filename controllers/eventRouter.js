@@ -1,9 +1,9 @@
 const express = require("express")
 
-const eventModel = require("../models/eventModel")
+const eventModel = require("../models/publicEventModel")
 const router = express.Router()
 
-router.post("/addevents", async (req, res) => {
+router.post("/add_public_events", async (req, res) => {
     let data = req.body
     console.log(data)
     eventModel.insertEvents(data, (error, results) => {
@@ -14,7 +14,7 @@ router.post("/addevents", async (req, res) => {
     });
 })
 
-router.get('/viewallevents', (req, res) => {
+router.get('/view_public_events', (req, res) => {
     eventModel.viewEvents((error, results) => {
         res.json(results);
     })
