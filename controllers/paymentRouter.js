@@ -15,7 +15,7 @@ router.post('/addpayment', (req, res) => {
   });
 });
 
-router.get('/viewpaymenthistory',(req,res)=>{
+router.get('/paymenthistory',(req,res)=>{
     paymentModel.viewPayments((error,results)=>{
       if(error){
         res.status(500).send('Error fetching payments:'+error)
