@@ -12,7 +12,7 @@ const eventRouter=require('./controllers/eventRouter')
 
 const studentRouter=require('./controllers/studentRouter')
 
-//const feedbackRouter=require("./controllers/feedbackRouter")
+const feedbackRouter=require("./controllers/feedbackRouter")
 
 
 
@@ -36,7 +36,7 @@ app.use("/api/student",studentRouter)
 
 app.use("/api/users",userRouter)
 
-//app.use("/api/feedback", feedbackRouter)
+app.use("/api/feedback", feedbackRouter)
 
 
 
