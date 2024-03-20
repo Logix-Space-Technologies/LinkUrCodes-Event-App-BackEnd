@@ -17,6 +17,7 @@ const adminModel={
         const query='SELECT * FROM admin';
         pool.query(query,callback);
     }
+   
 }
 
 

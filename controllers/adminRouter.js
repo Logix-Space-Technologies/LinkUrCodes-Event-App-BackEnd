@@ -1,6 +1,7 @@
 const express=require("express")
 const adminModel=require("../models/adminModel")
 const bcrypt=require("bcryptjs")
+const { error } = require("console")
 const router=express.Router()
 
 const hashPasswordGenerator=async(pass)=>{
@@ -32,6 +33,6 @@ router.get('/viewadmin',(req,res)=>{
     })
 });
     
-        
+
 
 module.exports=router
