@@ -27,10 +27,6 @@ const packageModel = {
     viewFeedbackUser: (callback) => {
         const query = 'SELECT u.user_name, e.event_public_name,f.feedback_content FROM user u join event_public e join feedback_user f on f.feedback_user_id = u.user_id where f.feedback_event_id = e.event_public_id';
         pool.query(query, callback);
-    },
-    viewOwnFeedbackUser: (userData,callback) => {
-        const query = '';
-        pool.query(query, userData, callback);
     }
 }
 
