@@ -1,3 +1,4 @@
+
 const express=require("express")
 const userModel=require("../models/userModel")
 const bcrypt=require("bcryptjs")
@@ -27,10 +28,10 @@ router.post('/adduser',async(req,res)=>{
 });
 
 //route to view a user
-router.post('/viewusers', (req, res) => {
-    var userId = req.body.id;
+router.post('/searchusers', (req, res) => {
+    var useremail = req.body.user_email;
 
-    userModel.viewUser(userId, (error, results) => {
+    userModel.searchUser(useremail, (error, results) => {
         if (error) {
             console.error('Error fetching user data:', error);
             return res.status(500).json({
@@ -59,6 +60,16 @@ router.post('/viewusers', (req, res) => {
         return res.json(responseData);
     });
 });
+
+router.get('/viewusers',(req,res)=>{
+    userModel.viewUsers((error,results)=>{
+      if(error){
+        res.status(500).send('Error fetching trainers:'+error)
+        return
+      }
+      res.status(200).json(results);
+    })
+  })
 
 
 

@@ -14,9 +14,13 @@ const userModel={
         pool.query(query,userData,callback)
     },
 
-    viewUser:(id,callback)=>{
-        const query='SELECT * FROM user WHERE user_id = ?';
-        pool.query(query,[id],callback)
+    searchUser:(email,callback)=>{
+        const query='SELECT * FROM user WHERE user_email = ?';
+        pool.query(query,[email],callback)
+    },
+    viewUsers:(callback)=>{
+        const query='SELECT * FROM user';
+        pool.query(query,callback)
     }
 }
 

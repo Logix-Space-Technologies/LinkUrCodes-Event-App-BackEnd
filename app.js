@@ -1,6 +1,6 @@
 const express=require("express")
 const cors=require("cors")
-const userRouter=require("./controllers/userRoute")
+const userRouter=require("./controllers/userRouter")
 
 const app=express()
 const port =8085;
