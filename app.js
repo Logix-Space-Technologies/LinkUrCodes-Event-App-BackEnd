@@ -1,5 +1,6 @@
 const express=require("express")
 const cors=require("cors")
+const userRouter=require("./controllers/userRouter")
 
 const collegeRouter=require("./controllers/collegeRouter")
 
@@ -25,7 +26,11 @@ app.use("/api/events", eventRouter)
 
 app.use("/api/admin",adminRouter)
 
+
+app.use("/api/users",userRouter)
+
 app.use("/api/feedback", feedbackRouter)
+
 
 
 app.listen(port, ()=>{
