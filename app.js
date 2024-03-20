@@ -8,7 +8,11 @@ const paymentRouter=require("./controllers/paymentRouter")
 
 const adminRouter=require('./controllers/adminRouter')
 
+
+const studentRouter=require('./controllers/studentRouter')
+
 const feedbackRouter=require("./controllers/feedbackRouter")
+
 
 
 const app=express()
@@ -26,6 +30,8 @@ app.use("/api/events", eventRouter)
 
 app.use("/api/admin",adminRouter)
 
+
+app.use("/api/student",studentRouter)
 
 app.use("/api/users",userRouter)
 
