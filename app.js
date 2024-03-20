@@ -1,10 +1,13 @@
 const express=require("express")
 const cors=require("cors")
+
 const collegeRouter=require("./controllers/collegeRouter")
 
 const paymentRouter=require("./controllers/paymentRouter")
 
 const adminRouter=require('./controllers/adminRouter')
+
+const feedbackRouter=require("./controllers/feedbackRouter")
 
 
 const app=express()
@@ -18,11 +21,11 @@ app.use("/api/college",collegeRouter)
 
 app.use("/api/payment",paymentRouter)
 
-
 app.use("/api/events", eventRouter)
 
-
 app.use("/api/admin",adminRouter)
+
+app.use("/api/feedback", feedbackRouter)
 
 
 app.listen(port, ()=>{
