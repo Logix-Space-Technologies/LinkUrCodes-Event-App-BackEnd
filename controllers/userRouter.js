@@ -17,11 +17,13 @@ router.post('/adduser',async(req,res)=>{
     const hashedPassword=await hashPasswordgenerator(password)
     data.user_password=hashedPassword
     userModel.insertUser(req.body,(error,results)=>{
-        if (error) {
+        if (error) 
+        {
             res.status(500).send('Error inserting member data'+error)
-            return
         }
-        res.status(201).send(`Member added with ID`)
+        else{
+            res.status(201).send(`Member added with ID`)
+        }
     })
 
     
@@ -64,7 +66,7 @@ router.post('/searchusers', (req, res) => {
 router.get('/viewusers',(req,res)=>{
     userModel.viewUsers((error,results)=>{
       if(error){
-        res.status(500).send('Error fetching trainers:'+error)
+        res.status(500).send('Error fetching users:'+error)
         return
       }
       res.status(200).json(results);
