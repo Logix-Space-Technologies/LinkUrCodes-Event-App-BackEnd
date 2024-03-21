@@ -31,7 +31,7 @@ router.post('/signup', async (req, res) => {
 router.post('/loginuser', (req, res) => {
     const { user_email, user_password } = req.body;
 
-    userModel.userLogin(user_email, (error, user) => { // Remove user_password parameter
+    userModel.userLogin(user_email, (error, user) => { 
         if (error) {
             return res.json({
                 status: "Error"
