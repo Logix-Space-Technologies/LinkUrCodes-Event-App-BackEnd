@@ -32,40 +32,6 @@ router.get('/viewstudent',async(req,res)=>{
     })
 })
 
-// Route to handle student login
-// router.post('/login', async (req, res) => {
-//     try {
-//         const { student_email, student_password } = req.body;
-
-//         // Retrieve the student's data from the database based on the provided email
-//         studentModel.loginStudent(student_email, async (error, results) => {
-//            // console.log(student_email,student_password)
-//             if (error) {
-//                 return res.status(500).json({ message: error.message });
-//             }
-
-//             if (results.length === 0) {
-//                 // No student found with the provided email
-//                 return res.status(401).json({ message: 'Invalid credentials' });
-//             }
-
-//             const student = results[0];
-
-//             // Compare the provided password with the hashed password stored in the database
-//             const passwordMatch = await comparePasswords(student_password, student.student_password);
-
-//             if (!passwordMatch) {
-//                 // Passwords do not match
-//                 return res.status(401).json({ message: 'Invalid credentials' });
-//             }
-
-//             // Passwords match, login successful
-//             res.json({ status: "success", data: student });
-//         });
-//     } catch (err) {
-//         res.status(500).json({ message: err.message });
-//     }
-// });
 router.post('/login', async (req, res) => {
     try {
         const { student_email, student_password } = req.body;
