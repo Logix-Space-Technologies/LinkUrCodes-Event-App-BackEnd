@@ -3,6 +3,7 @@ const express=require("express")
 const userModel=require("../models/userModel")
 const bcrypt=require("bcryptjs")
 
+
 hashPasswordgenerator=async(pass)=>{
     const salt=await bcrypt.genSalt(10)
     return bcrypt.hash(pass,salt)

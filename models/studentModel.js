@@ -17,7 +17,18 @@ const studentModel={
     viewStudent:(callback)=>{
         const query='SELECT * FROM student';
         pool.query(query,callback);
+    },
+    // loginStudent:(studentData,callback)=>{
+    //     const query='SELECT * FROM student WHERE student_email=? AND student_password=?'
+    //     pool.query(query,studentData,callback);
+    // }
+    loginStudent: (studentData, callback) => {
+        const query = 'SELECT * FROM student WHERE student_email=? AND student_password=?';
+        // Ensure studentData is an array containing email and password
+        const values = [studentData.student_email, studentData.student_password];
+        pool.query(query, values, callback);
     }
+    
 }
 
 module.exports=studentModel
