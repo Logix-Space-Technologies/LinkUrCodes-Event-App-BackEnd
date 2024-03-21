@@ -23,6 +23,8 @@ router.post('/signup', async (req, res) => {
             return
         }
         res.status(201).send('User added with ID')
+    })
+})
 
 router.post('/adduser',async(req,res)=>{
     let{data}={"data":req.body}
@@ -123,6 +125,8 @@ router.get('/viewusers', (req, res) => {
             return
         }
         res.status(200).json(results);
+    })
+})
 
 router.get('/viewusers',(req,res)=>{
     userModel.viewUsers((error,results)=>{
