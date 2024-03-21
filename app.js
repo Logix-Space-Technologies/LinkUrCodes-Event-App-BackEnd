@@ -8,6 +8,7 @@ const paymentRouter=require("./controllers/paymentRouter")
 
 const adminRouter=require('./controllers/adminRouter')
 
+const eventRouter=require('./controllers/eventRouter')
 
 const studentRouter=require('./controllers/studentRouter')
 
@@ -17,7 +18,7 @@ const feedbackRouter=require("./controllers/feedbackRouter")
 
 const app=express()
 const port =8085;
-const eventRouter = require("./controllers/eventRouter")
+
 app.use(express.json())
 app.use(cors())
 
