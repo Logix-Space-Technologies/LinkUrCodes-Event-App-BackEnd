@@ -68,5 +68,45 @@ router.post('/loginstudent', (req, res) => {
     });
 });
 
+router.put('/updatepassword', async (req, res) => {
+    try {
+        const { student_email, student_password } = req.body;
+
+        // Check if all required fields are provided
+        if (!student_email || !student_password) {
+            return res.status(400).json({ message: 'Email and new password are required' });
+        }
+
+        // Hash the new password
+        const hashedNewPassword = await hashPasswordGenerator(student_password);
+
+        // Check if the email exists in the database
+        studentModel.loginStudent(student_email, async (error, student) => {
+            if (error) {
+                return res.status(500).json({ message: error.message });
+            }
+
+            if (!student) {
+                // Email not found in the table
+                return res.status(404).json({ message: 'Invalid email' });
+            }
+
+            // Update the password in the database
+            studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                // Password updated successfully
+                res.json({ status: 'success', message: 'Password updated successfully' });
+            });
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+
+
 
 module.exports = router
