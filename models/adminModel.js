@@ -18,7 +18,6 @@ const adminModel={
         pool.query(query,callback);
     },
     loginAdmin: (admin_username, callback) => {
-        // Your admin table needs to have an 'email' and 'password' column
         const query = 'SELECT * FROM admin WHERE admin_username = ? LIMIT 1'; // Assuming your table is named 'admin'
         pool.query(query, [admin_username], (error, results) => {
           if (error) {
