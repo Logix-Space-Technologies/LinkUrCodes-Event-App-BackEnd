@@ -15,6 +15,10 @@ const publicEventModel = {
     viewPublicEvents: (callback) => {
         const query = 'SELECT * FROM event_public';
         pool.query(query, callback);
+    },
+    updatePublicEvents: (event_public_id, updatedFields, callback) => {
+        const query = 'UPDATE event_public SET ? WHERE event_public_id = ?';
+        pool.query(query, [updatedFields, event_public_id], callback);
     }
    
 }
