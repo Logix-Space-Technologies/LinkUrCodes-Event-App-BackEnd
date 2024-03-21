@@ -1,31 +1,85 @@
 
-const express=require("express")
-const userModel=require("../models/userModel")
-const bcrypt=require("bcryptjs")
+const express = require("express")
+const userModel = require("../models/userModel")
+const bcrypt = require("bcryptjs")
 
-hashPasswordgenerator=async(pass)=>{
-    const salt=await bcrypt.genSalt(10)
-    return bcrypt.hash(pass,salt)
+hashPasswordgenerator = async (pass) => {
+    const salt = await bcrypt.genSalt(10)
+    return bcrypt.hash(pass, salt)
 }
 
-const router=express.Router()
+const router = express.Router()
 
 //route to add a user
+
+router.post('/signup', async (req, res) => {
+    let { data } = { "data": req.body }
+    let password = data.user_password
+    const hashedPassword = await hashPasswordgenerator(password)
+    data.user_password = hashedPassword
+    userModel.insertUser(req.body, (error, results) => {
+        if (error) {
+            res.status(500).send('Error inserting user data' + error)
+            return
+        }
+        res.status(201).send('User added with ID')
+
 router.post('/adduser',async(req,res)=>{
     let{data}={"data":req.body}
     let password=data.user_password
     const hashedPassword=await hashPasswordgenerator(password)
     data.user_password=hashedPassword
     userModel.insertUser(req.body,(error,results)=>{
-        if (error) {
+        if (error) 
+        {
             res.status(500).send('Error inserting member data'+error)
-            return
         }
-        res.status(201).send(`Member added with ID`)
+        else{
+            res.status(201).send(`Member added with ID`)
+        }
+
     })
 
-    
+
 });
+
+
+router.post('/loginuser', (req, res) => {
+    const { user_email, user_password } = req.body;
+
+    userModel.userLogin(user_email, (error, user) => { 
+        if (error) {
+            return res.json({
+                status: "Error"
+            });
+        }
+        if (!user) {
+            return res.json({
+                status: "Invalid Email ID"
+            });
+        }
+        // Compare the password retrieved from the database with the provided password
+        bcrypt.compare(user_password, user.user_password, (err, isMatch) => {
+            if (err) {
+                return res.json({
+                    status: "Error"
+                });
+            }
+            if (!isMatch) {
+                return res.json({
+                    status: "Invalid Password"
+                });
+            }
+            // Successful login
+            return res.json({
+                status: "Success",
+                userData: user
+            });
+        });
+    });
+});
+
+
 
 //route to view a user
 router.post('/searchusers', (req, res) => {
@@ -61,18 +115,28 @@ router.post('/searchusers', (req, res) => {
     });
 });
 
+
+router.get('/viewusers', (req, res) => {
+    userModel.viewUsers((error, results) => {
+        if (error) {
+            res.status(500).send('Error fetching users:' + error)
+            return
+        }
+        res.status(200).json(results);
+
 router.get('/viewusers',(req,res)=>{
     userModel.viewUsers((error,results)=>{
       if(error){
-        res.status(500).send('Error fetching trainers:'+error)
+        res.status(500).send('Error fetching users:'+error)
         return
       }
       res.status(200).json(results);
+
     })
-  })
+})
 
 
 
 
 
-module.exports=router
+module.exports = router
