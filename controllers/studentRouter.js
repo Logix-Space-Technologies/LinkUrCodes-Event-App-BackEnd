@@ -11,10 +11,18 @@ const hashPasswordGenerator = async (pass) => {
 
 router.post('/addstudent', async (req, res) => {
     try {
-        let { data } = { "data": req.body };
-        let password = data.student_password;
-        const hashedPassword = await hashPasswordGenerator(password);
-        data.student_password = hashedPassword;
+        let data = req.body;
+        if (!Array.isArray(data)) {
+            // If data is not an array, convert it to an array with a single element
+            data = [data];
+        }
+        // Hash passwords for each student
+        for (let student of data) {
+            let password = student.student_password;
+            const hashedPassword = await hashPasswordGenerator(password);
+            student.student_password = hashedPassword;
+        }
+
         studentModel.insertStudent(data, (error, results) => {
             if (error) {
                 return res.status(500).json({ message: error.message });
@@ -24,7 +32,8 @@ router.post('/addstudent', async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
-})
+});
+
 
 router.get('/viewstudent', async (req, res) => {
     studentModel.viewStudent((error, results) => {
