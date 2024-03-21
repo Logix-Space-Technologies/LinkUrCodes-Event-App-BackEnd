@@ -9,16 +9,16 @@ const pool=mysql.createPool({
     port:process.env.DB_PORT
 });
 
-const paymentModel={
+const paymentcollegeModel={
     insertpayment: (paymentData,callback)=>{
-        const query='INSERT INTO payment SET ?';
+        const query='INSERT INTO payment_college SET ?';
         pool.query(query,paymentData,callback)
     },
 
 
     viewPayments:(callback)=>{
-        const query='SELECT * FROM payment';
+        const query='SELECT * FROM payment_college';
         pool.query(query,callback)
     }
 }
-module.exports=paymentModel;
+module.exports=paymentcollegeModel;

@@ -7,16 +7,16 @@ const pool = mysql.createPool({
     port: process.env.DB_PORT
 })
 
-const eventModel = {
-    insertEvents: (eventData, callback) => {
-        const query = 'INSERT INTO event SET ?';
+const privateEventModel = {
+    insertPrivateEvents: (eventData, callback) => {
+        const query = 'INSERT INTO event_private SET ?';
         pool.query(query, eventData, callback);
     },
-    viewEvents: (callback) => {
-        const query = 'SELECT * FROM event';
+    viewPrivateEvents: (callback) => {
+        const query = 'SELECT * FROM event_private';
         pool.query(query, callback);
     }
    
 }
 
-module.exports = eventModel;
+module.exports = privateEventModel;
