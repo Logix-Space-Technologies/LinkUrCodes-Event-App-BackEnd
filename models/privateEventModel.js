@@ -15,6 +15,10 @@ const privateEventModel = {
     viewPrivateEvents: (callback) => {
         const query = 'SELECT * FROM event_private';
         pool.query(query, callback);
+    },
+    updatePrivateEvents: (event_private_id, updatedFields, callback) => {
+        const query = 'UPDATE event_private SET ? WHERE event_private_id = ?';
+        pool.query(query, [updatedFields, event_private_id], callback);
     }
    
 }
