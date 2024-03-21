@@ -29,7 +29,8 @@ const certificateModel = {
         pool.query(query, callback);
     },
     findCertificatesByPrivateEvent: (callback) => {
-        const query = `SELECT s.student_name AS Name,s.student_email AS Email,s.student_admno as Admno,s.student_college as College,e.event_private_name AS Event,c.certificate_name,c.issued_date,c.Issued_By,c.status,c.expiration_date, CASE WHEN p.student_id IS NOT NULL THEN 'paid' ELSE 'not paid' END AS Payment_Status FROM certificate_stud c INNER JOIN student s ON c.certificate_student_id = s.student_id INNER JOIN event_private e ON c.certificate_private_event_id = e.event_private_id LEFT JOIN payment_college p ON s.student_id = p.student_id WHERE c.status = 'pending'`;
+        const query = `SELECT s.student_name AS student_name,s.student_email AS student_email,s.student_admno AS student_admn,cl.college_name AS college_name,e.event_private_name AS event_private_name,cs.certificate_name AS certificate_name,cs.issued_date AS issued_date,
+        cs.Issued_By AS Issued_By,cs.status AS status,cs.expiration_date AS expiration_date,CASE WHEN pc.college_id IS NOT NULL THEN 'paid' ELSE 'not paid' END AS payment_status FROM certificate_stud cs INNER JOIN student s ON cs.certificate_student_id = s.student_id INNER JOIN event_private e ON cs.certificate_private_event_id = e.event_private_id INNER JOIN college cl ON s.student_college_id = cl.college_id LEFT JOIN payment_college pc ON cl.college_id = pc.college_id AND e.event_private_id = pc.private_event_id`;
         pool.query(query, callback);
     },
     findCertificatesByUsers: (user_id,callback) => {
@@ -44,10 +45,10 @@ const certificateModel = {
     },
     findCertificatesByStudents: (student_id, callback) => {
         const query = `
-        SELECT s.student_name AS Name, s.student_email AS Email, s.student_admno AS Admno, s.student_college AS College, e.event_private_name AS Event, c.certificate_name, c.issued_date, c.Issued_By, c.status, c.expiration_date
-        FROM certificate_stud c
-        INNER JOIN student s ON c.certificate_student_id = s.student_id
-        INNER JOIN event_private e ON c.certificate_private_event_id = e.event_private_id
+        SELECT s.student_name AS Name, s.student_email AS Email, s.student_admno AS Admno, cl.college_name AS College, e.event_private_name AS Event, c.certificate_name,
+        c.issued_date, c.Issued_By, c.status, c.expiration_date FROM certificate_stud c INNER JOIN student s ON c.certificate_student_id = s.student_id INNER JOIN event_private e 
+        ON c.certificate_private_event_id = e.event_private_id INNER JOIN college cl 
+        ON cl.college_id = s.student_college_id 
         WHERE s.student_id = ?
         `;
         pool.query(query, [student_id], callback);
@@ -70,8 +71,8 @@ const certificateModel = {
     },
     findPublicEventsByUserId: (user_id, callback) => {
         const query = `
-            SELECT event_id
-            FROM user
+            SELECT payment_event_id
+            FROM payment_user
             WHERE user_id = ?
         `;
         pool.query(query, [user_id], callback);

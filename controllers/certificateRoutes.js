@@ -64,11 +64,13 @@ router.post('/generate-certificate/public', (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
             return;
         }
+        console.log(publicEvents);
         if (publicEvents.length === 0) {
             res.status(400).json({ error: 'No public events found for the user' });
             return;
         }
-        const publicEventIds = publicEvents.map(event => event.event_id);
+        const publicEventIds = publicEvents.map(event => event.payment_event_id);
+        console.log(publicEventIds);
         const promises = publicEventIds.map(publicEventId => {
             return new Promise((resolve, reject) => {
         certificateModel.insertCertificateUser({
@@ -232,6 +234,7 @@ router.get('/certificates/student', (req, res) => {
         res.status(200).json(results);
     });
 });
+
 
 
 
