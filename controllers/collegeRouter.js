@@ -89,7 +89,7 @@ router.post('/studentupload', upload.single('file'), async(req, res) => {
             student_name: student.student_name,
             student_admno: student.student_admno,
             student_email: student.student_email,
-            student_password: student.student_admno,// Set student_admno as password
+            student_password: student.student_admno.toString(),// Set student_admno as password
             event_id: student.event_id,
             student_college_id: student.student_college_id
         }));
@@ -99,7 +99,7 @@ console.log("new data",newStudentData)
         console.log('Response from other API:', response.data);
 
         // Send a response back to the client
-        res.json({ message: 'inserted', data: response.data });
+        res.json({ status: 'inserted'});
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while processing the file.' });
