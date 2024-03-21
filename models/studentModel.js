@@ -10,10 +10,19 @@ const pool=mysql.createPool({
 })
 
 const studentModel={
-    insertStudent:(studentData,callback)=>{
-        const query='INSERT INTO student SET?';
-        pool.query(query,studentData,callback);
-    },
+        insertStudent: (studentsData, callback) => {
+            const query = 'INSERT INTO student (student_name, student_admno, student_email, student_password, event_id, student_college_id) VALUES ?';
+            const values = studentsData.map(student => [
+                student.student_name,
+                student.student_admno,
+                student.student_email,
+                student.student_password,
+                student.event_id,
+                student.student_college_id
+            ]);
+            pool.query(query, [values], callback);
+        }
+,
     viewStudent:(callback)=>{
         const query='SELECT * FROM student';
         pool.query(query,callback);
