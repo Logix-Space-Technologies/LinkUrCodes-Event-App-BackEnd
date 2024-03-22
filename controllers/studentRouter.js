@@ -1,7 +1,6 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
 const bcrypt = require("bcryptjs")
-const nodemailer=require("nodemailer")
 const router = express.Router()
 
 const hashPasswordGenerator = async (pass) => {
