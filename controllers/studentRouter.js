@@ -1,6 +1,7 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
 const bcrypt = require("bcryptjs")
+const nodemailer=require("nodemailer")
 const router = express.Router()
 
 const hashPasswordGenerator = async (pass) => {
@@ -104,8 +105,6 @@ router.put('/updatepassword', async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-
-
 
 
 
