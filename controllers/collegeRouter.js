@@ -61,7 +61,7 @@ const upload = multer({
     }
 });
 
-router.post('/studentupload', upload.single('file'), async(req, res) => {
+router.post('/studentupload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
@@ -93,16 +93,42 @@ router.post('/studentupload', upload.single('file'), async(req, res) => {
             event_id: student.event_id,
             student_college_id: student.student_college_id
         }));
-console.log("new data",newStudentData)
-        const response = await axios.post('http://localhost:8085/api/student/addstudent',newStudentData);
+        console.log("new data", newStudentData)
+        const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
         // Process the response from the other API
         console.log('Response from other API:', response.data);
 
         // Send a response back to the client
-        res.json({ status: 'inserted'});
+        res.json({ status: 'inserted' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while processing the file.' });
+    }
+});
+
+router.post('/deleteCollege', async (req, res) => {
+    try {
+        const { college_id } = req.body;
+        // Retrieve college details using the provided college ID
+        collegeModel.findCollegeById(college_id, async (error, college) => {
+            if (error) {
+                return res.status(500).json({ error: 'Error finding college by ID' });
+            }
+
+            if (!college || college.length === 0) {
+                return res.status(404).json({ error: 'College not found' });
+            }
+            // Delete the college from the database
+            collegeModel.deleteCollegeById(college_id, (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: 'Error deleting college' });
+                }
+                res.json({ status: 'College deleted successfully' });
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while deleting the college' });
     }
 });
 

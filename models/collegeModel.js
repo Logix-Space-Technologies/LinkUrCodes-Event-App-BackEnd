@@ -24,7 +24,31 @@ const collegeModel = {
     findCollege:(callback)=>{
         const query='SELECT * FROM college';
         pool.query(query,callback)
-    }
+    },
+    deleteCollegeById: (college_id, callback) => {
+        console.log("mod clg",college_id)
+        const query = 'DELETE FROM college WHERE college_id = ?';
+        pool.query(query, [college_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
+    },
+    findCollegeById: (college_id, callback) => {
+        const query = 'SELECT * FROM college WHERE college_id = ?';
+        pool.query(query, [college_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
+    }
+
 };
 
 module.exports = collegeModel;
