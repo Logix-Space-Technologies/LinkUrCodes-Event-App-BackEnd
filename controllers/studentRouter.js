@@ -11,10 +11,18 @@ const hashPasswordGenerator = async (pass) => {
 
 router.post('/addstudent', async (req, res) => {
     try {
-        let { data } = { "data": req.body };
-        let password = data.student_password;
-        const hashedPassword = await hashPasswordGenerator(password);
-        data.student_password = hashedPassword;
+        let data = req.body;
+        if (!Array.isArray(data)) {
+            // If data is not an array, convert it to an array with a single element
+            data = [data];
+        }
+        // Hash passwords for each student
+        for (let student of data) {
+            let password = student.student_password;
+            const hashedPassword = await hashPasswordGenerator(password);
+            student.student_password = hashedPassword;
+        }
+
         studentModel.insertStudent(data, (error, results) => {
             if (error) {
                 return res.status(500).json({ message: error.message });
@@ -24,7 +32,8 @@ router.post('/addstudent', async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
-})
+});
+
 
 router.get('/viewstudent', async (req, res) => {
     studentModel.viewStudent((error, results) => {
@@ -58,6 +67,46 @@ router.post('/loginstudent', (req, res) => {
         });
     });
 });
+
+router.put('/updatepassword', async (req, res) => {
+    try {
+        const { student_email, student_password } = req.body;
+
+        // Check if all required fields are provided
+        if (!student_email || !student_password) {
+            return res.status(400).json({ message: 'Email and new password are required' });
+        }
+
+        // Hash the new password
+        const hashedNewPassword = await hashPasswordGenerator(student_password);
+
+        // Check if the email exists in the database
+        studentModel.loginStudent(student_email, async (error, student) => {
+            if (error) {
+                return res.status(500).json({ message: error.message });
+            }
+
+            if (!student) {
+                // Email not found in the table
+                return res.status(404).json({ message: 'Invalid email' });
+            }
+
+            // Update the password in the database
+            studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                // Password updated successfully
+                res.json({ status: 'success', message: 'Password updated successfully' });
+            });
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+
 
 
 module.exports = router
