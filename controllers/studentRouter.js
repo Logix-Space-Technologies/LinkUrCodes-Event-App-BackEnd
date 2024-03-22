@@ -138,6 +138,7 @@ router.post('/sortstudbycollege', (req, res) => {
 });
 
 
+
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
@@ -174,3 +175,4 @@ router.post("/forgotpassword", async (req, res) => {
 });
 
 module.exports = router;
+
