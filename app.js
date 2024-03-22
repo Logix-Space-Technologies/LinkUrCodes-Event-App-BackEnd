@@ -1,19 +1,13 @@
 const express=require("express")
 const cors=require("cors")
+const certificateRouter = require("./controllers/certificateRoutes")
 const userRouter=require("./controllers/userRouter")
-
 const collegeRouter=require("./controllers/collegeRouter")
-
 const paymentRouter=require("./controllers/paymentRouter")
-
 const adminRouter=require('./controllers/adminRouter')
-
 const eventRouter=require('./controllers/eventRouter')
-
 const studentRouter=require('./controllers/studentRouter')
-
 const feedbackRouter=require("./controllers/feedbackRouter")
-
 
 
 const app=express()
@@ -39,6 +33,7 @@ app.use("/api/users",userRouter)
 app.use("/api/feedback", feedbackRouter)
 
 
+app.use("/api/certificate", certificateRouter)
 
 app.listen(port, ()=>{
     console.log("Server running on",port)
