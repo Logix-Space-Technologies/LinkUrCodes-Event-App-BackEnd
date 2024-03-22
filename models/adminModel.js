@@ -16,8 +16,24 @@ const adminModel={
     viewAdmin:(callback)=>{
         const query='SELECT * FROM admin';
         pool.query(query,callback);
-    }
-}
+    },
+    loginAdmin: (admin_username, callback) => {
+        const query = 'SELECT * FROM admin WHERE admin_username = ? LIMIT 1'; // Assuming your table is named 'admin'
+        pool.query(query, [admin_username], (error, results) => {
+          if (error) {
+            return callback(error, null);
+          }
+          // If no admin found, results array will be empty
+          if (results.length === 0) {
+            return callback(null, null);
+          }
+          // Return the first admin found (there should only be one due to the 'LIMIT 1' in the query)
+          return callback(null, results[0]);
+        });
+      }
 
+
+};
+   
 
 module.exports=adminModel;
