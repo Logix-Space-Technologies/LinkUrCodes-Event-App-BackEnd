@@ -105,8 +105,23 @@ router.put('/updatepassword', async (req, res) => {
     }
 });
 
+// Endpoint to get students by college
+router.post('/sortstudbycollege', (req, res) => {
+    // Assuming you're sending the college name as a query parameter
+    const student_college_id = req.body;
+    console.log("hai") // Correctly using console.log here
+
+    if (!student_college_id) {
+        return res.status(400).json({ message: 'College ID is required' });
+    }
+
+    studentModel.sortStudentsByCollege(student_college_id, (error, students) => {
+        if (error) {
+            return res.status(500).json({ message: error.message });
+        }
+        res.json({ students });
+    });
+});
 
 
-
-
-module.exports = router
+module.exports = router;
