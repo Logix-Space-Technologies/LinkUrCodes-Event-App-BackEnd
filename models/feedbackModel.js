@@ -15,7 +15,7 @@ const packageModel = {
         pool.query(query, feedbackStudData, callback);
     },
     viewFeedbackStud: (callback) => {
-        const query = 'SELECT s.student_name,s.student_college, e.event_private_name,f.feedback_content FROM student s join event_private e join feedback_stud f on f.feedback_student_id = s.student_id where f.feedback_event_id = e.event_private_id';
+        const query = 'SELECT s.student_name, e.event_private_name,c.college_name,f.feedback_content FROM student s join event_private e join feedback_stud f join college c on f.feedback_student_id = s.student_id where f.feedback_event_id = e.event_private_id and s.student_college_id=c.college_id';
         pool.query(query, callback);
     },
 
