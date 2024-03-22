@@ -9,16 +9,14 @@ const hashPasswordGenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hash(pass, salt)
 }
-
-console.log('Email:', process.env.EMAIL_USER); 
-console.log('EmailPass:', process.env.EMAIL_PASSWORD); 
+ 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     auth: {
-        user: process.env.EMAIL_USER,
+        user: process.env.EMAIL_ID,
         pass: process.env.EMAIL_PASSWORD
     }
 });
