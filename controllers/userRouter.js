@@ -15,8 +15,8 @@ const transporter = nodemailer.createTransport({
     // Configuration for your email service provider
     service: 'gmail',
     auth: {
-        user: process.env.DB_USER_EMAIL, // Your email address
-        pass: process.env.DB_USER_PASS // Your email password (or app password if 2-factor authentication is enabled)
+        user: process.env.EMAIL_ID, // Your email address
+        pass: process.env.EMAIL_PASSWORD // Your email password (or app password if 2-factor authentication is enabled)
     }
 });
 
@@ -37,7 +37,7 @@ router.post('/signup', async (req, res) => {
 
             // Send a welcome email
             const mailOptions = {
-                from: process.env.DB_USER_EMAIL, // Sender's email address
+                from: process.env.EMAIL_USER, // Sender's email address
                 to: data.user_email, // Recipient's email address
                 subject: 'Welcome!', // Email subject
                 text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
