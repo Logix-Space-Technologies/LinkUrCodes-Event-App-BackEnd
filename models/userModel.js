@@ -14,6 +14,7 @@ const userModel={
         pool.query(query,userData,callback)
     },
 
+
     userLogin: (user_email, callback) => { // Remove user_password parameter
         // Your user table needs to have an 'email' and 'password' column
         const query = 'SELECT * FROM user WHERE user_email = ? LIMIT 1'; // Assuming your table is named 'admin'
@@ -32,6 +33,7 @@ const userModel={
     ,
     
 
+
     searchUser:(email,callback)=>{
         const query='SELECT * FROM user WHERE user_email = ?';
         pool.query(query,[email],callback)
@@ -39,6 +41,10 @@ const userModel={
     viewUsers:(callback)=>{
         const query='SELECT * FROM user';
         pool.query(query,callback)
+    },
+    deleteUsers: (user_id, callback) => {
+        const query = 'DELETE FROM user WHERE user_id = ?';
+        pool.query(query, [user_id], callback);
     }
 }
 
