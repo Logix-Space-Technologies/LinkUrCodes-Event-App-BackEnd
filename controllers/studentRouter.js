@@ -119,6 +119,25 @@ router.put('/updatepassword', async (req, res) => {
     }
 });
 
+// Endpoint to get students by college
+router.post('/sortstudbycollege', (req, res) => {
+    // Assuming you're sending the college name as a query parameter
+    const student_college_id = req.body;
+    console.log("hai") // Correctly using console.log here
+
+    if (!student_college_id) {
+        return res.status(400).json({ message: 'College ID is required' });
+    }
+
+    studentModel.sortStudentsByCollege(student_college_id, (error, students) => {
+        if (error) {
+            return res.status(500).json({ message: error.message });
+        }
+        res.json({ students });
+    });
+});
+
+
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
@@ -131,7 +150,6 @@ router.post("/forgotpassword", async (req, res) => {
             if (!student) {
                 return res.status(400).json({ error: "Invalid student email" });
             }
-
             // Send an email with a message for password reset
             const mailOptions = {
                 from: process.env.EMAIL_USER,
@@ -155,5 +173,4 @@ router.post("/forgotpassword", async (req, res) => {
     }
 });
 
-
-module.exports = router
+module.exports = router;

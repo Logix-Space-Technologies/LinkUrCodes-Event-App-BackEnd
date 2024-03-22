@@ -42,11 +42,14 @@ const studentModel={
           return callback(null, results[0]);
         });
       },
-updatePassword :(student_email, hashedPassword, callback) => {
+    updatePassword :(student_email, hashedPassword, callback) => {
     const query = 'UPDATE student SET student_password = ? WHERE student_email = ?';
     pool.query(query, [hashedPassword, student_email], callback);
-}
-    
+    },
+    sortStudentsByCollege: (student_college_id, callback) => {
+        const query = 'SELECT * FROM student WHERE student_college_id = 1 GROUP BY student_name'; // Assuming you want to sort them by name, adjust as necessary
+        pool.query(query, [student_college_id], callback);
+    },
 }
 
 module.exports=studentModel
