@@ -23,25 +23,9 @@ router.post('/signup', async (req, res) => {
             return
         }
         res.status(201).send('User added with ID')
-
-router.post('/adduser',async(req,res)=>{
-    let{data}={"data":req.body}
-    let password=data.user_password
-    const hashedPassword=await hashPasswordgenerator(password)
-    data.user_password=hashedPassword
-    userModel.insertUser(req.body,(error,results)=>{
-        if (error) 
-        {
-            res.status(500).send('Error inserting member data'+error)
-        }
-        else{
-            res.status(201).send(`Member added with ID`)
-        }
-
     })
+})
 
-
-});
 
 
 router.post('/loginuser', (req, res) => {
@@ -123,6 +107,8 @@ router.get('/viewusers', (req, res) => {
             return
         }
         res.status(200).json(results);
+    })
+})
 
 router.get('/viewusers',(req,res)=>{
     userModel.viewUsers((error,results)=>{
