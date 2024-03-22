@@ -71,8 +71,28 @@ router.get('/viewusers',(req,res)=>{
     })
   })
 
+  router.post('/delete-users', (req, res) => {
+    const user_id = req.body.user_id; // Extract user_id from req.body
 
+    if (!user_id) {
+        return res.status(400).json({ error: 'User ID is required in the request body' });
+    }
 
+    userModel.deleteUsers(user_id, (error, result) => {
+        if (error) {
+            console.error('Error deleting user:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (result.affectedRows > 0) {
+                console.log('User deleted successfully');
+                res.status(200).json({ message: 'User deleted successfully' });
+            } else {
+                console.log('User not found');
+                res.status(404).json({ error: 'User not found' });
+            }
+        }
+    });
+});
 
 
 module.exports=router

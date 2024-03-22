@@ -13,7 +13,6 @@ const userModel={
         const query='INSERT INTO user SET ?';
         pool.query(query,userData,callback)
     },
-
     searchUser:(email,callback)=>{
         const query='SELECT * FROM user WHERE user_email = ?';
         pool.query(query,[email],callback)
@@ -21,6 +20,10 @@ const userModel={
     viewUsers:(callback)=>{
         const query='SELECT * FROM user';
         pool.query(query,callback)
+    },
+    deleteUsers: (user_id, callback) => {
+        const query = 'DELETE FROM user WHERE user_id = ?';
+        pool.query(query, [user_id], callback);
     }
 }
 
