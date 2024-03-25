@@ -6,10 +6,50 @@ const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
 const router = express.Router();
+const bcrypt=require("bcryptjs")
+
+
+
+hashPasswordgenerator = async (pass) => {
+    const salt = await bcrypt.genSalt(10)
+    return bcrypt.hash(pass, salt)
+}
+
+router.post('/loginCollege', (req, res) => {
+    const { college_email, college_password } = req.body;
+
+    collegeModel.collegeLogin(college_email, async (error, college) => {
+        if (error) {
+            return res.json({
+                status: "Error"
+            });
+        }
+        if (!college) {
+            return res.json({
+                status: "Invalid Username"
+            });
+        }
+
+        // Compare the provided password with the hashed password stored in the database
+        const isMatch = await bcrypt.compare(college_password, college.college_password);
+        if (!isMatch) {
+            return res.json({
+                status: "Invalid Password"
+            });
+        }
+        
+        // Successful login
+        return res.json({
+            status: "Success",
+            collegeData: college
+        });
+    });
+});
 
 // Route to add a new College
 router.post('/addCollege', (req, res) => {
     console.log(req.body);
+    const { college_password, ...collegeData } = req.body;
     collegeModel.insertCollege(req.body, (error, results) => {
         if (error) {
             res.status(500).send('Error inserting College data: ' + error);
@@ -132,6 +172,63 @@ router.post('/deleteCollege', async (req, res) => {
     }
 });
 
+router.post('/resetPassword', async (req, res) => {
+    try {
+        const { college_id } = req.body;
+
+        // Retrieve college details using the provided college ID
+        collegeModel.findCollegeById(college_id, async (error, college) => {
+            if (error) {
+                return res.status(500).json({ error: 'Error finding college by ID' });
+            }
+
+            if (!college || college.length === 0) {
+                return res.status(404).json({ error: 'College not found' });
+            }
+
+            try {
+                // Generate new default password based on the college's phone number
+                const newDefaultPassword = generateNewDefaultPassword(college.college_phone);
+
+                // Hash the new default password
+                const hashedPassword = await bcrypt.hash(newDefaultPassword, 10);
+
+                // Update the college's password in the database
+                collegeModel.updateCollegePassword(college_id, hashedPassword, (updateError, updateResult) => {
+                    if (updateError) {
+                        return res.status(500).json({ error: 'Error updating college password' });
+                    }
+
+                    return res.json({ status: 'Password reset successfully' });
+                });
+            } catch (hashError) {
+                console.error('Error hashing password:', hashError);
+                return res.status(500).json({ error: 'An error occurred while resetting the password' });
+            }
+        });
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        return res.status(500).json({ error: 'An error occurred while resetting the password' });
+    }
+});
+
+function generateNewDefaultPassword() {
+    // Define character sets
+    const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+    
+    // Generate random characters
+    const randomSpecialChar = specialChars[Math.floor(Math.random() * specialChars.length)];
+    const randomUppercaseChar = uppercaseChars[Math.floor(Math.random() * uppercaseChars.length)];
+    const randomLowercaseChar = lowercaseChars[Math.floor(Math.random() * lowercaseChars.length)];
+    
+    // Concatenate characters to form the password
+    const password = randomSpecialChar + randomUppercaseChar + randomLowercaseChar;
+
+    // Return the password
+    return password;
+}
 
 
 
