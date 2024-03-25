@@ -19,6 +19,10 @@ const privateEventModel = {
     updatePrivateEvents: (event_private_id, updatedFields, callback) => {
         const query = 'UPDATE event_private SET ? WHERE event_private_id = ?';
         pool.query(query, [updatedFields, event_private_id], callback);
+    },
+    searchPrivateEvents: (searchTerm, callback) => {
+        const query = 'SELECT * FROM event_private WHERE event_private_name LIKE ?';
+        pool.query(query, [`%${searchTerm}%`], callback);
     }
    
 }

@@ -76,4 +76,36 @@ router.put('/update_public_events', (req, res) => {
 });
 
 
+router.post('/search-public-events', (req, res) => {
+    const eventName = req.body.event_public_name; // Assuming the event name is sent in the request body
+    if (!eventName) {
+        return res.status(400).json({ error: 'Event name is required' });
+    }
+
+    publicEventModel.searchPublicEvents(eventName, (err, results) => {
+        if (err) {
+            console.error('Error searching for events:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(results);
+    });
+});
+
+
+router.post('/search-private-events', (req, res) => {
+    const eventName = req.body.event_private_name; // Assuming the event name is sent in the request body
+    if (!eventName) {
+        return res.status(400).json({ error: 'Event name is required' });
+    }
+
+    privateEventModel.searchPrivateEvents(eventName, (err, results) => {
+        if (err) {
+            console.error('Error searching for events:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(results);
+    });
+});
+
+
 module.exports = router
