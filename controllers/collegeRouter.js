@@ -1,23 +1,83 @@
 const express = require('express');
-const collegeModel = require('../models/CollegeModel');
+const collegeModel = require('../models/collegeModel');
 const studentModel = require("../models/studentModel")
 const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
 const router = express.Router();
+const bcrypt = require("bcryptjs")
+
+hashPasswordgenerator = async (pass) => {
+    const salt = await bcrypt.genSalt(10)
+    return bcrypt.hash(pass, salt)
+}
+
+// Function to validate password
+function validatePassword(password) {
+    // Check if the length is at most 8 characters
+    if (password.length !== 8) {
+        return false;
+    }
+
+    // Regular expressions for checking different criteria
+    const uppercaseCheck = /[A-Z]/;
+    const lowercaseCheck = /[a-z]/;
+    const digitCheck = /[0-9]/;
+    const specialCharCheck = /[^A-Za-z0-9]/;
+
+    // Check if the password contains at least one uppercase letter
+    if (!uppercaseCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one lowercase letter
+    if (!lowercaseCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one digit
+    if (!digitCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one special character
+    if (!specialCharCheck.test(password)) {
+        return false;
+    }
+
+    return true;
+}
 
 // Route to add a new College
-router.post('/addCollege', (req, res) => {
-    console.log(req.body);
-    collegeModel.insertCollege(req.body, (error, results) => {
-        if (error) {
-            res.status(500).send('Error inserting College data: ' + error);
-            return;
+router.post('/addCollege', async (req, res) => {
+    try {
+        let { data } = { "data": req.body };
+        let password = data.college_password;
+
+        if (!validatePassword(password)) {
+            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
         }
-        res.status(201).send(`College added with ID: ${results.insertId}`);
-    });
+        
+
+        const hashedPassword = await hashPasswordgenerator(password);
+        data.college_password = hashedPassword;
+
+        // Insert the college into the database
+        collegeModel.insertCollege(data, (error, results) => {
+            if (error) {
+                res.status(500).send('Error inserting college data: ' + error);
+                return;
+            }
+
+            res.status(201).send('College added with ID: ' + results.insertId);
+        });
+    } catch (error) {
+        console.error('Error in addCollege route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
 
 // Route to get a college by college name
 router.post('/searchCollege', (req, res) => {
@@ -132,7 +192,40 @@ router.post('/deleteCollege', async (req, res) => {
     }
 });
 
+router.post('/logincollege', (req, res) => {
+    const { admin_username, admin_password } = req.body;
 
+    adminModel.loginAdmin(admin_username, (error, admin) => {
+        if (error) {
+            return res.json({
+                status: "Error"
+            });
+        }
+        if (!admin) {
+            return res.json({
+                status: "Invalid Username"
+            });
+        }
+        // Now admin is found, let's compare the password
+        bcrypt.compare(admin_password, admin.admin_password, (err, isMatch) => {
+            if (err) {
+                return res.json({
+                    status: "Error is"
+                });
+            }
+            if (!isMatch) {
+                return res.json({
+                    status: "Invalid Password"
+                });
+            }
+            // Successful login
+            return res.json({
+                status: "Success",
+                adminData: admin
+            });
+        });
+    });
+});
 
 
 module.exports = router;
