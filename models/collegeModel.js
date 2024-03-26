@@ -25,10 +25,11 @@ const collegeModel = {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM college WHERE college_email = ?';
             pool.query(query, [college_email], (error, results) => {
+                
                 if (error) {
                     reject(error);
                 } else {
-                    resolve(results[2]); // Assuming you want to return the first result
+                    resolve(results[0]); // Assuming you want to return the first result
                 }
             });
         });

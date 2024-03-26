@@ -90,7 +90,7 @@ router.post("/collegeLogin", async(req,res)=>{
                 return;
             }
             if (results.length > 0) {
-                res.status(200).json(results[2]);
+                res.status(200).json(results[0]);
             } else {
                 res.status(404).send('College not found');
             }
@@ -145,42 +145,42 @@ router.get('/Viewcollege', (req, res) => {
     });
 });
 // The following /Viewcollegedetail is created to test jwt token
-// router.post('/Viewcollegedetail', (req, res) => {
-//     const collegetoken = req.headers["collegetoken"];
-//     jwt.verify(collegetoken, "collegelogin", async(error, decoded) => {
-//         if (error) {
-//             return res.json({ "status": "error", "message": "Failed to verify token" });
-//         }
-//         if (decoded && decoded.college_email) {
-//             const { college_email } = decoded;
-//             try {
+router.post('/Viewcollegedetail', (req, res) => {
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async(error, decoded) => {
+        if (error) {
+            return res.json({ "status": "error", "message": "Failed to verify token" });
+        }
+        if (decoded && decoded.college_email) {
+            const { college_email } = decoded;
+            try {
                 
-//                 const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
-//                     if (error) {
-//                         res.status(500).send('Error retrieving college data');
-//                         return;
-//                     }
-//                     if (results.length > 0) {
-//                         res.status(200).json(results[2]);
-//                     } else {
-//                         res.status(404).send('College not found');
-//                     }
-//                 });
-//                 console.log(college)
-//                 if (!college) {
-//                     return res.json({ status: "Incorrect mailid" });
-//                 }
-//                 else {
-//                     return res.json({ status: "success", "collegedata": college});
-//                 }
-//         }catch (error) {
-//             return res.status(500).json({ "status": "error", "message": "Failed to fetch college details" });
-//         }
-//     } else {
-//         return res.json({ "status": "unauthorised user" });
-//     }
-// });
-// });
+                const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+                    if (error) {
+                        res.status(500).send('Error retrieving college data');
+                        return;
+                    }
+                    if (results.length > 0) {
+                        res.status(200).json(results[2]);
+                    } else {
+                        res.status(404).send('College not found');
+                    }
+                });
+                console.log(college)
+                if (!college) {
+                    return res.json({ status: "Incorrect mailid" });
+                }
+                else {
+                    return res.json({ status: "success", "collegedata": college});
+                }
+        }catch (error) {
+            return res.status(500).json({ "status": "error", "message": "Failed to fetch college details" });
+        }
+    } else {
+        return res.json({ "status": "unauthorised user" });
+    }
+});
+});
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
