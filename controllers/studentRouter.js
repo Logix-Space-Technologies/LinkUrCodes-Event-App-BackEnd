@@ -1,25 +1,16 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
-const nodemailer=require("nodemailer")
+const passwordResetModel=require("../models/mailerModel")
+//const nodemailer=require("nodemailer")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
+const jwt=require("jsonwebtoken")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hash(pass, salt)
 }
- 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_ID,
-        pass: process.env.EMAIL_PASSWORD
-    }
-});
 
 router.post('/addstudent', async (req, res) => {
     try {
@@ -72,10 +63,21 @@ router.post('/loginstudent', (req, res) => {
                 return res.json({status: "Invalid Password"});
             }
             // Successful login
-            return res.json({
-                status: "Success",
-                studentData: student
-            });
+            jwt.sign({email:student_email},"studlogin",{expiresIn:"1d"},
+            (error,token)=>{
+                if (error) {
+                    res.json({
+                        "status":"error",
+                        "error":error
+                    })
+                } else {
+                    return res.json({
+                        status: "Success",
+                        studentData: student,
+                        "token":token
+                    }); 
+                }
+            })
         });
     });
 });
@@ -134,14 +136,10 @@ router.post('/sortstudbycollege', (req, res) => {
         res.json({ students });
     });
 });
-
-
-
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
-
-        // Check if the student with the given email exists
+        const subjectheading = 'Password Reset'; 
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
                 return res.status(500).json({ error: error.message });
@@ -149,28 +147,22 @@ router.post("/forgotpassword", async (req, res) => {
             if (!student) {
                 return res.status(400).json({ error: "Invalid student email" });
             }
-            // Send an email with a message for password reset
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: student_email,
-                subject: 'Password Reset',
-                text: `Dear ${student.student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`,
-            };
-            
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending password reset email:', error);
-                    return res.status(500).json({ error: 'Failed to send password reset email' });
-                } else {
-                    console.log('Password reset email sent:', info.response);
-                    return res.json({ status: "success", message: "Password reset message has been sent to your email" });
-                }
-            });
+            try {
+                const student_name = student.student_name;
+                const textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
+
+                // Send password reset email
+                await passwordResetModel.sendPasswordResetEmail(student_email, student.student_name, subjectheading, textsend);
+                return res.json({ status: "success", message: "Password reset message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
         });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
 });
+
 
 module.exports = router;
 
