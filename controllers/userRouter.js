@@ -2,6 +2,7 @@
 const express = require("express")
 const userModel = require("../models/userModel")
 const validateModel=require("../models/validateModel")
+const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
 const nodemailer = require('nodemailer');
 
@@ -43,36 +44,47 @@ router.post('/signup', async (req, res) => {
         data.user_password = hashedPassword;
 
         // Insert the user into the database
-        userModel.insertUser(data, (error, results) => {
+        userModel.insertUser(data, async(error, results) => {
             if (error) {
                 res.status(500).send('Error inserting user data: ' + error);
                 return;
             }
 
+            try {
+                let user_name=data.user_name;
+                let textsend = `Dear ${user_name},\n\nYou have successfully registered.`;
+                let subjectheading = 'Successfully Registered'
+                // Send password reset email
+                await mailerModel.sendEmail(email, subjectheading, textsend);
+                return res.json({ status: "success", message: "Message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
+
             // Send a welcome email
-            const mailOptions = {
-                from: process.env.EMAIL_USER, // Sender's email address
-                to: data.user_email, // Recipient's email address
-                subject: 'Welcome!', // Email subject
-                text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
-            };
+            // const mailOptions = {
+            //     from: process.env.EMAIL_USER, // Sender's email address
+            //     to: data.user_email, // Recipient's email address
+            //     subject: 'Welcome!', // Email subject
+            //     text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
+            // };
 
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending welcome email:', error);
+            // transporter.sendMail(mailOptions, (error, info) => {
+            //     if (error) {
+            //         console.error('Error sending welcome email:', error);
                     
-                } else {
-                    console.log('Welcome email sent:', info.response);
+            //     } else {
+            //         console.log('Welcome email sent:', info.response);
                     
-                }
-            });
+            //     }
+            // });
 
-            res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
+            //res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
         });
     } catch (error) {
         console.error('Error in signup route:', error);
         res.status(500).json({ error: 'Internal server error' });
-    }2
+    }
 });
 
 
