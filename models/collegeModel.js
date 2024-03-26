@@ -28,7 +28,7 @@ const collegeModel = {
                 if (error) {
                     reject(error);
                 } else {
-                    resolve(results[0]); // Assuming you want to return the first result
+                    resolve(results[2]); // Assuming you want to return the first result
                 }
             });
         });
