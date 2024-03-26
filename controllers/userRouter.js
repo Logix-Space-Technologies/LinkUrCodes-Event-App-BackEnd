@@ -3,6 +3,7 @@ const express = require("express")
 const userModel = require("../models/userModel")
 const bcrypt = require("bcryptjs")
 const nodemailer = require('nodemailer');
+const jwt=require("jsonwebtoken")
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -135,11 +136,21 @@ router.post('/loginuser', (req, res) => {
                     status: "Invalid Password"
                 });
             }
-            // Successful login
+           jwt.sign({email:user_email},"eventapp",{expiresIn:"1d"},
+           (error,token)=>{
+            if (error) {
+                res.json({
+                    status:"error",
+                    "error":error
+                })
+            } else {
+                 // Successful login
             return res.json({
                 status: "Success",
-                userData: user
+                userData: user,"token":token
             });
+            }
+           })
         });
     });
 });
@@ -148,58 +159,59 @@ router.post('/loginuser', (req, res) => {
 
 //route to view a user
 router.post('/searchusers', (req, res) => {
-    var useremail = req.body.user_email;
-
-    userModel.searchUser(useremail, (error, results) => {
+    const searchTerm = req.body.term;
+    const token=req.headers["token"]
+    jwt.verify(token, "eventapp", (error, decoded) => {
         if (error) {
-            console.error('Error fetching user data:', error);
-            return res.status(500).json({
-                status: "Internal Server Error"
-            });
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
         }
+        
+        userModel.searchUser(searchTerm, (error, results) => {
+            if (error) {
+                console.error('Error fetching user data:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
 
-        if (results.length === 0) {
-            // If no user found with the provided ID
-            return res.status(404).json({
-                status: "User Not Found"
-            });
-        }
+            if (results.length === 0) {
+                // If no users found with the provided search term
+                return res.status(404).json({ status: "Users Not Found" });
+            }
 
-        // Assuming there is only one matching row, extract user data
-        const userData = results[0];
+            // Prepare response data
+            const responseData = results.map(userData => ({
+                name: userData.user_name,
+                email: userData.user_email
+            }));
 
-        // Prepare response data
-        const responseData = {
-            name: userData.user_name,
-            email: userData.user_email
-        };
+            console.log(responseData);
 
-        console.log(responseData);
-
-        return res.json(responseData);
+            return res.json(responseData);
+        });
     });
+   
 });
 
 
-router.get('/viewusers', (req, res) => {
-    userModel.viewUsers((error, results) => {
-        if (error) {
-            res.status(500).send('Error fetching users:' + error)
-            return
-        }
-        res.status(200).json(results);
-    })
-})
 
-router.get('/viewusers',(req,res)=>{
-    userModel.viewUsers((error,results)=>{
-      if(error){
-        res.status(500).send('Error fetching users:'+error)
-        return
-      }
-      res.status(200).json(results);
-
-    })
+router.post('/viewusers',(req,res)=>{
+    const token=req.headers["token"]
+   jwt.verify(token,"eventapp",(error,decoded)=>{
+    if (decoded && decoded.email) {
+        userModel.viewUsers((error,results)=>{
+            if(error){
+              res.status(500).send('Error fetching users:'+error)
+              return
+            }
+            res.status(200).json(results);
+      
+          })
+    } else {
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+   })
 })
 
   router.post('/delete-users', (req, res) => {
