@@ -11,6 +11,46 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
+// Function to validate password
+function validatePassword(password) {
+    // Check if the length is at most 8 characters
+    if (password.length !== 8) {
+        return false;
+    }
+
+    // Regular expressions for checking different criteria
+    const uppercaseCheck = /[A-Z]/;
+    const lowercaseCheck = /[a-z]/;
+    const digitCheck = /[0-9]/;
+    const specialCharCheck = /[^A-Za-z0-9]/;
+
+    // Check if the password contains at least one uppercase letter
+    if (!uppercaseCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one lowercase letter
+    if (!lowercaseCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one digit
+    if (!digitCheck.test(password)) {
+        return false;
+    }
+
+    // Check if the password contains at least one special character
+    if (!specialCharCheck.test(password)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+
+
+
 const transporter = nodemailer.createTransport({
     // Configuration for your email service provider
     service: 'gmail',
@@ -25,6 +65,13 @@ router.post('/signup', async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
+
+        if (!validatePassword(password)) {
+            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        }
+        
+
+
         const hashedPassword = await hashPasswordgenerator(password);
         data.user_password = hashedPassword;
 
@@ -58,7 +105,7 @@ router.post('/signup', async (req, res) => {
     } catch (error) {
         console.error('Error in signup route:', error);
         res.status(500).json({ error: 'Internal server error' });
-    }
+    }2
 });
 
 
