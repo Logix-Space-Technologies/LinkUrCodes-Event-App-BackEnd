@@ -1,6 +1,6 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
-const passwordResetModel=require("../models/mailerModel")
+const mailerModel=require("../models/mailerModel")
 //const nodemailer=require("nodemailer")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
@@ -148,11 +148,12 @@ router.post("/forgotpassword", async (req, res) => {
                 return res.status(400).json({ error: "Invalid student email" });
             }
             try {
-                const student_name = student.student_name;
-                const textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
+                let student_name=student.student_name;
+                let sending_email=student_email;
+                let textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
 
                 // Send password reset email
-                await passwordResetModel.sendPasswordResetEmail(student_email, student.student_name, subjectheading, textsend);
+                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
                 return res.status(500).json({ error: error.message });
