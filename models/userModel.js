@@ -32,10 +32,12 @@ const userModel={
     ,
     
 
-    searchUser:(email,callback)=>{
-        const query='SELECT * FROM user WHERE user_email = ?';
-        pool.query(query,[email],callback)
-    },
+    searchUser: (searchTerm, callback) => {
+    const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
+    const searchTermPattern = `%${searchTerm}%`;
+    pool.query(query, [searchTermPattern, searchTermPattern], callback);
+}
+,
     viewUsers:(callback)=>{
         const query='SELECT * FROM user';
         pool.query(query,callback)
