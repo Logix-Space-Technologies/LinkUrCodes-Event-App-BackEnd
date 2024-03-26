@@ -4,6 +4,7 @@ const userModel = require("../models/userModel")
 const validateModel=require("../models/validateModel")
 const bcrypt = require("bcryptjs")
 const nodemailer = require('nodemailer');
+const { error } = require("console");
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -26,13 +27,14 @@ router.post('/signup', async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
-
-        if (!validateModel.validatePassword(password)) {
-            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        let email = data.user_email;
+        const { isValid, message } = await validateModel.validateAndCheckEmail(email);
+        if (!isValid) {
+            return res.status(400).json({ message });
         }
-        
-
-
+        if (!validateModel.validatePassword(password)) {
+            return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        }
         const hashedPassword = await hashPasswordgenerator(password);
         data.user_password = hashedPassword;
 
