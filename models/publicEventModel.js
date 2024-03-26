@@ -19,6 +19,10 @@ const publicEventModel = {
     updatePublicEvents: (event_public_id, updatedFields, callback) => {
         const query = 'UPDATE event_public SET ? WHERE event_public_id = ?';
         pool.query(query, [updatedFields, event_public_id], callback);
+    },
+    searchPublicEvents: (searchTerm, callback) => {
+        const query = 'SELECT * FROM event_public WHERE event_public_name LIKE ?';
+        pool.query(query, [`%${searchTerm}%`], callback);
     }
    
 }
