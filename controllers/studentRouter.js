@@ -3,6 +3,7 @@ const studentModel = require("../models/studentModel")
 const nodemailer=require("nodemailer")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
+const jwt=require("jsonwebtoken")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
@@ -74,10 +75,21 @@ router.post('/loginstudent', (req, res) => {
                 return res.json({status: "Invalid Password"});
             }
             // Successful login
-            return res.json({
-                status: "Success",
-                studentData: student
-            });
+            jwt.sign({email:student_email},"studlogin",{expiresIn:"1d"},
+            (error,token)=>{
+                if (error) {
+                    res.json({
+                        "status":"error",
+                        "error":error
+                    })
+                } else {
+                    return res.json({
+                        status: "Success",
+                        studentData: student,
+                        "token":token
+                    }); 
+                }
+            })
         });
     });
 });
