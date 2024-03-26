@@ -12,7 +12,6 @@ const hashPasswordGenerator = async (pass) => {
     return bcrypt.hash(pass, salt)
 }
 
-
 router.post('/addstudent', async (req, res) => {
     try {
         let data = req.body;
