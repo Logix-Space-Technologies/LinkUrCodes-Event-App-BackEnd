@@ -7,6 +7,8 @@ const fs = require('fs');
 const axios = require('axios');
 const router = express.Router();
 const bcrypt = require("bcryptjs")
+const jwt=require("jsonwebtoken")
+
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -79,6 +81,42 @@ router.post('/addCollege', async (req, res) => {
 });
 
 
+router.post("/collegeLogin", async(req,res)=>{
+    try {
+        const { college_email, college_password } = req.body;
+        const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+            if (error) {
+                res.status(500).send('Error retrieving college data');
+                return;
+            }
+            if (results.length > 0) {
+                res.status(200).json(results[2]);
+            } else {
+                res.status(404).send('College not found');
+            }
+        });
+        console.log(college)
+        if (!college) {
+            return res.json({ status: "Incorrect mailid" });
+        }
+        const match = await bcrypt.compare(college_password, college.college_password);
+        if (!match) {
+            return res.json({ status: "Incorrect password" });
+        }
+        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+            if (error) {
+                return res.json({ "status": "error", "error": error });
+            } else {
+                return res.json({ status: "success", "collegedata": college, "collegetoken": collegetoken });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ "status": "error", "message": "Failed to login college" });
+    }
+});
+
+
 // Route to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var college_name = req.body.college_name; // Use req.body.name to retrieve college name
@@ -97,6 +135,7 @@ router.post('/searchCollege', (req, res) => {
 });
 
 router.get('/Viewcollege', (req, res) => {
+    
     collegeModel.findCollege((error, results) => {
         if (error) {
             res.status(500).send('Error fetching college_details:' + error)
@@ -105,6 +144,43 @@ router.get('/Viewcollege', (req, res) => {
         res.status(200).json(results);
     });
 });
+// The following /Viewcollegedetail is created to test jwt token
+// router.post('/Viewcollegedetail', (req, res) => {
+//     const collegetoken = req.headers["collegetoken"];
+//     jwt.verify(collegetoken, "collegelogin", async(error, decoded) => {
+//         if (error) {
+//             return res.json({ "status": "error", "message": "Failed to verify token" });
+//         }
+//         if (decoded && decoded.college_email) {
+//             const { college_email } = decoded;
+//             try {
+                
+//                 const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+//                     if (error) {
+//                         res.status(500).send('Error retrieving college data');
+//                         return;
+//                     }
+//                     if (results.length > 0) {
+//                         res.status(200).json(results[2]);
+//                     } else {
+//                         res.status(404).send('College not found');
+//                     }
+//                 });
+//                 console.log(college)
+//                 if (!college) {
+//                     return res.json({ status: "Incorrect mailid" });
+//                 }
+//                 else {
+//                     return res.json({ status: "success", "collegedata": college});
+//                 }
+//         }catch (error) {
+//             return res.status(500).json({ "status": "error", "message": "Failed to fetch college details" });
+//         }
+//     } else {
+//         return res.json({ "status": "unauthorised user" });
+//     }
+// });
+// });
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
