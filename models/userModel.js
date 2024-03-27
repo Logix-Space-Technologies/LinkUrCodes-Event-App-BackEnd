@@ -34,10 +34,19 @@ const userModel={
     
 
 
+    searchUser: (searchTerm, callback) => {
+    const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
+    const searchTermPattern = `%${searchTerm}%`;
+    pool.query(query, [searchTermPattern, searchTermPattern], callback);
+}
+,
+
+
     searchUser:(email,callback)=>{
         const query='SELECT * FROM user WHERE user_email = ?';
         pool.query(query,[email],callback)
     },
+
     viewUsers:(callback)=>{
         const query='SELECT * FROM user WHERE user_delete_status=0';
         pool.query(query,callback)
