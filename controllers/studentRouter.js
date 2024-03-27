@@ -1,6 +1,7 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
-const nodemailer=require("nodemailer")
+const mailerModel=require("../models/mailerModel")
+//const nodemailer=require("nodemailer")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
 const jwt=require("jsonwebtoken")
@@ -10,19 +11,6 @@ const hashPasswordGenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hash(pass, salt)
 }
-
-console.log('Email:', process.env.EMAIL_USER); 
-console.log('EmailPass:', process.env.EMAIL_PASSWORD); 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
-});
 
 router.post('/addstudent', async (req, res) => {
     try {
@@ -38,11 +26,21 @@ router.post('/addstudent', async (req, res) => {
             student.student_password = hashedPassword;
         }
 
-        studentModel.insertStudent(data, (error, results) => {
+        studentModel.insertStudent(data, async(error, results) => {
             if (error) {
                 return res.status(500).json({ message: error.message });
             }
-            res.json({ status: "success", data: results });
+            try {
+                let stud_name=data.student_name;
+                let email = data.student_email;
+                let textsend = `Dear ${stud_name},\n\nYou have successfully registered as a student.`;
+                let subjectheading = 'Successfully Registered'
+                await mailerModel.sendEmail(email, subjectheading, textsend);
+                return res.json({ status: "success", message: "Message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            // res.json({ status: "success", data: results });
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -75,7 +73,7 @@ router.post('/loginstudent', (req, res) => {
                 return res.json({status: "Invalid Password"});
             }
             // Successful login
-            jwt.sign({email:student_email},"studlogin",{expiresIn:"1d"},
+            jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
             (error,token)=>{
                 if (error) {
                     res.json({
@@ -148,14 +146,10 @@ router.post('/sortstudbycollege', (req, res) => {
         res.json({ students });
     });
 });
-
-
-
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
-
-        // Check if the student with the given email exists
+        const subjectheading = 'Password Reset'; 
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
                 return res.status(500).json({ error: error.message });
@@ -163,28 +157,23 @@ router.post("/forgotpassword", async (req, res) => {
             if (!student) {
                 return res.status(400).json({ error: "Invalid student email" });
             }
-            // Send an email with a message for password reset
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: student_email,
-                subject: 'Password Reset',
-                text: `Dear ${student.student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`,
-            };
-            
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending password reset email:', error);
-                    return res.status(500).json({ error: 'Failed to send password reset email' });
-                } else {
-                    console.log('Password reset email sent:', info.response);
-                    return res.json({ status: "success", message: "Password reset message has been sent to your email" });
-                }
-            });
+            try {
+                let student_name=student.student_name;
+                let sending_email=student_email;
+                let textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
+
+                // Send password reset email
+                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+                return res.json({ status: "success", message: "Password reset message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
         });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
 });
+
 
 module.exports = router;
 
