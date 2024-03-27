@@ -1,9 +1,15 @@
 
 const express = require("express")
 const userModel = require("../models/userModel")
+const validateModel=require("../models/validateModel")
+const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
 const nodemailer = require('nodemailer');
+
+const { error } = require("console");
+
 const jwt=require("jsonwebtoken")
+
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -12,52 +18,12 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-// Function to validate password
-function validatePassword(password) {
-    // Check if the length is at most 8 characters
-    if (password.length !== 8) {
-        return false;
-    }
-
-    // Regular expressions for checking different criteria
-    const uppercaseCheck = /[A-Z]/;
-    const lowercaseCheck = /[a-z]/;
-    const digitCheck = /[0-9]/;
-    const specialCharCheck = /[^A-Za-z0-9]/;
-
-    // Check if the password contains at least one uppercase letter
-    if (!uppercaseCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one lowercase letter
-    if (!lowercaseCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one digit
-    if (!digitCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one special character
-    if (!specialCharCheck.test(password)) {
-        return false;
-    }
-
-    return true;
-}
-
-
-
-
-
 const transporter = nodemailer.createTransport({
     // Configuration for your email service provider
     service: 'gmail',
     auth: {
-        user: process.env.DB_USER_EMAIL, // Your email address
-        pass: process.env.DB_USER_PASS // Your email password (or app password if 2-factor authentication is enabled)
+        user: process.env.EMAIL_ID, // Your email address
+        pass: process.env.EMAIL_PASSWORD // Your email password (or app password if 2-factor authentication is enabled)
     }
 });
 
@@ -66,47 +32,59 @@ router.post('/signup', async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
-
-        if (!validatePassword(password)) {
-            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        let email = data.user_email;
+        const { isValid, message } = await validateModel.validateAndCheckEmail(email);
+        if (!isValid) {
+            return res.status(400).json({ message });
         }
-        
-
-
+        if (!validateModel.validatePassword(password)) {
+            return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        }
         const hashedPassword = await hashPasswordgenerator(password);
         data.user_password = hashedPassword;
 
         // Insert the user into the database
-        userModel.insertUser(data, (error, results) => {
+        userModel.insertUser(data, async(error, results) => {
             if (error) {
                 res.status(500).send('Error inserting user data: ' + error);
                 return;
             }
 
+            try {
+                let user_name=data.user_name;
+                let textsend = `Dear ${user_name},\n\nYou have successfully registered.`;
+                let subjectheading = 'Successfully Registered'
+                // Send password reset email
+                await mailerModel.sendEmail(email, subjectheading, textsend);
+                return res.json({ status: "success", message: "Message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
+
             // Send a welcome email
-            const mailOptions = {
-                from: process.env.DB_USER_EMAIL, // Sender's email address
-                to: data.user_email, // Recipient's email address
-                subject: 'Welcome!', // Email subject
-                text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
-            };
+            // const mailOptions = {
+            //     from: process.env.EMAIL_USER, // Sender's email address
+            //     to: data.user_email, // Recipient's email address
+            //     subject: 'Welcome!', // Email subject
+            //     text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
+            // };
 
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('Error sending welcome email:', error);
+            // transporter.sendMail(mailOptions, (error, info) => {
+            //     if (error) {
+            //         console.error('Error sending welcome email:', error);
                     
-                } else {
-                    console.log('Welcome email sent:', info.response);
+            //     } else {
+            //         console.log('Welcome email sent:', info.response);
                     
-                }
-            });
+            //     }
+            // });
 
-            res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
+            //res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
         });
     } catch (error) {
         console.error('Error in signup route:', error);
         res.status(500).json({ error: 'Internal server error' });
-    }2
+    }
 });
 
 
