@@ -39,13 +39,14 @@ const userModel={
         pool.query(query,[email],callback)
     },
     viewUsers:(callback)=>{
-        const query='SELECT * FROM user';
+        const query='SELECT * FROM user WHERE user_delete_status=0';
         pool.query(query,callback)
     },
     deleteUsers: (user_id, callback) => {
-        const query = 'DELETE FROM user WHERE user_id = ?';
+        const query = 'UPDATE user SET user_delete_status=1 WHERE user_id = ?';
         pool.query(query, [user_id], callback);
-    }
+    },
+
 }
 
 module.exports=userModel

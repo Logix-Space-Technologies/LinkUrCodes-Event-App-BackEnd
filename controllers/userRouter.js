@@ -191,17 +191,6 @@ router.get('/viewusers', (req, res) => {
     })
 })
 
-router.get('/viewusers',(req,res)=>{
-    userModel.viewUsers((error,results)=>{
-      if(error){
-        res.status(500).send('Error fetching users:'+error)
-        return
-      }
-      res.status(200).json(results);
-
-    })
-})
-
   router.post('/delete-users', (req, res) => {
     const user_id = req.body.user_id; // Extract user_id from req.body
 
