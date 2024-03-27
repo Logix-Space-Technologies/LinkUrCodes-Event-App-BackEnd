@@ -4,7 +4,7 @@ const userModel = require("../models/userModel")
 const validateModel=require("../models/validateModel")
 const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
-const nodemailer = require('nodemailer');
+// const nodemailer = require('nodemailer');
 
 const { error } = require("console");
 
@@ -18,14 +18,14 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-const transporter = nodemailer.createTransport({
-    // Configuration for your email service provider
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_ID, // Your email address
-        pass: process.env.EMAIL_PASSWORD // Your email password (or app password if 2-factor authentication is enabled)
-    }
-});
+// const transporter = nodemailer.createTransport({
+//     // Configuration for your email service provider
+//     service: 'gmail',
+//     auth: {
+//         user: process.env.EMAIL_ID, // Your email address
+//         pass: process.env.EMAIL_PASSWORD // Your email password (or app password if 2-factor authentication is enabled)
+//     }
+// });
 
 // Route for signing up a new user
 router.post('/signup', async (req, res) => {
@@ -33,13 +33,13 @@ router.post('/signup', async (req, res) => {
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
-        const { isValid, message } = await validateModel.validateAndCheckEmail(email);
-        if (!isValid) {
-            return res.status(400).json({ message });
-        }
-        if (!validateModel.validatePassword(password)) {
-            return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
-        }
+        // const { isValid, message } = await validateModel.validateAndCheckEmail(email);
+        // if (!isValid) {
+        //     return res.status(400).json({ message });
+        // }
+        // if (!validateModel.validatePassword(password)) {
+        //     return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        // }
         const hashedPassword = await hashPasswordgenerator(password);
         data.user_password = hashedPassword;
 
@@ -50,16 +50,16 @@ router.post('/signup', async (req, res) => {
                 return;
             }
 
-            try {
-                let user_name=data.user_name;
-                let textsend = `Dear ${user_name},\n\nYou have successfully registered.`;
-                let subjectheading = 'Successfully Registered'
-                // Send password reset email
-                await mailerModel.sendEmail(email, subjectheading, textsend);
-                return res.json({ status: "success", message: "Message has been sent to your email" });
-            } catch (error) {
-                return res.status(500).json({ error: error.message });
-            }
+            // try {
+            //     let user_name=data.user_name;
+            //     let textsend = `Dear ${user_name},\n\nYou have successfully registered.`;
+            //     let subjectheading = 'Successfully Registered'
+            //     // Send password reset email
+            //     await mailerModel.sendEmail(email, subjectheading, textsend);
+            //     return res.json({ status: "success", message: "Message has been sent to your email" });
+            // } catch (error) {
+            //     return res.status(500).json({ error: error.message });
+            // }
 
             // Send a welcome email
             // const mailOptions = {
@@ -172,8 +172,7 @@ router.post('/searchusers', (req, res) => {
 
 
 
-<<<<<<< HEAD
-=======
+
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
    jwt.verify(token,"eventapp",(error,decoded)=>{
@@ -194,7 +193,6 @@ router.post('/viewusers',(req,res)=>{
    })
 })
 
->>>>>>> eb78e64797d6a1714d6dece57f47ecfbb2a9e0cd
   router.post('/delete-users', (req, res) => {
     const user_id = req.body.user_id; // Extract user_id from req.body
 
