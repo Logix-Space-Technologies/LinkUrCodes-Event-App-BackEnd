@@ -4,7 +4,7 @@ const userModel = require("../models/userModel")
 const validateModel=require("../models/validateModel")
 const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
-// const nodemailer = require('nodemailer');
+//const nodemailer = require('nodemailer');
 
 const { error } = require("console");
 
