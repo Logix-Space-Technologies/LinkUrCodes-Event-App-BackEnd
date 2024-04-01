@@ -70,4 +70,36 @@ router.post('/collegepaymenthistory', (req, res) => {
   });
 })
 
+router.post('/searchbyevntmonth', (req, res) => {
+  // Assuming you're sending the event month as a string in the request body
+  const { event_private_date } = req.body; // Assuming event_private_date is the key for the month value in the request body
+
+  // Log to check if the endpoint is accessed
+  console.log("Searching events for month:", event_private_date);
+
+  // Check if the event month is provided
+  if (!event_private_date) {
+      return res.status(400).json({ message: 'Event month is required.' });
+  }
+
+  // Convert the event month to an integer
+  const eventMonthInt = parseInt(event_private_date);
+
+  // Call the function to search and sort payments by event date
+  paymentcollegeModel.sortPaymentByEventdate(eventMonthInt, (error, details) => {
+      if (error) {
+          return res.status(500).json({ message: error.message });
+      }
+      
+      // Check if the details array is empty
+      if (details.length === 0) {
+          return res.json({ message: 'No events in this month.' });
+      }
+      
+      // Return the details if found
+      res.json({ details });
+  });
+});
+
+
 module.exports = router;
