@@ -1,41 +1,42 @@
-const express=require("express")
-const adminModel=require("../models/adminModel")
-const bcrypt=require("bcryptjs")
+const express = require("express")
+const adminModel = require("../models/adminModel")
+const bcrypt = require("bcryptjs")
 const { error } = require("console")
-const router=express.Router()
+const router = express.Router()
+const jwt = require("jsonwebtoken")
 
-const hashPasswordGenerator=async(pass)=>{
+const hashPasswordGenerator = async (pass) => {
     console.log(pass)
-    const salt=await bcrypt.genSalt(10);
-    return bcrypt.hash(pass,salt)
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(pass, salt)
 }
 
 const PASSWORD_MIN_LENGTH = 8; // Minimum password length
 const PASSWORD_REGEX = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z])(?=.*[@$!%*?&]).{8,}$/; // Password complexity regex with special character
 
-router.post('/addadmin',async(req,res)=>{
-    try{
-        let{data}={"data":req.body};
-        let password=data.admin_password;
+router.post('/addadmin', async (req, res) => {
+    try {
+        let { data } = { "data": req.body };
+        let password = data.admin_password;
         // Validate password
         if (!password || password.length < PASSWORD_MIN_LENGTH || !PASSWORD_REGEX.test(password)) {
             return res.status(400).json({ message: "Invalid password. Password should be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@,$,!,%,*,?,&)." });
         }
-        const hashedPassword=await hashPasswordGenerator(password);
-        data.admin_password=hashedPassword;
-        adminModel.insertAdmin(data,(error,results)=>{
-            if(error){
-                return res.status(500).json({message:error.message});
+        const hashedPassword = await hashPasswordGenerator(password);
+        data.admin_password = hashedPassword;
+        adminModel.insertAdmin(data, (error, results) => {
+            if (error) {
+                return res.status(500).json({ message: error.message });
             }
-            res.json({status:"success",data:results});
+            res.json({ status: "success", data: results });
         });
-    }catch(err){
-        res.status(500).json({message:err.message});
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
-router.get('/viewadmin',(req,res)=>{
-    adminModel.viewAdmin((error,results)=>{
+router.get('/viewadmin', (req, res) => {
+    adminModel.viewAdmin((error, results) => {
         res.json(results);
     })
 });
@@ -68,10 +69,13 @@ router.post('/loginadmin', (req, res) => {
                 });
             }
             // Successful login
-            return res.json({
-                status: "Success",
-                adminData: admin
-            });
+            jwt.sign({ adminUsername:admin_username }, "eventAdmin", { expiresIn: "1d" }, (error, token) => {
+                if (error) {
+                    res.json({ "status": "error", "error": error })
+                } else {
+                    return res.json({ status: "success", adminData: admin, "admintoken": token });
+                }
+            })
         });
     });
 });
@@ -79,4 +83,4 @@ router.post('/loginadmin', (req, res) => {
 
 
 
-module.exports=router
+module.exports = router

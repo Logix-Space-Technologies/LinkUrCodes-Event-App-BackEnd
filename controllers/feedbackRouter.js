@@ -1,7 +1,7 @@
 const express = require("express")
-
 const feedbackModel = require("../models/feedbackModel")
 const router = express.Router()
+const jwt = require("jsonwebtoken")
 
 //student feedback
 router.post("/addfeedbackstud", async (req, res) => {
@@ -15,7 +15,7 @@ router.post("/addfeedbackstud", async (req, res) => {
     });
 })
 
-router.get('/viewallfeedbackstud', (req, res) => {
+router.post('/viewallfeedbackstud', (req, res) => {
     feedbackModel.viewFeedbackStud((error, results) => {
         res.json(results);
     })
@@ -33,10 +33,20 @@ router.post("/addfeedbackuser", async (req, res) => {
     });
 })
 
-router.get('/viewallfeedbackuser', (req, res) => {
-    feedbackModel.viewFeedbackUser((error, results) => {
-        res.json(results);
-    })
+router.post('/viewallfeedbackuser', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            return res.json({ "status": "error", "message": "Failed to verify token" });
+        }
+        if (decoded && decoded.adminUsername) {
+            feedbackModel.viewFeedbackUser((error, results) => {
+                res.json(results);
+            })
+        } else {
+            return res.json({ "status": "unauthorised user" });
+        }
+    });
 });
 
 
