@@ -53,6 +53,26 @@ router.post('/signup', async (req, res) => {
                 return res.status(500).json({ error: error.message });
             }
 
+
+            //Send a welcome email
+            // const mailOptions = {
+            //     from: process.env.EMAIL_USER, // Sender's email address
+            //     to: data.user_email, // Recipient's email address
+            //     subject: 'Welcome!', // Email subject
+            //     text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
+            // };
+
+            // transporter.sendMail(mailOptions, (error, info) => {
+            //     if (error) {
+            //         console.error('Error sending welcome email:', error);
+                    
+            //     } else {
+            //         console.log('Welcome email sent:', info.response);
+            //     }
+            // });
+
+            // res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
+
         });
     } catch (error) {
         console.error('Error in signup route:', error);
@@ -142,6 +162,7 @@ router.post('/searchusers', (req, res) => {
     });
    
 });
+
 
 
 
