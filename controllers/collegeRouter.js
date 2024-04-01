@@ -245,23 +245,12 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
-        // Retrieve college details using the provided college ID
-        collegeModel.findCollegeById(college_id, async (error, college) => {
-            if (error) {
-                return res.status(500).json({ error: 'Error finding college by ID' });
-            }
-
-            if (!college || college.length === 0) {
-                return res.status(404).json({ error: 'College not found' });
-            }
-            // Delete the college from the database
             collegeModel.deleteCollegeById(college_id, (err, result) => {
                 if (err) {
                     return res.status(500).json({ error: 'Error deleting college' });
                 }
                 res.json({ status: 'College deleted successfully' });
             });
-        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while deleting the college' });
