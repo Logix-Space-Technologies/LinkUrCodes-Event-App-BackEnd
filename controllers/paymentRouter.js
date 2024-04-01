@@ -70,4 +70,11 @@ router.post('/collegepaymenthistory', (req, res) => {
   });
 })
 
+
+router.get('/sortviewpayclg', (req, res) => {
+  paymentcollegeModel.sortPaymentByEventdate((error, results) => {
+      res.json(results);
+  })
+});
+
 module.exports = router;
