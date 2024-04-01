@@ -391,6 +391,30 @@ router.post('/certificates/student', (req, res) => {
 
 
 
+router.post('/approve-request/user', (req, res) => {
+    const { certificate_user_id } = req.body;
+    certificateModel.updateCertificateStatusUser(certificate_user_id, 'approved', (err, result) => {
+        if (err) {
+            console.error('Error approving request: ' + err);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+        res.status(200).json({ message: 'Certificate request approved successfully' });
+    });
+});
+
+
+router.post('/deny-request/user', (req, res) => {
+    const { certificate_user_id } = req.body;
+    certificateModel.updateCertificateStatusUser(certificate_user_id, 'denied', (err, result) => {
+        if (err) {
+            console.error('Error denying request: ' + err);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+        res.status(200).json({ message: 'Certificate request denied successfully' });
+    });
+});
 
 
 
