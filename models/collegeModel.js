@@ -41,7 +41,8 @@ const collegeModel = {
     },
     deleteCollegeById: (college_id, callback) => {
         console.log("mod clg",college_id)
-        const query = 'DELETE FROM college WHERE college_id = ?';
+        const query =  'UPDATE college SET delete_status=1 WHERE college_id = ?';
+
         pool.query(query, [college_id], (error, result) => {
             if (error) {
                 console.error('Error executing query:', error);

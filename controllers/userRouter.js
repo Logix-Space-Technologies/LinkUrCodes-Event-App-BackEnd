@@ -18,14 +18,6 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-const transporter = nodemailer.createTransport({
-    // Configuration for your email service provider
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_ID, // Your email address
-        pass: process.env.EMAIL_PASSWORD // Your email password (or app password if 2-factor authentication is enabled)
-    }
-});
 
 // Route for signing up a new user
 router.post('/signup', async (req, res) => {
@@ -61,6 +53,7 @@ router.post('/signup', async (req, res) => {
                 return res.status(500).json({ error: error.message });
             }
 
+
             //Send a welcome email
             // const mailOptions = {
             //     from: process.env.EMAIL_USER, // Sender's email address
@@ -79,6 +72,7 @@ router.post('/signup', async (req, res) => {
             // });
 
             // res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
+
         });
     } catch (error) {
         console.error('Error in signup route:', error);
@@ -113,7 +107,7 @@ router.post('/loginuser', (req, res) => {
                     status: "Invalid Password"
                 });
             }
-           jwt.sign({email:user_email},"eventapp",{expiresIn:"1d"},
+           jwt.sign({email:user_email},"user-eventapp",{expiresIn:"1d"},
            (error,token)=>{
             if (error) {
                 res.json({
@@ -174,7 +168,7 @@ router.post('/searchusers', (req, res) => {
 
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
-   jwt.verify(token,"eventapp",(error,decoded)=>{
+   jwt.verify(token,"user-eventapp",(error,decoded)=>{
     if (decoded && decoded.email) {
         userModel.viewUsers((error,results)=>{
             if(error){
@@ -191,6 +185,26 @@ router.post('/viewusers',(req,res)=>{
     }
    })
 })
+
+// router.post('/studviewusers',(req,res)=>{
+//     const token=req.headers["token"]
+//    jwt.verify(token,"stud-eventapp",(error,decoded)=>{
+//     if (decoded && decoded.email) {
+//         userModel.viewUsers((error,results)=>{
+//             if(error){
+//               res.status(500).send('Error fetching users:'+error)
+//               return
+//             }
+//             res.status(200).json(results);
+      
+//           })
+//     } else {
+//         res.json({
+//             "status":"Unauthorized user"
+//         })
+//     }
+//    })
+// })
 
   router.post('/delete-users', (req, res) => {
     const user_id = req.body.user_id; // Extract user_id from req.body

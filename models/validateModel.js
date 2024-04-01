@@ -13,7 +13,7 @@ const pool = mysql.createPool({
 });
 
 const validationModel = {
-    validateAndCheckEmail: async function(email) {
+    validateAndCheckEmail: async function (email) {
         // Validate email format first
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
@@ -34,7 +34,7 @@ const validationModel = {
     },
     validatePassword: function(password) {
         // Check if the length is exactly 8 characters
-        if (password.length !== 8) {
+        if (password.length < 8) {
             return false;
         }
 
@@ -54,12 +54,15 @@ const validationModel = {
 
         return true;
     },
-    validatePhoneNumber: function(phoneNumber) {
+
+   
+
+    validatePhoneNumber: function (phoneNumber) {
         // Basic regex for phone number validation - adjust as necessary for specific requirements
         const phoneCheck = /^\+?[1-9]\d{1,14}$/; // E.164 format
         return phoneCheck.test(phoneNumber);
     },
-    validateName: function(name) {
+    validateName: function (name) {
         // Allows letters, spaces, apostrophes, and hyphens. Adjust as needed.
         const nameCheck = /^[A-Za-z\s'-]+$/;
         return nameCheck.test(name);
