@@ -16,9 +16,18 @@ router.post("/addfeedbackstud", async (req, res) => {
 })
 
 router.post('/viewallfeedbackstud', (req, res) => {
-    feedbackModel.viewFeedbackStud((error, results) => {
-        res.json(results);
-    })
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            feedbackModel.viewFeedbackStud((error, results) => {
+                res.json(results);
+            })
+        }
+    });
 });
 
 //user feedback
@@ -37,14 +46,13 @@ router.post('/viewallfeedbackuser', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            return res.json({ "status": "error", "message": "Failed to verify token" });
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
             feedbackModel.viewFeedbackUser((error, results) => {
                 res.json(results);
             })
-        } else {
-            return res.json({ "status": "unauthorised user" });
         }
     });
 });

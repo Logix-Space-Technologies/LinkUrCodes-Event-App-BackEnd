@@ -21,7 +21,8 @@ router.post('/userpaymenthistory', async(req, res) => {
   const admintoken = req.headers["token"];
   jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
     if (error) {
-      return res.json({ "status": "error", "message": "Failed to verify token" });
+      console.log({ "status": "error", "message": "Failed to verify token" })
+      return res.json({ "status": "unauthorised user" });
     }
     if (decoded && decoded.adminUsername) {
       paymentModel.viewPayments((error, results) => {
@@ -31,8 +32,6 @@ router.post('/userpaymenthistory', async(req, res) => {
         }
         res.status(200).json(results);
       })
-    } else {
-      return res.json({ "status": "unauthorised user" });
     }
   });
 })
@@ -56,7 +55,8 @@ router.post('/collegepaymenthistory', (req, res) => {
   const admintoken = req.headers["token"];
   jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
     if (error) {
-      return res.json({ "status": "error", "message": "Failed to verify token" });
+      console.log({ "status": "error", "message": "Failed to verify token" })
+      return res.json({ "status": "unauthorised user" });
     }
     if (decoded && decoded.adminUsername) {
       paymentcollegeModel.viewPayments((error, results) => {
@@ -66,8 +66,6 @@ router.post('/collegepaymenthistory', (req, res) => {
         }
         res.status(200).json(results);
       })
-    } else {
-      return res.json({ "status": "unauthorised user" });
     }
   });
 })
