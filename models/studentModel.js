@@ -50,6 +50,10 @@ const studentModel={
         const query = 'SELECT * FROM student WHERE student_college_id = 1 GROUP BY student_name'; // Assuming you want to sort them by name, adjust as necessary
         pool.query(query, [student_college_id], callback);
     },
+    sortStudentsByEvent: (event_id, callback) => {
+        const query = 'SELECT * FROM student WHERE event_id = 1 GROUP BY student_name'; 
+        pool.query(query, [event_id], callback);
+    },
 }
 
 module.exports=studentModel

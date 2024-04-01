@@ -133,7 +133,6 @@ router.put('/updatepassword', async (req, res) => {
 router.post('/sortstudbycollege', (req, res) => {
     // Assuming you're sending the college name as a query parameter
     const student_college_id = req.body;
-    console.log("hai") // Correctly using console.log here
 
     if (!student_college_id) {
         return res.status(400).json({ message: 'College ID is required' });
@@ -146,6 +145,23 @@ router.post('/sortstudbycollege', (req, res) => {
         res.json({ students });
     });
 });
+
+router.post('/sortstudbyevent', (req, res) => {
+    // Assuming you're sending the event name as a query parameter
+    const event_id = req.body;
+
+    if (!event_id) {
+        return res.status(400).json({ message: 'Event ID is required' });
+    }
+
+    studentModel.sortStudentsByEvent(event_id, (error, students) => {
+        if (error) {
+            return res.status(500).json({ message: error.message });
+        }
+        res.json({ students });
+    });
+});
+
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
