@@ -215,5 +215,20 @@ router.post('/viewusers',(req,res)=>{
     });
 });
 
+router.post('/sortuserbyeventid', (req, res) => {
+    const { payment_event_id } = req.body; // Assuming the event_id is provided in the request body
+    console.log("hai"); // Correctly using console.log here
+
+    if (!payment_event_id) {
+        return res.status(400).json({ message: 'Event ID is required' });
+    }
+
+    userModel.sortStudentsByevent(payment_event_id, (error, users) => {
+        if (error) {
+            return res.status(500).json({ message: error.message });
+        }
+        res.json({ users });
+    });
+});
 
 module.exports = router
