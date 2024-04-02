@@ -3,6 +3,7 @@ const express = require("express")
 const publicEventModel = require("../models/publicEventModel")
 const privateEventModel = require("../models/privateEventModel")
 const router = express.Router()
+const jwt = require("jsonwebtoken")
 
 router.post("/add_public_events", async (req, res) => {
     let data = req.body
@@ -15,11 +16,26 @@ router.post("/add_public_events", async (req, res) => {
     });
 })
 
+// router.get('/view_public_events', (req, res) => {
+//     publicEventModel.viewPublicEvents((error, results) => {
+//         res.json(results);
+//     })
+// });
+
 router.post('/view_public_events', (req, res) => {
-    publicEventModel.viewPublicEvents((error, results) => {
-        res.json(results);
-    })
-});
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            publicEventModel.viewPublicEvents((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+
 
 router.post("/add_private_events", async (req, res) => {
     let data = req.body
@@ -32,11 +48,27 @@ router.post("/add_private_events", async (req, res) => {
     });
 })
 
+
+// router.get('/view_private_events', (req, res) => {
+//     privateEventModel.viewPrivateEvents((error, results) => {
+//         res.json(results);
+//     })
+// });
+
 router.post('/view_private_events', (req, res) => {
-    privateEventModel.viewPrivateEvents((error, results) => {
-        res.json(results);
-    })
-});
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            privateEventModel.viewPrivateEvents((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+
 
 router.put('/update_private_events', (req, res) => {
     const { event_private_id, updatedFields } = req.body;
