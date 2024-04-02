@@ -48,7 +48,7 @@ router.post('/addstudent', async (req, res) => {
 });
 
 
-router.get('/viewstudent', async (req, res) => {
+router.post('/viewstudent', async (req, res) => {
     studentModel.viewStudent((error, results) => {
         res.json(results)
     })
