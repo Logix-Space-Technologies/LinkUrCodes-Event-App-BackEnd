@@ -48,10 +48,10 @@ const userModel = {
     },
 
 
-    viewUsers: (callback) => {
-        const query = 'SELECT * FROM user';
-        pool.query(query, callback)
-
+    // viewUsers: (callback) => {
+    //     const query = 'SELECT * FROM user';
+    //     pool.query(query, callback)
+    // },
     viewUsers:(callback)=>{
         const query='SELECT * FROM user WHERE user_delete_status=0';
         pool.query(query,callback)
