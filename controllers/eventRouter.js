@@ -35,6 +35,7 @@ router.post('/view_public_events', (req, res) => {
             })
         }
     });
+})
 
 
 router.post("/add_private_events", async (req, res) => {
@@ -68,6 +69,7 @@ router.post('/view_private_events', (req, res) => {
             })
         }
     });
+})
 
 
 router.put('/update_private_events', (req, res) => {
