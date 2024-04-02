@@ -15,7 +15,7 @@ router.post("/add_public_events", async (req, res) => {
     });
 })
 
-router.get('/view_public_events', (req, res) => {
+router.post('/view_public_events', (req, res) => {
     publicEventModel.viewPublicEvents((error, results) => {
         res.json(results);
     })
@@ -32,7 +32,7 @@ router.post("/add_private_events", async (req, res) => {
     });
 })
 
-router.get('/view_private_events', (req, res) => {
+router.post('/view_private_events', (req, res) => {
     privateEventModel.viewPrivateEvents((error, results) => {
         res.json(results);
     })

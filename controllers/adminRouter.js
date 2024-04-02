@@ -35,7 +35,7 @@ router.post('/addadmin', async (req, res) => {
     }
 });
 
-router.get('/viewadmin', (req, res) => {
+router.post('/viewadmin', (req, res) => {
     adminModel.viewAdmin((error, results) => {
         res.json(results);
     })
