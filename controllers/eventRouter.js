@@ -35,7 +35,7 @@ router.post('/view_public_events', (req, res) => {
             })
         }
     });
-});
+
 
 router.post("/add_private_events", async (req, res) => {
     let data = req.body
@@ -47,6 +47,7 @@ router.post("/add_private_events", async (req, res) => {
         res.json({ status: "success"});
     });
 })
+
 
 // router.get('/view_private_events', (req, res) => {
 //     privateEventModel.viewPrivateEvents((error, results) => {
@@ -67,7 +68,7 @@ router.post('/view_private_events', (req, res) => {
             })
         }
     });
-});
+
 
 router.put('/update_private_events', (req, res) => {
     const { event_private_id, updatedFields } = req.body;

@@ -134,7 +134,7 @@ router.post('/searchCollege', (req, res) => {
     });
 });
 
-router.get('/Viewcollege', (req, res) => {
+router.post('/Viewcollege', (req, res) => {
     
     collegeModel.findCollege((error, results) => {
         if (error) {
