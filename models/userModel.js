@@ -47,18 +47,28 @@ const userModel = {
         pool.query(query, [email], callback)
     },
 
+
     viewUsers: (callback) => {
         const query = 'SELECT * FROM user';
         pool.query(query, callback)
+
+    viewUsers:(callback)=>{
+        const query='SELECT * FROM user WHERE user_delete_status=0';
+        pool.query(query,callback)
+
     },
     deleteUsers: (user_id, callback) => {
-        const query = 'DELETE FROM user WHERE user_id = ?';
+        const query = 'UPDATE user SET user_delete_status=1 WHERE user_id = ?';
         pool.query(query, [user_id], callback);
     },
+
     sortStudentsByevent: (payment_event_id, callback) => {
         const query = 'SELECT * FROM user JOIN payment_user ON user.user_id = payment_user.user_id WHERE payment_user.payment_event_id=?'; // Assuming you want to sort them by name, adjust as necessary
         pool.query(query, [payment_event_id], callback);
     }
+
+
+
 }
 
 module.exports = userModel
