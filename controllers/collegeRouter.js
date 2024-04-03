@@ -5,99 +5,28 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
+const validateModel=require("../models/validateModel")
 const router = express.Router();
 const bcrypt = require("bcryptjs")
 const jwt=require("jsonwebtoken")
-
-
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
 }
-
-// Function to validate password
-function validatePassword(password) {
-    // Check if the length is at most 8 characters
-    if (password.length !== 8) {
-        return false;
-    }
-
-    // Regular expressions for checking different criteria
-    const uppercaseCheck = /[A-Z]/;
-    const lowercaseCheck = /[a-z]/;
-    const digitCheck = /[0-9]/;
-    const specialCharCheck = /[^A-Za-z0-9]/;
-
-    // Check if the password contains at least one uppercase letter
-    if (!uppercaseCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one lowercase letter
-    if (!lowercaseCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one digit
-    if (!digitCheck.test(password)) {
-        return false;
-    }
-
-    // Check if the password contains at least one special character
-    if (!specialCharCheck.test(password)) {
-        return false;
-    }
-
-    return true;
-}
-
-// Route to add a new College
-// nvalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
-router.post('/loginCollege', (req, res) => {
-    const { college_email, college_password } = req.body;
-
-    collegeModel.collegeLogin(college_email, async (error, college) => {
-        if (error) {
-            return res.json({
-                status: "Error"
-            });
-        }
-        if (!college) {
-            return res.json({
-                status: "Invalid Username"
-            });
-        }
-
-        // Compare the provided password with the hashed password stored in the database
-        const isMatch = await bcrypt.compare(college_password, college.college_password);
-        if (!isMatch) {
-            return res.json({
-                status: "Invalid Password"
-            });
-        }
-        
-        // Successful login
-        return res.json({
-            status: "Success",
-            collegeData: college
-        });
-    });
-});
-
 // Route to add a new College
 router.post('/addCollege', async (req, res) => {
     try {
         let { data } = { "data": req.body };
-        let password = data.college_password;
+        // let password = data.college_password;
 
-        if (!validatePassword(password)) {
-            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
-        }
+        // if (!validateModel.validatePassword(password)) {
+        //     return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+        // }
         
 
-        const hashedPassword = await hashPasswordgenerator(password);
-        data.college_password = hashedPassword;
+        // const hashedPassword = await hashPasswordgenerator(password);
+        // data.college_password = hashedPassword;
 
         // Insert the college into the database
         collegeModel.insertCollege(data, (error, results) => {
@@ -113,7 +42,6 @@ router.post('/addCollege', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 
 router.post("/collegeLogin", async(req,res)=>{
     try {
@@ -149,9 +77,7 @@ router.post("/collegeLogin", async(req,res)=>{
         return res.status(500).json({ "status": "error", "message": "Failed to login college" });
     }
 });
-
-
-// Route to get a college by college name
+// Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var college_name = req.body.college_name; // Use req.body.name to retrieve college name
 
@@ -291,8 +217,6 @@ router.post('/deleteCollege', async (req, res) => {
     }
 });
 
-router.post('/logincollege', (req, res) => {
-    const { admin_username, admin_password } = req.body;
 router.post('/resetPassword', async (req, res) => {
     try {
         const { college_id } = req.body;
@@ -350,39 +274,5 @@ function generateNewDefaultPassword() {
     // Return the password
     return password;
 }
-
-
-    adminModel.loginAdmin(admin_username, (error, admin) => {
-        if (error) {
-            return res.json({
-                status: "Error"
-            });
-        }
-        if (!admin) {
-            return res.json({
-                status: "Invalid Username"
-            });
-        }
-        // Now admin is found, let's compare the password
-        bcrypt.compare(admin_password, admin.admin_password, (err, isMatch) => {
-            if (err) {
-                return res.json({
-                    status: "Error is"
-                });
-            }
-            if (!isMatch) {
-                return res.json({
-                    status: "Invalid Password"
-                });
-            }
-            // Successful login
-            return res.json({
-                status: "Success",
-                adminData: admin
-            });
-        });
-    });
-});
-
 
 module.exports = router;
