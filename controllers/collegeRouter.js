@@ -79,9 +79,9 @@ router.post("/collegeLogin", async(req,res)=>{
 });
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
-    var college_name = req.body.college_name; // Use req.body.name to retrieve college name
+    var term = req.body.term; // Use req.body.name to retrieve college name
 
-    collegeModel.findCollegeByName(college_name, (error, results) => {
+    collegeModel.findCollegeByName(term, (error, results) => {
         if (error) {
             res.status(500).send('Error retrieving college data');
             return;
@@ -101,7 +101,17 @@ router.post('/Viewcollege', (req, res) => {
             res.status(500).send('Error fetching college_details:' + error)
             return
         }
+        const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
         res.status(200).json(results);
+        }
+    else {
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+    })
     });
 });
 // The following /Viewcollegedetail is created to test jwt token
