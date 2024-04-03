@@ -8,7 +8,6 @@ const axios = require('axios');
 const router = express.Router();
 const bcrypt = require("bcryptjs")
 const jwt=require("jsonwebtoken")
-const bcrypt=require("bcryptjs")
 
 
 
@@ -54,14 +53,7 @@ function validatePassword(password) {
 }
 
 // Route to add a new College
-router.post('/addCollege', async (req, res) => {
-    try {
-        let { data } = { "data": req.body };
-        let password = data.college_password;
-
-        if (!validatePassword(password)) {
-            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
-=======
+// nvalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
 router.post('/loginCollege', (req, res) => {
     const { college_email, college_password } = req.body;
 
@@ -94,14 +86,13 @@ router.post('/loginCollege', (req, res) => {
 });
 
 // Route to add a new College
-router.post('/addCollege', (req, res) => {
-    console.log(req.body);
-    const { college_password, ...collegeData } = req.body;
-    collegeModel.insertCollege(req.body, (error, results) => {
-        if (error) {
-            res.status(500).send('Error inserting College data: ' + error);
-            return;
+router.post('/addCollege', async (req, res) => {
+    try {
+        let { data } = { "data": req.body };
+        let password = data.college_password;
 
+        if (!validatePassword(password)) {
+            return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
         }
         
 
