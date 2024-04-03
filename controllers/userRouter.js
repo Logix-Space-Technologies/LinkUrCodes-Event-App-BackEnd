@@ -168,8 +168,8 @@ router.post('/searchusers', (req, res) => {
 
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
-   jwt.verify(token,"user-eventapp",(error,decoded)=>{
-    if (decoded && decoded.email) {
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
         userModel.viewUsers((error,results)=>{
             if(error){
               res.status(500).send('Error fetching users:'+error)
