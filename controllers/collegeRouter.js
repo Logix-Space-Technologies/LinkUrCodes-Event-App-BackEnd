@@ -318,12 +318,20 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
+        const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
             collegeModel.deleteCollegeById(college_id, (err, result) => {
                 if (err) {
                     return res.status(500).json({ error: 'Error deleting college' });
                 }
                 res.json({ status: 'College deleted successfully' });
             });
+        }
+        else{
+            return res.json({ "status": "unauthorised user" });
+        }
+        })
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while deleting the college' });

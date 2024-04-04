@@ -107,7 +107,7 @@ router.post('/loginuser', (req, res) => {
                     status: "Invalid Password"
                 });
             }
-           jwt.sign({email:user_email},"user-eventapp",{expiresIn:"1d"},
+           jwt.sign({email:user_email},"eventuser",{expiresIn:"1d"},
            (error,token)=>{
             if (error) {
                 res.json({

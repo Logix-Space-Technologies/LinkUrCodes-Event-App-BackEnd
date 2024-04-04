@@ -7,15 +7,49 @@ const jwt = require("jsonwebtoken")
 const router = express.Router()
 
 router.post('/adduserpayment', (req, res) => {
-  console.log(req.body)
-  paymentModel.insertpayment(req.body, (error, results) => {
-    if (error) {
-      res.status(500).send('Error in gaving payments' + error);
-      return;
-    }
-    res.status(201).send(`payment added with ID: ${results.insertId}`);
+  console.log(req.body);
+  const usertoken = req.headers["usertoken"];
+  jwt.verify(usertoken, "eventuser", (error, decoded) => {
+      if (error) {
+          console.error('JWT Verification Error:', error.message);
+          return res.status(401).json({ status: "Unauthorized", message: "Invalid or expired token" });
+      }
+
+      if (decoded && decoded.email) {
+          paymentModel.insertpayment(req.body, (error, results) => {
+              if (error) {
+                  console.error('Error in payments:', error);
+                  return res.status(500).send('Error in payments: ' + error.message);
+              }
+              res.status(201).json({ message: `Payment added with ID: ${results.insertId}` });
+          });
+      } else {
+          res.status(401).json({ status: "Unauthorized", message: "Unauthorized user" });
+      }
   });
 });
+
+
+// router.post('/adduserpayment', (req, res) => {
+//   console.log(req.body)
+//   const usertoken=req.headers["usertoken"]
+//    jwt.verify(usertoken,"usertoken",(error,decoded)=>{
+//     if (decoded && decoded.user_email) {
+//   paymentModel.insertpayment(req.body, (error, results) => {
+//     if (error) {
+//       res.status(500).send('Error in payments' + error);
+//       return;
+//     }
+//     res.status(201).send(`payment added with ID: ${results.insertId}`);
+//   });
+//   }
+//   else{
+//     res.json({
+//       "status":"Unauthorized user"
+//   })
+//   }
+// })
+// });
 
 router.post('/userpaymenthistory', async(req, res) => {
   const admintoken = req.headers["token"];
