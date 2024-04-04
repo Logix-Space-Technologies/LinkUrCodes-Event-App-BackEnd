@@ -5,10 +5,10 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
-const validateModel=require("../models/validateModel")
+const validateModel = require("../models/validateModel")
 const router = express.Router();
 const bcrypt = require("bcryptjs")
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 const path = require('path');
 
 hashPasswordgenerator = async (pass) => {
@@ -19,31 +19,31 @@ hashPasswordgenerator = async (pass) => {
 router.post('/addCollege', async (req, res) => {
     try {
         let { data } = { "data": req.body };
-        const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-        collegeModel.insertCollege(data, (error, results) => {
-            if (error) {
-                res.status(500).send('Error inserting college data: ' + error);
-                return;
-            }
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
+            if (decoded && decoded.adminUsername) {
+                collegeModel.insertCollege(data, (error, results) => {
+                    if (error) {
+                        res.status(500).send('Error inserting college data: ' + error);
+                        return;
+                    }
 
-            res.status(201).send('College added with ID: ' + results.insertId);
-        });
-        }
-        else{
-            res.json({
-                "status":"Unauthorized user"
-            })
-        }
-    })
+                    res.status(201).send('College added with ID: ' + results.insertId);
+                });
+            }
+            else {
+                res.json({
+                    "status": "Unauthorized user"
+                })
+            }
+        })
     } catch (error) {
         console.error('Error in addCollege route:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-router.post("/collegeLogin", async(req,res)=>{
+router.post("/collegeLogin", async (req, res) => {
     try {
         const { college_email, college_password } = req.body;
         const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
@@ -80,60 +80,60 @@ router.post("/collegeLogin", async(req,res)=>{
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var term = req.body.term; // Use req.body.name to retrieve college name
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    collegeModel.findCollegeByName(term, (error, results) => {
-        if (error) {
-            res.status(500).send('Error retrieving college data');
-            return;
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            collegeModel.findCollegeByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving college data');
+                    return;
+                }
+                if (results.length > 0) {
+                    res.status(200).json(results[0]);
+                } else {
+                    res.status(404).send('College not found');
+                }
+            });
         }
-        if (results.length > 0) {
-            res.status(200).json(results[0]);
-        } else {
-            res.status(404).send('College not found');
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
         }
     });
-    }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        })
-    }
-});
 });
 
 router.post('/Viewcollege', (req, res) => {
-    
+
     collegeModel.findCollege((error, results) => {
         if (error) {
             res.status(500).send('Error fetching college_details:' + error)
             return
         }
-        const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-        res.status(200).json(results);
-        }
-    else {
-        res.json({
-            "status":"Unauthorized user"
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
+            if (decoded && decoded.adminUsername) {
+                res.status(200).json(results);
+            }
+            else {
+                res.json({
+                    "status": "Unauthorized user"
+                })
+            }
         })
-    }
-    })
     });
 });
 // The following /Viewcollegedetail is created to test jwt token
 router.post('/Viewcollegedetail', (req, res) => {
     const collegetoken = req.headers["collegetoken"];
-    jwt.verify(collegetoken, "collegelogin", async(error, decoded) => {
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
         if (error) {
             return res.json({ "status": "error", "message": "Failed to verify token" });
         }
         if (decoded && decoded.college_email) {
             const { college_email } = decoded;
             try {
-                
+
                 const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
                     if (error) {
                         res.status(500).send('Error retrieving college data');
@@ -150,15 +150,15 @@ router.post('/Viewcollegedetail', (req, res) => {
                     return res.json({ status: "Incorrect mailid" });
                 }
                 else {
-                    return res.json({ status: "success", "collegedata": college});
+                    return res.json({ status: "success", "collegedata": college });
                 }
-        }catch (error) {
-            return res.status(500).json({ "status": "error", "message": "Failed to fetch college details" });
+            } catch (error) {
+                return res.status(500).json({ "status": "error", "message": "Failed to fetch college details" });
+            }
+        } else {
+            return res.json({ "status": "unauthorised user" });
         }
-    } else {
-        return res.json({ "status": "unauthorised user" });
-    }
-});
+    });
 });
 
 // const storage = multer.diskStorage({
@@ -256,54 +256,37 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 
     try {
         const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
-        if (decoded && decoded.college_email)
-        {
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const data = xlsx.utils.sheet_to_json(worksheet);
+        jwt.verify(collegetoken, "collegetoken", async (error, decoded) => {
+            if (decoded && decoded.college_email) {
+                const workbook = xlsx.readFile(req.file.path);
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const data = xlsx.utils.sheet_to_json(worksheet);
 
-        // Construct data for insertion
-        const newStudentData = data.map(student => ({
-            student_name: student.student_name,
-            student_admno: student.student_admno,
-            student_email: student.student_email,
-            // Consider using a secure, hashed password instead of student_admno
-            student_password: student.student_admno.toString(),
-            event_id: student.event_id,
-            student_college_id: student.student_college_id
-        }));
-        // try {
-        //     const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData, {
-        //         headers: {
-        //             // Pass the JWT token in the standard Authorization header using the Bearer scheme
-        //             Authorization: `Bearer ${collegetoken}`
-        //         }
-        //     });
-        //     // Process the response from the other API
-        //     res.json({ status: 'Success', message: 'Students inserted', data: response.data });
-        // } catch (apiError) {
-        //     // Handle errors from the external API request
-        //     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-        //     res.status(500).json({ error: 'Failed to insert students via the API.' });
-        // }
-        
-        try {
-            const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
-            // Process the response from the other API
-            res.json({ status: 'Success', message: 'Students inserted', data: response.data });
-        } catch (apiError) {
-            // Handle errors from the external API request
-            console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-            res.status(500).json({ error: 'Failed to insert students via the API.' });
-        }
-    }
-    else
-    {
-        return res.json({ "status": "unauthorised user" });
-    }
-    })
+                // Construct data for insertion
+                const newStudentData = data.map(student => ({
+                    student_name: student.student_name,
+                    student_admno: student.student_admno,
+                    student_email: student.student_email,
+                    // Consider using a secure, hashed password instead of student_admno
+                    student_password: student.student_admno.toString(),
+                    event_id: student.event_id,
+                    student_college_id: student.student_college_id
+                }));
+                try {
+                    const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
+                    // Process the response from the other API
+                    res.json({ status: 'success', message: 'Students inserted', data: response.data });
+                } catch (apiError) {
+                    // Handle errors from the external API request
+                    console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
+                    res.status(500).json({ status: 'error inserting', error: 'Failed to insert students via the API.' });
+                }
+            }
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
     } catch (error) {
         console.error('Processing Error:', error.message);
         res.status(500).json({ error: 'An error occurred while processing the file.' });
@@ -318,12 +301,12 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
-            collegeModel.deleteCollegeById(college_id, (err, result) => {
-                if (err) {
-                    return res.status(500).json({ error: 'Error deleting college' });
-                }
-                res.json({ status: 'College deleted successfully' });
-            });
+        collegeModel.deleteCollegeById(college_id, (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error deleting college' });
+            }
+            res.json({ status: 'College deleted successfully' });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while deleting the college' });
@@ -375,12 +358,12 @@ function generateNewDefaultPassword() {
     const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
     const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
-    
+
     // Generate random characters
     const randomSpecialChar = specialChars[Math.floor(Math.random() * specialChars.length)];
     const randomUppercaseChar = uppercaseChars[Math.floor(Math.random() * uppercaseChars.length)];
     const randomLowercaseChar = lowercaseChars[Math.floor(Math.random() * lowercaseChars.length)];
-    
+
     // Concatenate characters to form the password
     const password = randomSpecialChar + randomUppercaseChar + randomLowercaseChar;
 
