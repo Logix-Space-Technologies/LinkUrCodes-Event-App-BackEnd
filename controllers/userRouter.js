@@ -18,7 +18,6 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-
 // Route for signing up a new user
 router.post('/signup', async (req, res) => {
     try {

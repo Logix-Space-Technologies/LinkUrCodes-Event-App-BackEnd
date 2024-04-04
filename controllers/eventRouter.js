@@ -8,12 +8,22 @@ const jwt = require("jsonwebtoken")
 router.post("/add_public_events", async (req, res) => {
     let data = req.body
     console.log(data)
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     publicEventModel.insertPublicEvents(data, (error, results) => {
         if (error) {
             return res.status(500).json({ message: error.message });
         }
         res.json({ status: "success"});
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 })
 
 router.post('/view_public_events', (req, res) => {
@@ -35,12 +45,22 @@ router.post('/view_public_events', (req, res) => {
 router.post("/add_private_events", async (req, res) => {
     let data = req.body
     console.log(data)
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     privateEventModel.insertPrivateEvents(data, (error, results) => {
         if (error) {
             return res.status(500).json({ message: error.message });
         }
         res.json({ status: "success"});
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+    })
 })
 
 router.post('/view_private_events', (req, res) => {
@@ -64,7 +84,9 @@ router.put('/update_private_events', (req, res) => {
     if (!event_private_id || !updatedFields) {
         return res.status(400).json({ error: 'Event ID and updated fields are required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     privateEventModel.updatePrivateEvents(event_private_id, updatedFields, (error, result) => {
         if (error) {
             console.error('Error updating event:', error);
@@ -73,7 +95,14 @@ router.put('/update_private_events', (req, res) => {
             console.log('Event updated successfully');
             res.status(200).json({ message: 'Event updated successfully' });
         }
-    });
+      });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 router.put('/update_public_events', (req, res) => {
@@ -82,7 +111,9 @@ router.put('/update_public_events', (req, res) => {
     if (!event_public_id || !updatedFields) {
         return res.status(400).json({ error: 'Event ID and updated fields are required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     publicEventModel.updatePublicEvents(event_public_id, updatedFields, (error, result) => {
         if (error) {
             console.error('Error updating event:', error);
@@ -92,6 +123,13 @@ router.put('/update_public_events', (req, res) => {
             res.status(200).json({ message: 'Event updated successfully' });
         }
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 router.post('/search-public-events', (req, res) => {
@@ -99,7 +137,9 @@ router.post('/search-public-events', (req, res) => {
     if (!eventName) {
         return res.status(400).json({ error: 'Event name is required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     publicEventModel.searchPublicEvents(eventName, (err, results) => {
         if (err) {
             console.error('Error searching for events:', err);
@@ -107,6 +147,13 @@ router.post('/search-public-events', (req, res) => {
         }
         res.json(results);
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 router.post('/search-private-events', (req, res) => {
@@ -114,7 +161,9 @@ router.post('/search-private-events', (req, res) => {
     if (!eventName) {
         return res.status(400).json({ error: 'Event name is required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     privateEventModel.searchPrivateEvents(eventName, (err, results) => {
         if (err) {
             console.error('Error searching for events:', err);
@@ -122,6 +171,13 @@ router.post('/search-private-events', (req, res) => {
         }
         res.json(results);
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 module.exports = router

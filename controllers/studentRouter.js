@@ -15,10 +15,60 @@ const hashPasswordGenerator = async (pass) => {
 router.post('/addstudent', async (req, res) => {
     try {
         let data = req.body;
-        if (!Array.isArray(data)) {
-            data = [data]; // Convert single student object to an array for consistency
+        const dataArray = [data]; // Convert JSON object to an array with a single element
+        const newdata = dataArray.map(item => ({
+            student_name: item.student_name,
+            student_admno: item.student_admno,
+            student_email: item.student_email,
+            student_password: item.student_admno.toString(),
+            event_id: item.event_id,
+            student_college_id: item.student_college_id
+        }));
+        let password = newdata[0].student_password;
+        const hashedPassword = await hashPasswordgenerator(password);
+        newdata[0].student_password = hashedPassword;
+        const collegetoken = req.headers["collegetoken"];
+        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
+        if (decoded && decoded.college_email)
+        {
+        studentModel.insertStudent(newdata, async (error, results) => {
+            if (error) {
+                console.error('Database Error:', error);
+                return res.status(500).json({ status: "error", message: 'Error inserting student data' });
+            }
+            else {
+                try {
+                    let user_name = newdata[0].student_name;
+                    let email = newdata[0].student_email
+                    let textsend = `
+                                \n Dear ${user_name},\n
+                                \n You have successfully registered. \n
+                                \n Username : ${email} \n
+                                \n Password is your admission number \n
+                                \n Note: You can reset your password at any time. \n
+                                `;
+                    let subjectheading = 'Successfully Registered'
+                    // Send password reset email
+                    await mailerModel.sendEmail(email, subjectheading, textsend);
+                    return res.json({ status: "success", message: "Student added,Message has been sent to your email" });
+                } catch (error) {
+                    return res.status(500).json({ status: "error senting mail", error: error.message });
+                }
+            }
+        });
         }
+        else{
+            return res.json({ "status": "unauthorised user" });
+        }
+    })
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
 
+router.post('/addstudentuploaded', async (req, res) => {
+    try {
+        let data = req.body;
         // Hash passwords for each student
         const promises = data.map(async (student) => {
             student.student_password = await hashPasswordGenerator(student.student_password);
@@ -34,13 +84,38 @@ router.post('/addstudent', async (req, res) => {
                 console.error('Database Error:', error);
                 return res.status(500).json({ message: 'Error inserting student data' });
             }
-
             // Send back a success response
-            res.status(201).json({ message: 'Students added successfully', results });
+            //res.status(201).json({ status: "success", message: 'Students added successfully', results });
+
+            try {
+                // Iterate through each element in the newdata array
+                for (let i = 0; i < studentsWithHashedPasswords.length; i++) {
+                    let user_name = studentsWithHashedPasswords[i].student_name;
+                    let email = studentsWithHashedPasswords[i].student_email;
+                    let textsend = `
+                                    \n Dear ${user_name},\n
+                                    \n You have successfully registered. \n
+                                    \n Username : ${email} \n
+                                    \n Password is your admission number \n
+                                    \n Note: You can reset your password at any time. \n
+                                    `;
+                    let subjectheading = 'Successfully Registered';
+
+                    // Send password reset email for each element
+                    mailerModel.sendEmail(email, subjectheading, textsend);
+                }
+
+                // Send a success response after sending emails for all elements
+                return res.json({ status: "success", message: "Students added, Messages have been sent to your email" });
+            } catch (error) {
+                // If any error occurs during email sending, return an error response
+                return res.status(500).json({ status: "error sending mail", error: error.message });
+            }
+
         });
     } catch (err) {
         console.error('Error in /addstudent route:', err);
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ status: "error", message: err.message });
     }
 });
 
@@ -110,7 +185,7 @@ router.put('/updatepassword', async (req, res) => {
         // Hash the new password
         const hashedNewPassword = await hashPasswordGenerator(student_password);
 
-        // Check if the email exists in the database
+        // Check if the email exists in the database studtoken
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
                 return res.status(500).json({ message: error.message });
@@ -143,13 +218,20 @@ router.post('/sortstudbycollege', (req, res) => {
     if (!student_college_id) {
         return res.status(400).json({ message: 'College ID is required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     studentModel.sortStudentsByCollege(student_college_id, (error, students) => {
         if (error) {
             return res.status(500).json({ message: error.message });
         }
         res.json({ students });
     });
+    }
+    else{
+        return res.json({ "status": "unauthorised user" });
+    }
+})
 });
 
 router.post('/sortstudbyevent', (req, res) => {
@@ -195,6 +277,5 @@ router.post("/forgotpassword", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
-
 
 module.exports = router;

@@ -65,7 +65,7 @@ router.post("/collegeLogin", async(req,res)=>{
         if (!match) {
             return res.json({ status: "Incorrect password" });
         }
-        jwt.sign({ college_email: college_email }, "collegetoken", { expiresIn: "1d" }, (error, collegetoken) => {
+        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
             if (error) {
                 return res.json({ "status": "error", "error": error });
             } else {
@@ -195,7 +195,7 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 
     try {
         const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
         if (decoded && decoded.college_email)
         {
         const workbook = xlsx.readFile(req.file.path);
@@ -212,9 +212,9 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
             student_password: student.student_admno.toString(),
             event_id: student.event_id,
             student_college_id: student.student_college_id
-        }));    
+        }));
         try {
-            const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
+            const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
             // Process the response from the other API
             res.json({ status: 'Success', message: 'Students inserted', data: response.data });
         } catch (apiError) {
@@ -242,12 +242,20 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
+        const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
             collegeModel.deleteCollegeById(college_id, (err, result) => {
                 if (err) {
                     return res.status(500).json({ error: 'Error deleting college' });
                 }
                 res.json({ status: 'College deleted successfully' });
             });
+        }
+        else{
+            return res.json({ "status": "unauthorised user" });
+        }
+        })
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while deleting the college' });
