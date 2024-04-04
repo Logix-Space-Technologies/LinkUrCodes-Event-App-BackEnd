@@ -52,27 +52,6 @@ router.post('/signup', async (req, res) => {
             } catch (error) {
                 return res.status(500).json({ error: error.message });
             }
-
-
-            //Send a welcome email
-            // const mailOptions = {
-            //     from: process.env.EMAIL_USER, // Sender's email address
-            //     to: data.user_email, // Recipient's email address
-            //     subject: 'Welcome!', // Email subject
-            //     text: `Dear ${data.user_name},\n\nWelcome to our platform! We're excited to have you as a new user.\n\nBest regards,\nThe Team` // Email body
-            // };
-
-            // transporter.sendMail(mailOptions, (error, info) => {
-            //     if (error) {
-            //         console.error('Error sending welcome email:', error);
-                    
-            //     } else {
-            //         console.log('Welcome email sent:', info.response);
-            //     }
-            // });
-
-            // res.status(201).send('User added with ID: ' + results.insertId+'\nPlease check your mailbox');
-
         });
     } catch (error) {
         console.error('Error in signup route:', error);
@@ -125,9 +104,6 @@ router.post('/loginuser', (req, res) => {
         });
     });
 });
-
-
-
 //route to view a user
 router.post('/searchusers', (req, res) => {
     const searchTerm = req.body.term;
@@ -163,9 +139,6 @@ router.post('/searchusers', (req, res) => {
    
 });
 
-
-
-
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
    jwt.verify(token,"eventAdmin",(error,decoded)=>{
@@ -186,27 +159,7 @@ router.post('/viewusers',(req,res)=>{
    })
 })
 
-// router.post('/studviewusers',(req,res)=>{
-//     const token=req.headers["token"]
-//    jwt.verify(token,"stud-eventapp",(error,decoded)=>{
-//     if (decoded && decoded.email) {
-//         userModel.viewUsers((error,results)=>{
-//             if(error){
-//               res.status(500).send('Error fetching users:'+error)
-//               return
-//             }
-//             res.status(200).json(results);
-      
-//           })
-//     } else {
-//         res.json({
-//             "status":"Unauthorized user"
-//         })
-//     }
-//    })
-// })
-
-  router.post('/delete-users', (req, res) => {
+router.post('/delete-users', (req, res) => {
     const user_id = req.body.user_id; // Extract user_id from req.body
 
     if (!user_id) {
