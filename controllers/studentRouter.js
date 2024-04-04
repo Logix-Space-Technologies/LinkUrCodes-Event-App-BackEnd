@@ -44,31 +44,6 @@ router.post('/addstudent', async (req, res) => {
     }
 });
 
-// router.post('/addstudent', async (req, res) => {
-//     try {
-//         let data = req.body;
-//         if (!Array.isArray(data)) {
-//             // If data is not an array, convert it to an array with a single element
-//             data = [data];
-//         }
-//         // Hash passwords for each student
-//         for (let student of data) {
-//             let password = student.student_password;
-//             const hashedPassword = await hashPasswordGenerator(password);
-//             student.student_password = hashedPassword;
-//         }
-
-//         studentModel.insertStudent(data, async(error, results) => {
-//             if (error) {
-//                 return res.status(500).json({ message: error.message });
-//             }
-//         });
-//     } catch (err) {
-//         res.status(500).json({ message: err.message });
-//     }
-// });
-
-
 router.post('/viewstudent', async (req, res) => {
     const token=req.headers["token"]
    jwt.verify(token,"eventAdmin",(error,decoded)=>{
@@ -223,4 +198,3 @@ router.post("/forgotpassword", async (req, res) => {
 
 
 module.exports = router;
-
