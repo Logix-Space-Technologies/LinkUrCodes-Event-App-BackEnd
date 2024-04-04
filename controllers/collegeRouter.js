@@ -161,67 +161,6 @@ router.post('/Viewcollegedetail', (req, res) => {
 });
 });
 
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, 'uploads/'); // Specify the upload destination here
-//     },
-//     filename: function (req, file, cb) {
-//         cb(null, file.originalname); // Use the original file name as the file name
-//     }
-// });
-// const upload = multer({
-//     storage: storage,
-//     limits: {
-//         fileSize: 20 * 1024 * 1024, // 20 MB in bytes
-//     }
-// });
-
-// router.post('/studentupload', upload.single('file'), async (req, res) => {
-//     try {
-//         if (!req.file) {
-//             return res.status(400).json({ error: 'No file uploaded' });
-//         }
-//         // Check file extension
-//         const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
-//         if (fileExtension !== 'xlsx') {
-//             // Delete the uploaded file if it's not an Excel file
-//             fs.unlink(req.file.path, (error) => {
-//                 if (error) {
-//                     console.error('Error deleting file:', error);
-//                 }
-//             });
-//             return res.status(400).json({ error: 'Invalid file format. Only .xlsx files are allowed.' });
-//         }
-
-//         const workbook = xlsx.readFile(req.file.path);
-//         const sheetName = workbook.SheetNames[0];
-//         const worksheet = workbook.Sheets[sheetName];
-//         const data = xlsx.utils.sheet_to_json(worksheet);
-//         console.log("data", data)
-
-//         // Construct data for insertion, setting student_admno as password
-//         const newStudentData = data.map(student => ({
-//             student_name: student.student_name,
-//             student_admno: student.student_admno,
-//             student_email: student.student_email,
-//             student_password: student.student_admno.toString(),// Set student_admno as password
-//             event_id: student.event_id,
-//             student_college_id: student.student_college_id
-//         }));
-//         console.log("new data", newStudentData)
-//         const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
-//         // Process the response from the other API
-//         console.log('Response from other API:', response.data);
-
-//         // Send a response back to the client
-//         res.json({ status: 'inserted' });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'An error occurred while processing the file.' });
-//     }
-// });
-
-// Enhanced storage configuration to prevent file name conflicts
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
@@ -273,22 +212,7 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
             student_password: student.student_admno.toString(),
             event_id: student.event_id,
             student_college_id: student.student_college_id
-        }));
-        // try {
-        //     const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData, {
-        //         headers: {
-        //             // Pass the JWT token in the standard Authorization header using the Bearer scheme
-        //             Authorization: `Bearer ${collegetoken}`
-        //         }
-        //     });
-        //     // Process the response from the other API
-        //     res.json({ status: 'Success', message: 'Students inserted', data: response.data });
-        // } catch (apiError) {
-        //     // Handle errors from the external API request
-        //     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-        //     res.status(500).json({ error: 'Failed to insert students via the API.' });
-        // }
-        
+        }));    
         try {
             const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
             // Process the response from the other API
