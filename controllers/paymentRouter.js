@@ -9,7 +9,7 @@ const router = express.Router()
 router.post('/adduserpayment', (req, res) => {
   console.log(req.body);
   const usertoken = req.headers["usertoken"];
-  jwt.verify(usertoken, "eventuser", (error, decoded) => {
+  jwt.verify(usertoken, "user-eventapp", (error, decoded) => {
       if (error) {
           console.error('JWT Verification Error:', error.message);
           return res.status(401).json({ status: "Unauthorized", message: "Invalid or expired token" });
@@ -28,28 +28,6 @@ router.post('/adduserpayment', (req, res) => {
       }
   });
 });
-
-
-// router.post('/adduserpayment', (req, res) => {
-//   console.log(req.body)
-//   const usertoken=req.headers["usertoken"]
-//    jwt.verify(usertoken,"usertoken",(error,decoded)=>{
-//     if (decoded && decoded.user_email) {
-//   paymentModel.insertpayment(req.body, (error, results) => {
-//     if (error) {
-//       res.status(500).send('Error in payments' + error);
-//       return;
-//     }
-//     res.status(201).send(`payment added with ID: ${results.insertId}`);
-//   });
-//   }
-//   else{
-//     res.json({
-//       "status":"Unauthorized user"
-//   })
-//   }
-// })
-// });
 
 router.post('/userpaymenthistory', async(req, res) => {
   const admintoken = req.headers["token"];
@@ -70,14 +48,10 @@ router.post('/userpaymenthistory', async(req, res) => {
   });
 })
 
-
-
-//payment college details
-
 router.post('/addcollegepayment', (req, res) => {
   console.log(req.body)
   const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
         if (decoded && decoded.college_email)
         {
   paymentcollegeModel.insertpayment(req.body, (error, results) => {
@@ -143,6 +117,5 @@ router.post('/searchbyevntmonth', (req, res) => {
       res.json({ details });
   });
 });
-
 
 module.exports = router;

@@ -28,7 +28,7 @@ router.post('/addstudent', async (req, res) => {
         const hashedPassword = await hashPasswordgenerator(password);
         newdata[0].student_password = hashedPassword;
         const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
         if (decoded && decoded.college_email)
         {
         studentModel.insertStudent(newdata, async (error, results) => {
@@ -154,7 +154,7 @@ router.post('/loginstudent', (req, res) => {
                 return res.json({status: "Invalid Password"});
             }
             // Successful login
-            jwt.sign({email:student_email},"studtoken",{expiresIn:"1d"},
+            jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
             (error,token)=>{
                 if (error) {
                     res.json({
@@ -278,6 +278,4 @@ router.post("/forgotpassword", async (req, res) => {
     }
 });
 
-
 module.exports = router;
-

@@ -26,12 +26,6 @@ router.post("/add_public_events", async (req, res) => {
 })
 })
 
-// router.get('/view_public_events', (req, res) => {
-//     publicEventModel.viewPublicEvents((error, results) => {
-//         res.json(results);
-//     })
-// });
-
 router.post('/view_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
@@ -68,13 +62,6 @@ router.post("/add_private_events", async (req, res) => {
     }
     })
 })
-
-
-// router.get('/view_private_events', (req, res) => {
-//     privateEventModel.viewPrivateEvents((error, results) => {
-//         res.json(results);
-//     })
-// });
 
 router.post('/view_private_events', (req, res) => {
     const admintoken = req.headers["token"];
@@ -196,6 +183,5 @@ router.post('/search-private-events', (req, res) => {
     }
 })
 });
-
 
 module.exports = router

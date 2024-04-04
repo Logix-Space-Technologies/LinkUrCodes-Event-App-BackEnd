@@ -80,7 +80,4 @@ router.post('/loginadmin', (req, res) => {
     });
 });
 
-
-
-
 module.exports = router

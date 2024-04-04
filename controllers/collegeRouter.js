@@ -65,7 +65,7 @@ router.post("/collegeLogin", async(req,res)=>{
         if (!match) {
             return res.json({ status: "Incorrect password" });
         }
-        jwt.sign({ college_email: college_email }, "collegetoken", { expiresIn: "1d" }, (error, collegetoken) => {
+        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
             if (error) {
                 return res.json({ "status": "error", "error": error });
             } else {
@@ -195,7 +195,7 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 
     try {
         const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
         if (decoded && decoded.college_email)
         {
         const workbook = xlsx.readFile(req.file.path);
