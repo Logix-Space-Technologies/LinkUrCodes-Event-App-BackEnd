@@ -103,9 +103,6 @@ router.post('/loginuser', (req, res) => {
         });
     });
 });
-
-
-
 //route to view a user
 router.post('/searchusers', (req, res) => {
     const searchTerm = req.body.term;

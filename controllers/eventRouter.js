@@ -78,7 +78,6 @@ router.post('/view_private_events', (req, res) => {
     });
 })
 
-
 router.put('/update_private_events', (req, res) => {
     const { event_private_id, updatedFields } = req.body;
 
@@ -105,7 +104,6 @@ router.put('/update_private_events', (req, res) => {
     }
 })
 });
-
 
 router.put('/update_public_events', (req, res) => {
     const { event_public_id, updatedFields } = req.body;
@@ -134,7 +132,6 @@ router.put('/update_public_events', (req, res) => {
 })
 });
 
-
 router.post('/search-public-events', (req, res) => {
     const eventName = req.body.event_public_name; // Assuming the event name is sent in the request body
     if (!eventName) {
@@ -158,7 +155,6 @@ router.post('/search-public-events', (req, res) => {
     }
 })
 });
-
 
 router.post('/search-private-events', (req, res) => {
     const eventName = req.body.event_private_name; // Assuming the event name is sent in the request body
