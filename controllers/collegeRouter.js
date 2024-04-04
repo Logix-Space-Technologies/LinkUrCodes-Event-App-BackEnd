@@ -9,6 +9,7 @@ const validateModel=require("../models/validateModel")
 const router = express.Router();
 const bcrypt = require("bcryptjs")
 const jwt=require("jsonwebtoken")
+const path = require('path');
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -18,17 +19,9 @@ hashPasswordgenerator = async (pass) => {
 router.post('/addCollege', async (req, res) => {
     try {
         let { data } = { "data": req.body };
-        // let password = data.college_password;
-
-        // if (!validateModel.validatePassword(password)) {
-        //     return res.status(400).send('Invalid password.Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
-        // }
-        
-
-        // const hashedPassword = await hashPasswordgenerator(password);
-        // data.college_password = hashedPassword;
-
-        // Insert the college into the database
+        const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
         collegeModel.insertCollege(data, (error, results) => {
             if (error) {
                 res.status(500).send('Error inserting college data: ' + error);
@@ -37,6 +30,13 @@ router.post('/addCollege', async (req, res) => {
 
             res.status(201).send('College added with ID: ' + results.insertId);
         });
+        }
+        else{
+            res.json({
+                "status":"Unauthorized user"
+            })
+        }
+    })
     } catch (error) {
         console.error('Error in addCollege route:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -65,7 +65,7 @@ router.post("/collegeLogin", async(req,res)=>{
         if (!match) {
             return res.json({ status: "Incorrect password" });
         }
-        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+        jwt.sign({ college_email: college_email }, "collegetoken", { expiresIn: "1d" }, (error, collegetoken) => {
             if (error) {
                 return res.json({ "status": "error", "error": error });
             } else {
@@ -79,9 +79,11 @@ router.post("/collegeLogin", async(req,res)=>{
 });
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
-    var college_name = req.body.college_name; // Use req.body.name to retrieve college name
-
-    collegeModel.findCollegeByName(college_name, (error, results) => {
+    var term = req.body.term; // Use req.body.name to retrieve college name
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
+    collegeModel.findCollegeByName(term, (error, results) => {
         if (error) {
             res.status(500).send('Error retrieving college data');
             return;
@@ -92,6 +94,13 @@ router.post('/searchCollege', (req, res) => {
             res.status(404).send('College not found');
         }
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+});
 });
 
 router.post('/Viewcollege', (req, res) => {
@@ -101,7 +110,17 @@ router.post('/Viewcollege', (req, res) => {
             res.status(500).send('Error fetching college_details:' + error)
             return
         }
+        const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
         res.status(200).json(results);
+        }
+    else {
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+    })
     });
 });
 // The following /Viewcollegedetail is created to test jwt token
@@ -142,63 +161,157 @@ router.post('/Viewcollegedetail', (req, res) => {
 });
 });
 
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/'); // Specify the upload destination here
+//     },
+//     filename: function (req, file, cb) {
+//         cb(null, file.originalname); // Use the original file name as the file name
+//     }
+// });
+// const upload = multer({
+//     storage: storage,
+//     limits: {
+//         fileSize: 20 * 1024 * 1024, // 20 MB in bytes
+//     }
+// });
+
+// router.post('/studentupload', upload.single('file'), async (req, res) => {
+//     try {
+//         if (!req.file) {
+//             return res.status(400).json({ error: 'No file uploaded' });
+//         }
+//         // Check file extension
+//         const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+//         if (fileExtension !== 'xlsx') {
+//             // Delete the uploaded file if it's not an Excel file
+//             fs.unlink(req.file.path, (error) => {
+//                 if (error) {
+//                     console.error('Error deleting file:', error);
+//                 }
+//             });
+//             return res.status(400).json({ error: 'Invalid file format. Only .xlsx files are allowed.' });
+//         }
+
+//         const workbook = xlsx.readFile(req.file.path);
+//         const sheetName = workbook.SheetNames[0];
+//         const worksheet = workbook.Sheets[sheetName];
+//         const data = xlsx.utils.sheet_to_json(worksheet);
+//         console.log("data", data)
+
+//         // Construct data for insertion, setting student_admno as password
+//         const newStudentData = data.map(student => ({
+//             student_name: student.student_name,
+//             student_admno: student.student_admno,
+//             student_email: student.student_email,
+//             student_password: student.student_admno.toString(),// Set student_admno as password
+//             event_id: student.event_id,
+//             student_college_id: student.student_college_id
+//         }));
+//         console.log("new data", newStudentData)
+//         const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
+//         // Process the response from the other API
+//         console.log('Response from other API:', response.data);
+
+//         // Send a response back to the client
+//         res.json({ status: 'inserted' });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'An error occurred while processing the file.' });
+//     }
+// });
+
+// Enhanced storage configuration to prevent file name conflicts
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // Specify the upload destination here
+        cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); // Use the original file name as the file name
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
+
+// File filter for MIME type checking
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
+    }
+};
+
 const upload = multer({
     storage: storage,
+    fileFilter: fileFilter,
     limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB in bytes
+        fileSize: 20 * 1024 * 1024, // 20 MB
     }
 });
 
 router.post('/studentupload', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-        // Check file extension
-        const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
-        if (fileExtension !== 'xlsx') {
-            // Delete the uploaded file if it's not an Excel file
-            fs.unlink(req.file.path, (error) => {
-                if (error) {
-                    console.error('Error deleting file:', error);
-                }
-            });
-            return res.status(400).json({ error: 'Invalid file format. Only .xlsx files are allowed.' });
-        }
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
 
+    try {
+        const collegetoken = req.headers["collegetoken"];
+        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        if (decoded && decoded.college_email)
+        {
         const workbook = xlsx.readFile(req.file.path);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const data = xlsx.utils.sheet_to_json(worksheet);
-        console.log("data", data)
 
-        // Construct data for insertion, setting student_admno as password
+        // Construct data for insertion
         const newStudentData = data.map(student => ({
             student_name: student.student_name,
             student_admno: student.student_admno,
             student_email: student.student_email,
-            student_password: student.student_admno.toString(),// Set student_admno as password
+            // Consider using a secure, hashed password instead of student_admno
+            student_password: student.student_admno.toString(),
             event_id: student.event_id,
             student_college_id: student.student_college_id
         }));
-        console.log("new data", newStudentData)
-        const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
-        // Process the response from the other API
-        console.log('Response from other API:', response.data);
-
-        // Send a response back to the client
-        res.json({ status: 'inserted' });
+        // try {
+        //     const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData, {
+        //         headers: {
+        //             // Pass the JWT token in the standard Authorization header using the Bearer scheme
+        //             Authorization: `Bearer ${collegetoken}`
+        //         }
+        //     });
+        //     // Process the response from the other API
+        //     res.json({ status: 'Success', message: 'Students inserted', data: response.data });
+        // } catch (apiError) {
+        //     // Handle errors from the external API request
+        //     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
+        //     res.status(500).json({ error: 'Failed to insert students via the API.' });
+        // }
+        
+        try {
+            const response = await axios.post('http://localhost:8085/api/student/addstudent', newStudentData);
+            // Process the response from the other API
+            res.json({ status: 'Success', message: 'Students inserted', data: response.data });
+        } catch (apiError) {
+            // Handle errors from the external API request
+            console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
+            res.status(500).json({ error: 'Failed to insert students via the API.' });
+        }
+    }
+    else
+    {
+        return res.json({ "status": "unauthorised user" });
+    }
+    })
     } catch (error) {
-        console.error(error);
+        console.error('Processing Error:', error.message);
         res.status(500).json({ error: 'An error occurred while processing the file.' });
+    } finally {
+        // Clean up: delete the uploaded file after processing
+        fs.unlink(req.file.path, (unlinkError) => {
+            if (unlinkError) console.error('Error deleting file:', unlinkError);
+        });
     }
 });
 

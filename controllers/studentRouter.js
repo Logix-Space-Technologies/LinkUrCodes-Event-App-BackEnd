@@ -16,41 +16,72 @@ router.post('/addstudent', async (req, res) => {
     try {
         let data = req.body;
         if (!Array.isArray(data)) {
-            // If data is not an array, convert it to an array with a single element
-            data = [data];
-        }
-        // Hash passwords for each student
-        for (let student of data) {
-            let password = student.student_password;
-            const hashedPassword = await hashPasswordGenerator(password);
-            student.student_password = hashedPassword;
+            data = [data]; // Convert single student object to an array for consistency
         }
 
-        studentModel.insertStudent(data, async(error, results) => {
+        // Hash passwords for each student
+        const promises = data.map(async (student) => {
+            student.student_password = await hashPasswordGenerator(student.student_password);
+            return student; // Return the modified student object
+        });
+
+        // Wait for all the passwords to be hashed
+        const studentsWithHashedPasswords = await Promise.all(promises);
+
+        // Insert students into the database
+        studentModel.insertStudent(studentsWithHashedPasswords, (error, results) => {
             if (error) {
-                return res.status(500).json({ message: error.message });
+                console.error('Database Error:', error);
+                return res.status(500).json({ message: 'Error inserting student data' });
             }
-            try {
-                let stud_name=data.student_name;
-                let email = data.student_email;
-                let textsend = `Dear ${stud_name},\n\nYou have successfully registered as a student.`;
-                let subjectheading = 'Successfully Registered'
-                await mailerModel.sendEmail(email, subjectheading, textsend);
-                return res.json({ status: "success", message: "Message has been sent to your email" });
-            } catch (error) {
-                return res.status(500).json({ error: error.message });
-            }
-            // res.json({ status: "success", data: results });
+
+            // Send back a success response
+            res.status(201).json({ message: 'Students added successfully', results });
         });
     } catch (err) {
+        console.error('Error in /addstudent route:', err);
         res.status(500).json({ message: err.message });
     }
 });
 
+// router.post('/addstudent', async (req, res) => {
+//     try {
+//         let data = req.body;
+//         if (!Array.isArray(data)) {
+//             // If data is not an array, convert it to an array with a single element
+//             data = [data];
+//         }
+//         // Hash passwords for each student
+//         for (let student of data) {
+//             let password = student.student_password;
+//             const hashedPassword = await hashPasswordGenerator(password);
+//             student.student_password = hashedPassword;
+//         }
+
+//         studentModel.insertStudent(data, async(error, results) => {
+//             if (error) {
+//                 return res.status(500).json({ message: error.message });
+//             }
+//         });
+//     } catch (err) {
+//         res.status(500).json({ message: err.message });
+//     }
+// });
+
 
 router.post('/viewstudent', async (req, res) => {
-    studentModel.viewStudent((error, results) => {
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
+        studentModel.viewStudent((error, results) => {
         res.json(results)
+    })
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
     })
 })
 
