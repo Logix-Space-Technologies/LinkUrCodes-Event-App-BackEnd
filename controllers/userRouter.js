@@ -212,7 +212,9 @@ router.post('/viewusers',(req,res)=>{
     if (!user_id) {
         return res.status(400).json({ error: 'User ID is required in the request body' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     userModel.deleteUsers(user_id, (error, result) => {
         if (error) {
             console.error('Error deleting user:', error);
@@ -227,6 +229,13 @@ router.post('/viewusers',(req,res)=>{
             }
         }
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 router.post('/sortuserbyeventid', (req, res) => {
@@ -236,13 +245,22 @@ router.post('/sortuserbyeventid', (req, res) => {
     if (!payment_event_id) {
         return res.status(400).json({ message: 'Event ID is required' });
     }
-
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     userModel.sortStudentsByevent(payment_event_id, (error, users) => {
         if (error) {
             return res.status(500).json({ message: error.message });
         }
         res.json({ users });
     });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        }) 
+    }
+    })
 });
 
 module.exports = router
