@@ -76,6 +76,10 @@ router.post('/userpaymenthistory', async(req, res) => {
 
 router.post('/addcollegepayment', (req, res) => {
   console.log(req.body)
+  const collegetoken = req.headers["collegetoken"];
+        jwt.verify(collegetoken,"collegetoken",async(error,decoded)=>{
+        if (decoded && decoded.college_email)
+        {
   paymentcollegeModel.insertpayment(req.body, (error, results) => {
     if (error) {
       res.status(500).send('Error in gaving payments' + error);
@@ -83,6 +87,11 @@ router.post('/addcollegepayment', (req, res) => {
     }
     res.status(201).send(`payment added with ID: ${results.insertId}`);
   });
+  }
+  else{
+    return res.json({ "status": "unauthorised user" });
+  }
+})
 });
 
 router.post('/collegepaymenthistory', (req, res) => {
