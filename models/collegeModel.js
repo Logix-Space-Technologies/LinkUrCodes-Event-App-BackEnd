@@ -13,6 +13,12 @@ const pool = mysql.createPool({
 
 
 const collegeModel = {
+    insertcollege: (college_name,college_email,college_phone,college_password,college_image,collegeData, callback) => {
+        const query = 'INSERT INTO college (college_name,college_email, college_phone, college_password, college_image) VALUES (?,?,?,?,?)'; // Inserting into multiple columns
+      
+        pool.query(query, [college_name,college_email,college_phone,college_password,college_image,collegeData], callback);
+    
+      },
 // Modify the insertCollege function to use phone number as default password
 insertCollege: (collegeData, callback) => {
   const query = 'INSERT INTO college SET ?';

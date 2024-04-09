@@ -1,3 +1,100 @@
+// const express = require('express');
+// const collegeModel = require('../models/collegeModel');
+// const studentModel = require("../models/studentModel")
+// const multer = require('multer');
+// const xlsx = require('xlsx');
+// const fs = require('fs');
+// const axios = require('axios');
+// const validateModel=require("../models/validateModel")
+// const router = express.Router();
+// const bcrypt = require("bcryptjs")
+// const jwt=require("jsonwebtoken")
+// const path = require('path');
+
+// hashPasswordgenerator = async (pass) => {
+//     const salt = await bcrypt.genSalt(10)
+//     return bcrypt.hash(pass, salt)
+// }
+// Route to add a new College
+
+
+
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//       cb(null, 'images/');
+//     },
+//     filename: function (req, file, cb) {
+//       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+//       const fileName = uniqueSuffix + '-' + file.originalname;
+//       cb(null, fileName);
+//     },
+// });
+
+// const upload = multer({ 
+//     storage: storage,
+//     fileFilter: function (req, file, cb) {
+//         if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+//             return cb(new Error('Only image files (jpg, jpeg, png, gif) are allowed'));
+//         }
+//         cb(null, true);
+//     }
+// });
+
+
+// //route to food add
+
+// router.post('/addclg', upload.single('file'), (req, res, next) => {
+//     // Check if file was uploaded
+//     if (!req.file) {
+//         return res.status(400).json({ error: 'No file uploaded' });
+//     }
+
+//     // Destructure properties from req.file
+//     const { filename: imagePath } = req.file;
+
+//     // Insert the image path into foodModel
+//     const collegeData = { photo: imagePath };
+   
+    
+//     collegeModel.insertcollege(req.body.college_name,req.body.college_email,req.body.college_phone,req.body.college_password,req.body.college_image,collegeData,(error, result) => {
+      
+   
+//         if (error) {
+//             console.error('Error inserting image path into collegeModel:', error);
+//             res.status(500).json({ error: 'Error inserting image path into collegeModel' });
+//         } else {
+//             console.log('Image path inserted into collegeModel successfully:', result);
+//             res.status(200).json({ success: 'data inserted' });
+//         }
+//     });
+// // });
+// router.post('/addCollege', async (req, res) => {
+//     try {
+//         let { data } = { "data": req.body };
+//         const token=req.headers["token"]
+//    jwt.verify(token,"eventAdmin",(error,decoded)=>{
+//     if (decoded && decoded.adminUsername) {
+//         collegeModel.insertCollege(data, (error, results) => {
+//             if (error) {
+//                 res.status(500).send('Error inserting college data: ' + error);
+//                 return;
+//             }
+
+//             res.status(201).send('College added with ID: ' + results.insertId);
+//         });
+//         }
+//         else{
+//             res.json({
+//                 "status":"Unauthorized user"
+//             })
+//         }
+//     })
+//     } catch (error) {
+//         console.error('Error in addCollege route:', error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// });
+
 const express = require('express');
 const collegeModel = require('../models/collegeModel');
 const studentModel = require("../models/studentModel")
@@ -5,43 +102,69 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
-const validateModel=require("../models/validateModel")
-const router = express.Router();
+const validateModel = require("../models/validateModel")
 const bcrypt = require("bcryptjs")
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 const path = require('path');
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
 }
-// Route to add a new College
-router.post('/addCollege', async (req, res) => {
-    try {
-        let { data } = { "data": req.body };
-        const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-        collegeModel.insertCollege(data, (error, results) => {
-            if (error) {
-                res.status(500).send('Error inserting college data: ' + error);
-                return;
-            }
+const router = express.Router();
 
-            res.status(201).send('College added with ID: ' + results.insertId);
-        });
+// Route to add a new College
+
+// Define storage configuration for multer
+// Define multer storage configuration
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'images/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileName = uniqueSuffix + '-' + file.originalname;
+        cb(null, fileName);
+    },
+});
+
+// Initialize multer with storage configuration
+const upload = multer({ 
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return cb(new Error('Only image files (jpg, jpeg, png, gif) are allowed'));
         }
-        else{
-            res.json({
-                "status":"Unauthorized user"
-            })
-        }
-    })
-    } catch (error) {
-        console.error('Error in addCollege route:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        cb(null, true);
     }
 });
+
+
+// Route to handle adding a new college with an image
+router.post('/addclg', upload.single('file'), (req, res, next) => {
+    // Check if file was uploaded
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Destructure properties from req.file
+    const { filename: imagePath } = req.file;
+
+    // Insert the image path into collegeModel
+    const collegeData = { photo: imagePath };
+    
+    // Assuming collegeModel.insertcollege is defined elsewhere
+    collegeModel.insertcollege(req.body.college_name, req.body.college_email, req.body.college_phone, req.body.college_password, req.body.college_image, collegeData, (error, result) => {
+        if (error) {
+            console.error('Error inserting image path into collegeModel:', error);
+            res.status(500).json({ error: 'Error inserting image path into collegeModel' });
+        } else {
+            console.log('Image path inserted into collegeModel successfully:', result);
+            res.status(200).json({ success: 'data inserted' });
+        }
+    });
+});
+
 
 router.post("/collegeLogin", async(req,res)=>{
     try {
@@ -222,32 +345,32 @@ router.post('/Viewcollegedetail', (req, res) => {
 // });
 
 // Enhanced storage configuration to prevent file name conflicts
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/');
+//     },
+//     filename: function (req, file, cb) {
+//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+//         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+//     }
+// });
 
-// File filter for MIME type checking
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-        cb(null, true);
-    } else {
-        cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
-    }
-};
+// // File filter for MIME type checking
+// const fileFilter = (req, file, cb) => {
+//     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+//         cb(null, true);
+//     } else {
+//         cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
+//     }
+// };
 
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB
-    }
-});
+// const upload = multer({
+//     storage: storage,
+//     fileFilter: fileFilter,
+//     limits: {
+//         fileSize: 20 * 1024 * 1024, // 20 MB
+//     }
+// });
 
 router.post('/studentupload', upload.single('file'), async (req, res) => {
     if (!req.file) {
