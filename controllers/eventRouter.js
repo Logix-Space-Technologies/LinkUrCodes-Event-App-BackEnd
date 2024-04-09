@@ -4,6 +4,8 @@ const publicEventModel = require("../models/publicEventModel")
 const privateEventModel = require("../models/privateEventModel")
 const router = express.Router()
 const jwt = require("jsonwebtoken")
+const multer = require('multer');
+const path = require('path');
 
 router.post("/add_public_events", async (req, res) => {
     let data = req.body
@@ -41,26 +43,66 @@ router.post('/view_public_events', (req, res) => {
     });
 })
 
+// Multer configuration for file upload
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/events/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
 
-router.post("/add_private_events", async (req, res) => {
-    let data = req.body
-    console.log(data)
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    privateEventModel.insertPrivateEvents(data, (error, results) => {
-        if (error) {
-            return res.status(500).json({ message: error.message });
-        }
-        res.json({ status: "success"});
-    });
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only JPEG and PNG images are allowed'), false);
     }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        })
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 20 * 1024 * 1024, // 20 MB
     }
-    })
+});
+router.post("/add_private_events", upload.single('image'), async (req, res) => {
+    const token = req.headers["token"]
+    jwt.verify(token,"eventAdmin",(error,decoded)=>{
+        
+     if (decoded && decoded.adminUsername) {
+         if (!req.file) {
+             return res.status(400).json({ error: 'No file uploaded' });
+         }
+         const imagePath = req.file.path; //image path
+         let data = req.body
+         const newData = {
+             event_private_name: data.event_private_name,
+             event_private_amount: data.event_private_amount,
+             event_private_description: data.event_private_description,
+             event_private_date: data.event_private_date,
+             event_private_time: data.event_private_time,
+             event_private_image: imagePath,
+             event_private_clgid: data.event_private_clgid,
+             event_addedby: data.event_addedby,
+             event_updatedby: data.event_addedby 
+         }
+     privateEventModel.insertPrivateEvents(newData, (error, results) => {
+         if (error) {
+             return res.status(500).json({ message: error.message });
+         }
+         res.json({ status: "success"});
+     });
+     }
+     else{
+         res.json({
+             "status":"Unauthorized user"
+         })
+     }
+     })
 })
 
 router.post('/view_private_events', (req, res) => {
