@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs")
 const { error } = require("console")
 const router = express.Router()
 const jwt = require("jsonwebtoken")
+const validateModel=require("../models/validateModel")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
@@ -11,15 +12,15 @@ const hashPasswordGenerator = async (pass) => {
     return bcrypt.hash(pass, salt)
 }
 
-const PASSWORD_MIN_LENGTH = 8; // Minimum password length
-const PASSWORD_REGEX = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z])(?=.*[@$!%*?&]).{8,}$/; // Password complexity regex with special character
+// const PASSWORD_MIN_LENGTH = 8; // Minimum password length
+// const PASSWORD_REGEX = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z])(?=.*[@$!%*?&]).{8,}$/; // Password complexity regex with special character
 
 router.post('/addadmin', async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.admin_password;
         // Validate password
-        if (!password || password.length < PASSWORD_MIN_LENGTH || !PASSWORD_REGEX.test(password)) {
+        if (!validateModel.validatePassword(password)) {
             return res.status(400).json({ message: "Invalid password. Password should be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@,$,!,%,*,?,&)." });
         }
         const hashedPassword = await hashPasswordGenerator(password);
@@ -36,9 +37,19 @@ router.post('/addadmin', async (req, res) => {
 });
 
 router.post('/viewadmin', (req, res) => {
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
     adminModel.viewAdmin((error, results) => {
         res.json(results);
     })
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
 });
 
 

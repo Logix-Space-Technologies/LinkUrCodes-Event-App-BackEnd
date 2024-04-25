@@ -10,9 +10,9 @@ const pool=mysql.createPool({
 });
 
 const paymentModel={
-    insertpayment: (paymentData,callback)=>{
-        const query='INSERT INTO payment_user SET ?';
-        pool.query(query,paymentData,callback)
+    insertpayment: (payment_user_id,payment_event_id,callback)=>{
+        const query='INSERT INTO payment_user (user_id, payment_event_id, payment_amount) SELECT ?,event_public_id,event_public_amount FROM event_public WHERE event_public_id = ?;';
+        pool.query(query,[payment_user_id,payment_event_id],callback)
     },
 
 

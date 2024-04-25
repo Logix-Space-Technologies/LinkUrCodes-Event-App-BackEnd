@@ -51,6 +51,16 @@ const EventPdfStorage = multer.diskStorage({
     }
 });
 
+const StudFIleStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/studfile/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
 const ImagefileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
         cb(null, true);
@@ -68,6 +78,17 @@ const PDFfileFilter = (req, file, cb) => {
         cb(new Error('Only PDF files are allowed'), false);
     }
 }
+
+const XLSXFilter = (req, file, cb) => {
+    // Check if the file is an XLSX file
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        cb(null, true); // Accept the file
+    } else {
+        // Reject the file
+        cb(new Error('Only XLSX files are allowed'), false);
+    }
+}
+
 
 // Multer upload setup
 const EventUpload = multer({
@@ -95,8 +116,16 @@ const EventPdf = multer({
 });
 
 const CollegeUpload = multer({
-    storage: EventPdfStorage,
-    fileFilter: PDFfileFilter,
+    storage: CollegeImageStorage,
+    fileFilter: ImagefileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5 MB limit
+    }
+});
+
+const StudUpload = multer({
+    storage: StudFIleStorage,
+    fileFilter: XLSXFilter,
     limits: {
         fileSize: 20 * 1024 * 1024, // 20 MB limit
     }
@@ -106,7 +135,9 @@ const CollegeUpload = multer({
 const UploadModel = {
     EventImageUpload: EventUpload, // Assign the configured multer instance directly
     UserImageUpload: UserUpload,
-    EventPdfupload: EventPdf
+    EventPdfupload: EventPdf,
+    CollegeImageupload: CollegeUpload,
+    StudentFileUpload: StudUpload
 };
 
 module.exports = UploadModel;
