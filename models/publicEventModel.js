@@ -23,8 +23,29 @@ const publicEventModel = {
     searchPublicEvents: (searchTerm, callback) => {
         const query = 'SELECT * FROM event_public WHERE event_public_name LIKE ?';
         pool.query(query, [`%${searchTerm}%`], callback);
+    },
+    deletePublicEvent: (event_ptivate_id, callback) => {
+        const query = 'UPDATE event_public SET delete_status=1 , cancel_status=1 WHERE event_public_id = ?';
+        pool.query(query, [event_ptivate_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
+    },
+    retrivePublicEvent: (event_ptivate_id, callback) => {
+        const query = 'UPDATE event_public SET delete_status=0 , cancel_status=0 WHERE event_public_id = ?';
+        pool.query(query, [event_ptivate_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
     }
-   
 }
 
 module.exports = publicEventModel;

@@ -10,13 +10,14 @@ const router = express.Router();
 const bcrypt = require("bcryptjs")
 const jwt=require("jsonwebtoken")
 const path = require('path');
+const uploadModel=require("../models/uploadModel")
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
 }
 // Route to add a new College
-router.post('/addCollege', async (req, res) => {
+router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async (req, res) => {
     try {
         let { data } = { "data": req.body };
         const token=req.headers["token"]
@@ -161,34 +162,34 @@ router.post('/Viewcollegedetail', (req, res) => {
 });
 });
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/');
+//     },
+//     filename: function (req, file, cb) {
+//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+//         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+//     }
+// });
 
-// File filter for MIME type checking
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-        cb(null, true);
-    } else {
-        cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
-    }
-};
+// // File filter for MIME type checking
+// const fileFilter = (req, file, cb) => {
+//     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+//         cb(null, true);
+//     } else {
+//         cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
+//     }
+// };
 
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB
-    }
-});
+// const upload = multer({
+//     storage: storage,
+//     fileFilter: fileFilter,
+//     limits: {
+//         fileSize: 20 * 1024 * 1024, // 20 MB
+//     }
+// });
 
-router.post('/studentupload', upload.single('file'), async (req, res) => {
+router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -206,8 +207,10 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
         // Construct data for insertion
         const newStudentData = data.map(student => ({
             student_name: student.student_name,
+            student_rollno: student.student_rollno,
             student_admno: student.student_admno,
             student_email: student.student_email,
+            student_phone_no: student.student_phone_no,
             // Consider using a secure, hashed password instead of student_admno
             student_password: student.student_admno.toString(),
             event_id: student.event_id,
