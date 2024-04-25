@@ -4,8 +4,10 @@ const publicEventModel = require("../models/publicEventModel")
 const privateEventModel = require("../models/privateEventModel")
 const router = express.Router()
 const jwt = require("jsonwebtoken")
+const uploadModel=require("../models/uploadModel")
 const multer = require('multer');
 const path = require('path');
+const UploadModel = require("../models/uploadModel")
 
 router.post("/add_public_events", async (req, res) => {
     let data = req.body
@@ -44,32 +46,32 @@ router.post('/view_public_events', (req, res) => {
 })
 
 // Multer configuration for file upload
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/events/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/events/');
+//     },
+//     filename: function (req, file, cb) {
+//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+//         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+//     }
+// });
 
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-        cb(null, true);
-    } else {
-        cb(new Error('Only JPEG and PNG images are allowed'), false);
-    }
-};
+// const fileFilter = (req, file, cb) => {
+//     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+//         cb(null, true);
+//     } else {
+//         cb(new Error('Only JPEG and PNG images are allowed'), false);
+//     }
+// };
 
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB
-    }
-});
-router.post("/add_private_events", upload.single('image'), async (req, res) => {
+// const upload = multer({
+//     storage: storage,
+//     fileFilter: fileFilter,
+//     limits: {
+//         fileSize: 20 * 1024 * 1024, // 20 MB
+//     }
+// });
+router.post("/add_private_events", UploadModel.EventImageUpload.single('image'), async (req, res) => {
     const token = req.headers["token"]
     jwt.verify(token,"eventAdmin",(error,decoded)=>{
         
