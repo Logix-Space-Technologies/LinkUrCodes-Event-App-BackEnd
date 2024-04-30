@@ -17,8 +17,10 @@ router.post('/addstudent', async (req, res) => {
         const dataArray = [data]; // Convert JSON object to an array with a single element
         const newdata = dataArray.map(item => ({
             student_name: item.student_name,
+            student_rollno: item.student_rollno,
             student_admno: item.student_admno,
             student_email: item.student_email,
+            student_phone_no: item.student_phone_no,
             student_password: item.student_admno.toString(),
             event_id: item.event_id,
             student_college_id: item.student_college_id

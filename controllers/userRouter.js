@@ -5,6 +5,7 @@ const validateModel=require("../models/validateModel")
 const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
 
+
 const { error } = require("console");
 
 const jwt=require("jsonwebtoken")
