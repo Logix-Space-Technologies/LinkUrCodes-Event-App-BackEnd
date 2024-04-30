@@ -162,33 +162,6 @@ router.post('/Viewcollegedetail', (req, res) => {
 });
 });
 
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, 'uploads/');
-//     },
-//     filename: function (req, file, cb) {
-//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-//         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-//     }
-// });
-
-// // File filter for MIME type checking
-// const fileFilter = (req, file, cb) => {
-//     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-//         cb(null, true);
-//     } else {
-//         cb(new Error('Invalid file type, only Excel (.xlsx) files are allowed!'), false);
-//     }
-// };
-
-// const upload = multer({
-//     storage: storage,
-//     fileFilter: fileFilter,
-//     limits: {
-//         fileSize: 20 * 1024 * 1024, // 20 MB
-//     }
-// });
-
 router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
