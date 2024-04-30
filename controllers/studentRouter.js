@@ -1,7 +1,6 @@
 const express = require("express")
 const studentModel = require("../models/studentModel")
 const mailerModel=require("../models/mailerModel")
-//const nodemailer=require("nodemailer")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
 const jwt=require("jsonwebtoken")
