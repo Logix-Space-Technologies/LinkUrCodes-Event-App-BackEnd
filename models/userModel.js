@@ -65,7 +65,27 @@ const userModel = {
     sortStudentsByevent: (payment_event_id, callback) => {
         const query = 'SELECT * FROM user JOIN payment_user ON user.user_id = payment_user.user_id WHERE payment_user.payment_event_id=?'; // Assuming you want to sort them by name, adjust as necessary
         pool.query(query, [payment_event_id], callback);
-    }
+    },
+    // userModel.js
+
+// Function to fetch user by user_id from the database
+getUserByEmail:(email, callback) => {
+    const query = "SELECT * FROM user WHERE user_email = ?";
+    pool.query(query, [email], (error, results) => {
+        if (error) {
+            return callback(error, null);
+        }
+        
+        // If user is found, return the user object
+        if (results.length > 0) {
+            return callback(null, results[0]);
+        } else {
+            // If user is not found, return null
+            return callback(null, null);
+        }
+    });
+}
+
 
 
 
