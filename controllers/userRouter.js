@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs")
 const { error } = require("console");
 
 const jwt=require("jsonwebtoken")
+const UploadModel = require("../models/uploadModel")
 
 
 hashPasswordgenerator = async (pass) => {
@@ -19,11 +20,12 @@ hashPasswordgenerator = async (pass) => {
 const router = express.Router()
 
 // Route for signing up a new user
-router.post('/signup', async (req, res) => {
+router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
+        
         const { isValid, message } = await validateModel.validateAndCheckEmail(email);
         if (!isValid) {
             return res.status(400).json({ message });
