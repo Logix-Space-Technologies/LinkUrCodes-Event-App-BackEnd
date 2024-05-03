@@ -98,6 +98,10 @@ insertCollege: (collegeData, callback) => {
         return callback(null, results[0]);
       });
     },
+    updateCollege: (college_id, updatedFields, callback) => {
+        const query = 'UPDATE college SET ? WHERE college_id = ?';
+        pool.query(query, [updatedFields, college_id], callback);
+    },
 updateCollegePassword: (college_id, newPassword, callback) => {
   const query = 'UPDATE college SET college_password = ? WHERE college_id = ?';
   pool.query(query, [newPassword, college_id], (error, result) => {
