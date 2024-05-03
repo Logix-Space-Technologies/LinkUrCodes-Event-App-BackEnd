@@ -10,6 +10,7 @@ const bcrypt = require("bcryptjs")
 const { error } = require("console");
 
 const jwt=require("jsonwebtoken")
+const UploadModel = require("../models/uploadModel")
 
 
 hashPasswordgenerator = async (pass) => {
@@ -19,12 +20,13 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-// Route for signing up a new user
-router.post('/signup',uploadModel.UserImageUpload.single('image'), async (req, res) => {
+
+router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
+        
         const { isValid, message } = await validateModel.validateAndCheckEmail(email);
         if (!isValid) {
             return res.status(400).json({ message });
@@ -215,5 +217,50 @@ router.post('/sortuserbyeventid', (req, res) => {
     }
     })
 });
+
+// Route to view logged-in user's profile
+router.post('/view-user-profile', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+
+        // Extract user_email from the decoded token
+        const user_email = decoded.email;
+
+        // Fetch user information from the database based on user_email
+        userModel.getUserByEmail(user_email, (error, user) => {
+            if (error) {
+                console.error('Error fetching user data:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
+
+            if (!user) {
+                // If user not found
+                return res.status(404).json({ status: "User Not Found" });
+            }
+
+            // Prepare response data
+            const responseData = {
+                name: user.user_name,
+                contact:user.user_contact_no,
+                image:user.user_image,
+                qualification:user.user_qualification,
+                skills:user.user_skills
+                
+                // Add more fields as needed
+            };
+
+            return res.json(responseData);
+        });
+    });
+});
+
+
+
 
 module.exports = router

@@ -112,7 +112,21 @@ updateCollegePassword: (college_id, newPassword, callback) => {
       console.log('Password updated successfully:', result);
       callback(null, result);
   });
-}
+},
+
+    findCollegeStudents: (college_id, callback) => {
+        console.log("mod clg", college_id)
+        const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.student_password, e.event_private_name FROM event_private e JOIN student s ON s.event_id=event_id WHERE s.student_college_id = 15 ORDER BY s.student_name ASC,e.event_private_name ASC;';
+
+        pool.query(query, [college_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
+    }
 
   
 
