@@ -224,6 +224,33 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
     }
 });
 
+router.put('/update_college',uploadModel.CollegeImageupload.single('image'), (req, res) => {
+    const { college_id, updatedFields } = req.body;
+
+    if (!college_id || !updatedFields) {
+        return res.status(400).json({ error: 'College ID and updated fields are required' });
+    }
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
+    collegeModel.updateCollege(college_id, updatedFields, (error, result) => {
+        if (error) {
+            console.error('Error updating event:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            console.log('College updated successfully');
+            res.status(200).json({ message: 'College updated successfully' });
+        }
+    });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
+});
+
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;

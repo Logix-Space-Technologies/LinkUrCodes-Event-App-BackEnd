@@ -3,6 +3,7 @@ const express = require("express")
 const userModel = require("../models/userModel")
 const validateModel=require("../models/validateModel")
 const mailerModel=require("../models/mailerModel")
+const uploadModel=require("../models/uploadModel")
 const bcrypt = require("bcryptjs")
 
 
@@ -19,7 +20,7 @@ hashPasswordgenerator = async (pass) => {
 
 const router = express.Router()
 
-// Route for signing up a new user
+
 router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, res) => {
     try {
         let { data } = { "data": req.body };
