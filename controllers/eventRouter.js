@@ -373,27 +373,6 @@ router.post('/retrive_public_event', async (req, res) => {
     }
 });
 
-router.post('/retrive_user_public_event', async (req, res) => {
-    try {
-        const { event_public_id } = req.body;
-        const token = req.headers["token"]
-        jwt.verify(token, "user-eventapp", (error, decoded) => {
-            if (decoded && decoded.email) {
-                publicEventModel.retrivePublicEvent(event_public_id, (error, result) => {
-                    if (error) {
-                        return res.status(500).json({ status: 'error', error: 'Error deleting event' });
-                    }
-                    res.json({ status: 'success' });
-                });
-            }
-            else {
-                return res.json({ "status": "unauthorised user" });
-            }
-        })
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
-    }
-});
+
 
 module.exports = router
