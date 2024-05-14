@@ -43,7 +43,7 @@ router.post('/view_public_events', (req, res) => {
     });
 })
 
-router.post('/user_view_public_events', (req, res) => {
+router.post('/view_user_public_events', (req, res) => {
     const token = req.headers["token"];
     jwt.verify(token, "user-eventapp", async (error, decoded) => {
         if (error) {
