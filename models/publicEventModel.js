@@ -45,6 +45,10 @@ const publicEventModel = {
             console.log('Query result:', result);
             callback(null, result);
         });
+    },
+    viewPublicEventsForUser: (callback) => {
+        const query = 'SELECT * FROM event_public';
+        pool.query(query, callback);
     }
 }
 
