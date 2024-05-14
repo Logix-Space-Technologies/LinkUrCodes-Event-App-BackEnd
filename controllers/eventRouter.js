@@ -43,6 +43,20 @@ router.post('/view_public_events', (req, res) => {
     });
 })
 
+router.post('/user_view_public_events', (req, res) => {
+    const token = req.headers["token"];
+    jwt.verify(token, "user-eventapp", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.email) {
+            publicEventModel.viewPublicEvents((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+})
 
 router.post("/add_private_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
     const token = req.headers["token"]
@@ -173,6 +187,30 @@ router.post('/search-public-events', (req, res) => {
     const token=req.headers["token"]
    jwt.verify(token,"eventAdmin",(error,decoded)=>{
     if (decoded && decoded.adminUsername) {
+    publicEventModel.searchPublicEvents(eventName, (err, results) => {
+        if (err) {
+            console.error('Error searching for events:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(results);
+    });
+    }
+    else{
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+})
+});
+
+router.post('/search-user_public-events', (req, res) => {
+    const eventName = req.body.event_public_name; // Assuming the event name is sent in the request body
+    if (!eventName) {
+        return res.status(400).json({ error: 'Event name is required' });
+    }
+    const token=req.headers["token"]
+   jwt.verify(token,"user-eventapp",(error,decoded)=>{
+    if (decoded && decoded.email) {
     publicEventModel.searchPublicEvents(eventName, (err, results) => {
         if (err) {
             console.error('Error searching for events:', err);
