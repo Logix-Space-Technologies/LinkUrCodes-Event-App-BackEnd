@@ -159,6 +159,29 @@ router.post('/viewstud1', async (req, res) => {
     }
 });
 
+router.post('/viewstudevent', async (req, res) => {
+    try {
+        const { student_id } = req.body;
+        const token = req.headers["token"];
+
+        // Verify the token
+        jwt.verify(token, "stud-eventapp", (error, decoded) => {
+            if (error) {
+                return res.status(401).json({ "error": "Unauthorized" });
+            }
+
+            studentModel.viewstudevent(student_id, (error, results) => {
+                if (error) {
+                    return res.status(500).json({ "error": "Internal Server Error" });
+                }
+                res.json(results);
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error": "Internal Server Error" });
+    }
+});
 // router.post('/viewstud1', async (req, res) => {
 //     try {
 //         const { student_id } = req.body;

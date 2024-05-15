@@ -31,6 +31,10 @@ const studentModel={
         const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.event_id, c.college_name, c.college_email, c.college_phone FROM student s JOIN college c ON s.student_college_id = c.college_id WHERE s.student_id = ?';
         pool.query(query, [student_id], callback)
     },
+    viewstudevent: (student_id, callback) => {
+        const query = 'SELECT ep.event_private_id,ep.event_private_name,ep.event_private_amount,ep.event_private_description,ep.event_private_date,ep.event_private_time FROM event_private AS ep INNER JOIN student AS s ON ep.event_private_id = s.event_id WHERE s.student_id = ?';
+        pool.query(query, [student_id], callback)
+    },
     loginStudent: (student_email, callback) => {
         // Your student table needs to have an 'email' and 'password' column
         const query = 'SELECT * FROM student WHERE student_email = ? LIMIT 1'; // Assuming your table is named 'student'
