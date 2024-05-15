@@ -26,7 +26,19 @@ router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, r
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
-        
+        const hashedPassword = await hashPasswordgenerator(password);
+        data.user_password = hashedPassword;
+        const imagePath = req.file.path;
+        const newData = {
+            user_name: data.user_name,
+            user_email: data.user_email,
+            user_password: data.user_password,
+            user_contact_no: data.user_contact_no,
+            user_image: imagePath,
+            user_qualification: data.user_qualification,
+            user_skills: data.user_skills
+        }
+    
         const { isValid, message } = await validateModel.validateAndCheckEmail(email);
         if (!isValid) {
             return res.status(400).json({ message });
@@ -34,11 +46,10 @@ router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, r
         if (!validateModel.validatePassword(password)) {
             return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
         }
-        const hashedPassword = await hashPasswordgenerator(password);
-        data.user_password = hashedPassword;
+        
 
         // Insert the user into the database
-        userModel.insertUser(data, async(error, results) => {
+        userModel.insertUser(newData, async(error, results) => {
             if (error) {
                 res.status(500).send('Error inserting user data: ' + error);
                 return;
@@ -247,6 +258,7 @@ router.post('/view-user-profile', (req, res) => {
             // Prepare response data
             const responseData = {
                 name: user.user_name,
+                email:user.user_email,
                 contact:user.user_contact_no,
                 image:user.user_image,
                 qualification:user.user_qualification,
