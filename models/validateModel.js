@@ -57,11 +57,11 @@ const validationModel = {
 
    
 
-    validatePhoneNumber: function (phoneNumber) {
-        // Basic regex for phone number validation - adjust as necessary for specific requirements
-        const phoneCheck = /^\+?[1-9]\d{1,14}$/; // E.164 format
-        return phoneCheck.test(phoneNumber);
-    },
+    // validatePhoneNumber: function (phoneNumber) {
+    //     // Basic regex for phone number validation - adjust as necessary for specific requirements
+    //     const phoneCheck = /^\+?[1-9]\d{1,14}$/; // E.164 format
+    //     return phoneCheck.test(phoneNumber);
+    // },
     validateName: function (name) {
         // Allows letters, spaces, apostrophes, and hyphens. Adjust as needed.
         const nameCheck = /^[A-Za-z\s'-]+$/;
