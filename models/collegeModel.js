@@ -127,10 +127,27 @@ findCollegeStudents: (student_college_id_obj, callback) => {
         console.log('Query result:', result);
         callback(null, result);
     });
-}
+},
 
-  
+   insertStudent: (studentData, callback) => {
+        try {
+            const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id, student_college_id } = studentData;
+            const student_password = bcrypt.hashSync(student_admno.toString(), 10);
 
+            const query = `INSERT INTO student (student_name, student_rollno, student_admno, student_email, student_phone_no, student_password, event_id, student_college_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            pool.query(query, [student_name, student_rollno, student_admno, student_email, student_phone_no, student_password, event_id, student_college_id], (error, result) => {
+                if (error) {
+                    console.error('Error inserting student data:', error);
+                    return callback(error, null);
+                }
+                console.log('Inserted student data:', result);
+                return callback(null, result);
+            });
+        } catch (error) {
+            console.error('Error processing request:', error);
+            return callback(error, null);
+        }
+    }
 };
 
 module.exports = collegeModel;
