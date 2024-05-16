@@ -13,7 +13,7 @@ const privateEventModel = {
         pool.query(query, eventData, callback);
     },
     viewPrivateEvents: (callback) => {
-        const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id ORDER BY e.event_private_id;';
+        const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby,e.event_added_date,e.event_updated_date, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id ORDER BY e.event_private_id;';
         pool.query(query, callback);
     },
     updatePrivateEvents: (event_private_id, updatedFields, callback) => {
@@ -48,13 +48,26 @@ const privateEventModel = {
     },
     viewActiveEvents: (callback) => {
         const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id where e.delete_status=0 and e.cancel_status=0 ORDER BY e.event_private_id;';
-       pool.query(query, callback);
+        pool.query(query, callback);
     },
     viewDeletedEvents: (callback) => {
         const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id where e.delete_status=1 and e.cancel_status=1 ORDER BY e.event_private_id;';
-       pool.query(query, callback);
+        pool.query(query, callback);
+    },
+    viewEventSByCollege: (event_clgid, callback) => {
+        const event_private_clgid =event_clgid.event_private_clgid
+        const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby,e.event_added_date,e.event_updated_date, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id WHERE event_private_clgid  = ?';
+        console.log("test", query)
+        pool.query(query, [event_private_clgid], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
     }
-   
+
 }
 
 module.exports = privateEventModel;
