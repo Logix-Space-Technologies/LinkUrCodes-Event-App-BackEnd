@@ -117,7 +117,7 @@ updateCollegePassword: (college_id, newPassword, callback) => {
 findCollegeStudents: (student_college_id_obj, callback) => {
     console.log("clg", student_college_id_obj)
     const student_college_id=student_college_id_obj.student_college_id
-    const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.student_password, e.event_private_name FROM event_private e JOIN student s ON s.event_id=event_id WHERE s.student_college_id = ? ORDER BY s.student_name ASC,e.event_private_name ASC;';
+    const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.student_password, e.event_private_name FROM event_private e JOIN student s ON s.event_id=e.event_private_id WHERE s.student_college_id = ? ORDER BY s.student_name ASC,e.event_private_name ASC;';
     console.log(query)
     pool.query(query, [student_college_id], (error, result) => {
         if (error) {
