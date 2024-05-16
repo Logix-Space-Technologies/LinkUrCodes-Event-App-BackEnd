@@ -11,6 +11,7 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const path = require('path');
 const uploadModel = require("../models/uploadModel")
+const privateEventModel = require("../models/privateEventModel")
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
