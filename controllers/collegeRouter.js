@@ -351,5 +351,24 @@ router.post('/collegeStudentDetails', async(req, res) => {
         } 
     });
 });
+router.post('/collegeEvents', async(req, res) => {
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.college_email) {
+            const event_private_clgid=req.body
+                const college = await privateEventModel.viewEventSByCollege(event_private_clgid, (error, results) => {
+                    if (error) {
+                        return res.json({ "status": "error" });
+                    } else {
+                        res.json(results)
+                    }
+                });
+        } 
+    });
+});
 
 module.exports = router;
