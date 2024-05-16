@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken")
 const path = require('path');
 const uploadModel = require("../models/uploadModel")
 const privateEventModel = require("../models/privateEventModel")
+const { sendEmail } = require('../models/mailerModel');
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -174,13 +175,69 @@ router.post('/Viewcollegedetail', (req, res) => {
     });
 });
 
-router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-    }
-
+router.post('/student/add', async (req, res) => {
     try {
+        const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id, student_college_id } = req.body;
         const collegetoken = req.headers["collegetoken"];
+        jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+            if (error) {
+                console.error('Error verifying college token:', error);
+                res.status(401).json({ error: 'Unauthorized: Invalid token.' });
+                return;
+            }
+            if (decoded && decoded.college_email) {
+                // Call insertStudent function from collegeModel
+                collegeModel.insertStudent({
+                    student_name,
+                    student_rollno,
+                    student_admno,
+                    student_email,
+                    student_phone_no,
+                    event_id,
+                    student_college_id
+                }, async (error, results) => {
+                    if (error) {
+                        console.error('Error inserting student data:', error);
+                        res.status(500).json({ error: 'Failed to insert student data into database.' });
+                        return;
+                    }
+                    console.log('Inserted student data:', results);
+                    const emailSubject = 'Registration Successful';
+                    const emailText = `Dear ${student_name},\n\nYou have successfully registered.\nUsername: ${student_email}\nPassword: ${student_admno}\n\nNote: You can reset your password at any time.`;
+                    try {
+                        await sendEmail(student_email, emailSubject, emailText);
+                        console.log('Email sent successfully.');
+                    } catch (emailError) {
+                        console.error('Error sending email:', emailError);
+                    }
+
+                    res.status(200).json({ status: 'Success', message: 'Student data inserted successfully.' });
+                });
+            } else {
+                console.error('Invalid college token or missing college email.');
+                res.status(401).json({ error: 'Unauthorized: Invalid token or missing college email.' });
+            }
+        });
+    } catch (error) {
+        console.error('Error processing request:', error);
+        res.status(500).json({ error: 'An error occurred while processing the request.' });
+    }
+});
+
+
+
+
+router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
+    try {
+        // Log the received file name
+        console.log('Received file:', req.file.originalname);
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const collegetoken = req.headers["collegetoken"];
+        console.log('Received token:',collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (decoded && decoded.college_email) {
                 const workbook = xlsx.readFile(req.file.path);
@@ -202,16 +259,18 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                 }));
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
+                    // Log the successful insertion
+                    console.log('Successfully inserted students:', response.data);
                     // Process the response from the other API
-                    res.json({ status: 'Success', message: 'Students inserted', data: response.data });
+                    res.status(200).json({ status: 'Success', message: 'Students inserted', data: response.data });
                 } catch (apiError) {
                     // Handle errors from the external API request
                     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-                    res.status(500).json({ error: 'Failed to insert students via the API.' });
+                    res.status(400).json({ error: 'Failed to insert students via the API.' });
                 }
             }
             else {
-                return res.json({ "status": "unauthorised user" });
+                return res.status(401).json({ "status": "Unauthorized user" });
             }
         })
     } catch (error) {
