@@ -229,13 +229,10 @@ router.post('/student/add', async (req, res) => {
 
 router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
     try {
-        // Log the received file name
         console.log('Received file:', req.file.originalname);
-
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-
         const collegetoken = req.headers["collegetoken"];
         console.log('Received token:',collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
@@ -244,27 +241,25 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const data = xlsx.utils.sheet_to_json(worksheet);
-
-                // Construct data for insertion
+                const collegeId = req.body.college_id;
                 const newStudentData = data.map(student => ({
                     student_name: student.student_name,
                     student_rollno: student.student_rollno,
                     student_admno: student.student_admno,
                     student_email: student.student_email,
                     student_phone_no: student.student_phone_no,
-                    // Consider using a secure, hashed password instead of student_admno
                     student_password: student.student_admno.toString(),
                     event_id: student.event_id,
-                    student_college_id: student.student_college_id
+                    student_college_id: student.student_college_id,
+                    student_password: student.student_admno.toString(),
+                    event_id: student.event_id,
+                    student_college_id:collegeId
                 }));
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
-                    // Log the successful insertion
                     console.log('Successfully inserted students:', response.data);
-                    // Process the response from the other API
                     res.status(200).json({ status: 'Success', message: 'Students inserted', data: response.data });
                 } catch (apiError) {
-                    // Handle errors from the external API request
                     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
                     res.status(400).json({ error: 'Failed to insert students via the API.' });
                 }
@@ -277,12 +272,14 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
         console.error('Processing Error:', error.message);
         res.status(500).json({ error: 'An error occurred while processing the file.' });
     } finally {
-        // Clean up: delete the uploaded file after processing
         fs.unlink(req.file.path, (unlinkError) => {
             if (unlinkError) console.error('Error deleting file:', unlinkError);
         });
     }
 });
+
+
+
 
 router.put('/update_college',uploadModel.CollegeImageupload.single('image'), (req, res) => {
     const { college_id, updatedFields } = req.body;
