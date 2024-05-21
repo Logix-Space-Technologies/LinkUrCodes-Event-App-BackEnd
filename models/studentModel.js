@@ -32,7 +32,7 @@ const studentModel={
         pool.query(query, [student_id], callback)
     },
     viewstudevent: (student_id, callback) => {
-        const query = 'SELECT ep.event_private_id,ep.event_private_name,ep.event_private_amount,ep.event_private_description,ep.event_private_date,ep.event_private_time FROM event_private AS ep INNER JOIN student AS s ON ep.event_private_id = s.event_id WHERE s.student_id = ?';
+        const query = 'SELECT ep.* FROM event_private AS ep INNER JOIN student AS s ON ep.event_private_id = s.event_id WHERE s.student_id = ?';
         pool.query(query, [student_id], callback)
     },
     loginStudent: (student_email, callback) => {
