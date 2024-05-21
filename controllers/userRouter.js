@@ -121,7 +121,7 @@ router.post('/loginuser', (req, res) => {
 router.post('/searchusers', (req, res) => {
     const searchTerm = req.body.term;
     const token=req.headers["token"]
-    jwt.verify(token, "eventapp", (error, decoded) => {
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
             console.error('Error verifying token:', error);
             return res.status(401).json({ status: "Unauthorized" });

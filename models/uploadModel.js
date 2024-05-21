@@ -80,11 +80,12 @@ const PDFfileFilter = (req, file, cb) => {
 }
 
 const XLSXFilter = (req, file, cb) => {
-    // Check if the file is an XLSX file
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+    if (
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.originalname.endsWith('.xlsx')
+    ) {
         cb(null, true); // Accept the file
     } else {
-        // Reject the file
         cb(new Error('Only XLSX files are allowed'), false);
     }
 }

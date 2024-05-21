@@ -38,20 +38,12 @@ const userModel = {
         const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
         const searchTermPattern = `%${searchTerm}%`;
         pool.query(query, [searchTermPattern, searchTermPattern], callback);
-    }
-    ,
-
-
-    searchUser: (email, callback) => {
-        const query = 'SELECT * FROM user WHERE user_email = ?';
-        pool.query(query, [email], callback)
     },
 
-
-    // viewUsers: (callback) => {
-    //     const query = 'SELECT * FROM user';
-    //     pool.query(query, callback)
-    // },
+    viewUsersFull: (callback) => {
+        const query = 'SELECT * FROM user';
+        pool.query(query, callback)
+    },
     viewUsers:(callback)=>{
         const query='SELECT * FROM user WHERE user_delete_status=0';
         pool.query(query,callback)
@@ -69,7 +61,7 @@ const userModel = {
     // userModel.js
 
 // Function to fetch user by user_id from the database
-getUserByEmail:(email, callback) => {
+    getUserByEmail:(email, callback) => {
     const query = "SELECT * FROM user WHERE user_email = ?";
     pool.query(query, [email], (error, results) => {
         if (error) {
@@ -85,8 +77,6 @@ getUserByEmail:(email, callback) => {
         }
     });
 }
-
-
 
 
 }
