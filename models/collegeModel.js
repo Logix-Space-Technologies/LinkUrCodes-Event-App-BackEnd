@@ -114,22 +114,40 @@ updateCollegePassword: (college_id, newPassword, callback) => {
   });
 },
 
-    findCollegeStudents: (college_id, callback) => {
-        console.log("mod clg", college_id)
-        const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.student_password, e.event_private_name FROM event_private e JOIN student s ON s.event_id=event_id WHERE s.student_college_id = 15 ORDER BY s.student_name ASC,e.event_private_name ASC;';
+findCollegeStudents: (student_college_id_obj, callback) => {
+    console.log("clg", student_college_id_obj)
+    const student_college_id=student_college_id_obj.student_college_id
+    const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.student_password, e.event_private_name FROM event_private e JOIN student s ON s.event_id=e.event_private_id WHERE s.student_college_id = ? ORDER BY e.event_private_name ASC,s.student_name ASC';
+    console.log(query)
+    pool.query(query, [student_college_id], (error, result) => {
+        if (error) {
+            console.error('Error executing query:', error);
+            return callback(error);
+        }
+        console.log('Query result:', result);
+        callback(null, result);
+    });
+},
 
-        pool.query(query, [college_id], (error, result) => {
-            if (error) {
-                console.error('Error executing query:', error);
-                return callback(error);
-            }
-            console.log('Query result:', result);
-            callback(null, result);
-        });
+   insertStudent: (studentData, callback) => {
+        try {
+            const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id, student_college_id } = studentData;
+            const student_password = bcrypt.hashSync(student_admno.toString(), 10);
+
+            const query = `INSERT INTO student (student_name, student_rollno, student_admno, student_email, student_phone_no, student_password, event_id, student_college_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            pool.query(query, [student_name, student_rollno, student_admno, student_email, student_phone_no, student_password, event_id, student_college_id], (error, result) => {
+                if (error) {
+                    console.error('Error inserting student data:', error);
+                    return callback(error, null);
+                }
+                console.log('Inserted student data:', result);
+                return callback(null, result);
+            });
+        } catch (error) {
+            console.error('Error processing request:', error);
+            return callback(error, null);
+        }
     }
-
-  
-
 };
 
 module.exports = collegeModel;
