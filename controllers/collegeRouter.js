@@ -103,10 +103,10 @@ router.post('/searchCollege', (req, res) => {
                     return;
                 }
                 if (results.length > 0) {
-                    res.status(200).json(results[0]);
+                    res.status(200).json(results);
                 } else {
-                    res.status(404).send('College not found');
-                }
+                    res.status(404).send('No College found');
+                } 
             });
         }
         else {

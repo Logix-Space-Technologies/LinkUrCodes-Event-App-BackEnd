@@ -118,39 +118,32 @@ router.post('/loginuser', (req, res) => {
     });
 });
 //route to view a user
+
 router.post('/searchusers', (req, res) => {
-    const searchTerm = req.body.term;
-    const token=req.headers["token"]
+    var term = req.body.term; // 
+    const token = req.headers["token"]
     jwt.verify(token, "eventAdmin", (error, decoded) => {
-        if (error) {
-            console.error('Error verifying token:', error);
-            return res.status(401).json({ status: "Unauthorized" });
+        if (decoded && decoded.adminUsername) {
+            userModel.findUserByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving user data');
+                    return;
+                }
+                if (results.length > 0) {
+                    res.status(200).json(results);
+                } else {
+                    res.status(404).send('No users found');
+                }                
+            });
         }
-        
-        userModel.searchUser(searchTerm, (error, results) => {
-            if (error) {
-                console.error('Error fetching user data:', error);
-                return res.status(500).json({ status: "Internal Server Error" });
-            }
-
-            if (results.length === 0) {
-                // If no users found with the provided search term
-                return res.status(404).json({ status: "Users Not Found" });
-            }
-
-            // Prepare response data
-            const responseData = results.map(userData => ({
-                name: userData.user_name,
-                email: userData.user_email
-            }));
-
-            console.log(responseData);
-
-            return res.json(responseData);
-        });
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
     });
-   
 });
+
 
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
