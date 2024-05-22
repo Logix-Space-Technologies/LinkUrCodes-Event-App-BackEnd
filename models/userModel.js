@@ -33,11 +33,10 @@ const userModel = {
     ,
 
 
-
-    searchUser: (searchTerm, callback) => {
-        const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
-        const searchTermPattern = `%${searchTerm}%`;
-        pool.query(query, [searchTermPattern, searchTermPattern], callback);
+    findUserByName: (term, callback) => {
+        const query = 'SELECT * FROM user WHERE user_name LIKE ?';
+        const searchTermPattern = `%${term}%`;
+        pool.query(query, [searchTermPattern], callback);
     },
 
     viewUsersFull: (callback) => {
