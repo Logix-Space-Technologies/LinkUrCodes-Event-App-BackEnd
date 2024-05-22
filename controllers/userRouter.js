@@ -118,8 +118,9 @@ router.post('/loginuser', (req, res) => {
     });
 });
 //route to view a user
+
 router.post('/searchusers', (req, res) => {
-    var term = req.body.term; // 
+    var term = req.body.term; 
     const token = req.headers["token"]
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (decoded && decoded.adminUsername) {
@@ -131,8 +132,8 @@ router.post('/searchusers', (req, res) => {
                 if (results.length > 0) {
                     res.status(200).json(results);
                 } else {
-                    res.status(404).send('No users found');
-                }
+                    res.status(404).json({status:'No users found'});
+                }                
             });
         }
         else {
@@ -141,29 +142,6 @@ router.post('/searchusers', (req, res) => {
             })
         }
     });
-});
-router.post('/searchuser', (req, res) => {
-    const searchTerm = req.body.term;
-    const token = req.headers["token"]
-    jwt.verify(token, "eventAdmin", (error, decoded) => {
-        if (error) {
-            console.error('Error verifying token:', error);
-            return res.status(401).json({ status: "Unauthorized" });
-        }
-        userModel.searchUser(searchTerm, (error, results) => {
-            if (error) {
-                console.error('Error fetching user data:', error);
-                return res.status(500).json({ status: "Internal Server Error" });
-            }
-
-            if (results.length === 0) {
-                // If no users found with the provided search term
-                return res.status(404).json({ status: "Users Not Found" });
-            }
-            return res.json(results);
-        });
-    });
-
 });
 
 router.post('/viewusers', (req, res) => {

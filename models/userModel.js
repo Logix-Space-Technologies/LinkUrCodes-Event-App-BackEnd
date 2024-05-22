@@ -29,17 +29,12 @@ const userModel = {
             // Return the first user found (there should only be one due to the 'LIMIT 1' in the query)
             return callback(null, results[0]);
         });
-    }
-    ,
-    searchUser: (searchTerm, callback) => {
-        if (!searchTerm) {
+    },
+
+    findUserByName: (term, callback) => {
+        if (!term) {
             return callback(null, []); // Return an empty array if the search term is empty
         }
-        const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ? ORDER BY user_name ASC,user_email ASC';
-        const searchTermPattern = `%${searchTerm}%`;
-        pool.query(query, [searchTermPattern, searchTermPattern], callback);
-    },
-    findUserByName: (term, callback) => {
         const query = 'SELECT * FROM user WHERE user_name LIKE ?';
         const searchTermPattern = `%${term}%`;
         pool.query(query, [searchTermPattern], callback);
