@@ -446,6 +446,21 @@ router.post('/view_active_public_events', (req, res) => {
     });
 })
 
+router.post('/view_deleted_public_events', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            publicEventModel.viewDeletedPublicEvents((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+})
+
 
 
 module.exports = router
