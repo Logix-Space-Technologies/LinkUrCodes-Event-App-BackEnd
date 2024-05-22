@@ -144,24 +144,25 @@ router.post('/searchusers', (req, res) => {
     });
 });
 
-router.post('/viewusers', (req, res) => {
-    const token = req.headers["token"]
-    jwt.verify(token, "eventAdmin", (error, decoded) => {
-        if (decoded && decoded.adminUsername) {
-            userModel.viewUsers((error, results) => {
-                if (error) {
-                    res.status(500).send('Error fetching users:' + error)
-                    return
-                }
-                res.status(200).json(results);
 
-            })
-        } else {
-            res.json({
-                "status": "Unauthorized user"
-            })
-        }
-    })
+router.post('/viewusers',(req,res)=>{
+    const token=req.headers["token"]
+   jwt.verify(token,"eventAdmin",(error,decoded)=>{
+    if (decoded && decoded.adminUsername) {
+        userModel.viewUsers((error,results)=>{
+            if(error){
+              res.status(500).send('Error fetching users:'+error)
+              return
+            }
+            res.status(200).json(results);
+      
+          })
+    } else {
+        res.json({
+            "status":"Unauthorized user"
+        })
+    }
+   })
 })
 
 router.post('/delete-users', (req, res) => {

@@ -29,6 +29,7 @@ const userModel = {
             // Return the first user found (there should only be one due to the 'LIMIT 1' in the query)
             return callback(null, results[0]);
         });
+
     },
 
     findUserByName: (term, callback) => {
