@@ -21,7 +21,7 @@ const privateEventModel = {
         pool.query(query, [updatedFields, event_private_id], callback);
     },
     searchPrivateEvents: (searchTerm, callback) => {
-        const query = 'SELECT * FROM event_private WHERE event_private_name LIKE ?';
+        const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time, e.event_private_image, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby,e.event_added_date,e.event_updated_date, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id where e.event_private_name LIKE ? ORDER BY e.event_private_name ASC';
         pool.query(query, [`%${searchTerm}%`], callback);
     },
     deletePrivateEvent: (event_ptivate_id, callback) => {
