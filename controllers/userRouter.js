@@ -126,7 +126,6 @@ router.post('/searchusers', (req, res) => {
             console.error('Error verifying token:', error);
             return res.status(401).json({ status: "Unauthorized" });
         }
-        
         userModel.searchUser(searchTerm, (error, results) => {
             if (error) {
                 console.error('Error fetching user data:', error);
@@ -137,16 +136,8 @@ router.post('/searchusers', (req, res) => {
                 // If no users found with the provided search term
                 return res.status(404).json({ status: "Users Not Found" });
             }
-
-            // Prepare response data
-            const responseData = results.map(userData => ({
-                name: userData.user_name,
-                email: userData.user_email
-            }));
-
-            console.log(responseData);
-
-            return res.json(responseData);
+console.log(results)
+            return res.json(results);
         });
     });
    
@@ -184,14 +175,14 @@ router.post('/delete-users', (req, res) => {
     userModel.deleteUsers(user_id, (error, result) => {
         if (error) {
             console.error('Error deleting user:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
+            res.status(500).json({ status:"success",error: 'Internal Server Error' });
         } else {
             if (result.affectedRows > 0) {
                 console.log('User deleted successfully');
-                res.status(200).json({ message: 'User deleted successfully' });
+                res.status(200).json({status:"success", message: 'User deleted successfully' });
             } else {
                 console.log('User not found');
-                res.status(404).json({ error: 'User not found' });
+                res.status(404).json({status:"error", error: 'User not found' });
             }
         }
     });

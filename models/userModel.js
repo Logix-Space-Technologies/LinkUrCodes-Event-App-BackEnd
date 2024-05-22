@@ -35,7 +35,10 @@ const userModel = {
 
 
     searchUser: (searchTerm, callback) => {
-        const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
+        if (!searchTerm) {
+            return callback(null, []); // Return an empty array if the search term is empty
+        }
+        const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ? ORDER BY user_name ASC,user_email ASC';
         const searchTermPattern = `%${searchTerm}%`;
         pool.query(query, [searchTermPattern, searchTermPattern], callback);
     },

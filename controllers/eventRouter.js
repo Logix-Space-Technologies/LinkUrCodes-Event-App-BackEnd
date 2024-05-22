@@ -71,7 +71,7 @@ router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), 
                 event_addedby: data.event_addedby,
                 event_updatedby: data.event_addedby
             };
-
+console.log(newData)
             publicEventModel.insertPublicEvents(newData, (error, results) => {
                 if (error) {
                     return res.status(500).json({ message: error.message });
@@ -248,7 +248,7 @@ router.post('/search-public-events', (req, res) => {
     publicEventModel.searchPublicEvents(eventName, (err, results) => {
         if (err) {
             console.error('Error searching for events:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({status:"error", error: 'Internal server error' });
         }
         res.json(results);
     });
@@ -430,6 +430,21 @@ router.post('/retrive_public_event', async (req, res) => {
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
+
+router.post('/view_active_public_events', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            publicEventModel.viewActivePublicEvents((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+})
 
 
 
