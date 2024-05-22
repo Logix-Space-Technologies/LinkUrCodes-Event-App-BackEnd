@@ -42,7 +42,6 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
                         return;
                     }
 
-                    //res.status(201).send('College added with ID: ' + results.insertId);
                     res.json({status:"success"});
                 });
             }
