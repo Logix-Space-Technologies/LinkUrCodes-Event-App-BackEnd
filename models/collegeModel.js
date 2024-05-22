@@ -56,7 +56,7 @@ insertCollege: (collegeData, callback) => {
     },
 
     findCollege:(callback)=>{
-        const query='SELECT * FROM college';
+        const query='SELECT * FROM college WHERE delete_status=0';
         pool.query(query,callback)
     },
     deleteCollegeById: (college_id, callback) => {
