@@ -119,6 +119,30 @@ router.post('/loginuser', (req, res) => {
 });
 //route to view a user
 router.post('/searchusers', (req, res) => {
+    var term = req.body.term; // 
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.findUserByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving user data');
+                    return;
+                }
+                if (results.length > 0) {
+                    res.status(200).json(results);
+                } else {
+                    res.status(404).send('No users found');
+                }                
+            });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    });
+});
+router.post('/searchuser', (req, res) => {
     const searchTerm = req.body.term;
     const token=req.headers["token"]
     jwt.verify(token, "eventAdmin", (error, decoded) => {
