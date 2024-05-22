@@ -31,9 +31,6 @@ const userModel = {
         });
     }
     ,
-
-
-
     searchUser: (searchTerm, callback) => {
         if (!searchTerm) {
             return callback(null, []); // Return an empty array if the search term is empty
@@ -41,6 +38,11 @@ const userModel = {
         const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ? ORDER BY user_name ASC,user_email ASC';
         const searchTermPattern = `%${searchTerm}%`;
         pool.query(query, [searchTermPattern, searchTermPattern], callback);
+    },
+    findUserByName: (term, callback) => {
+        const query = 'SELECT * FROM user WHERE user_name LIKE ?';
+        const searchTermPattern = `%${term}%`;
+        pool.query(query, [searchTermPattern], callback);
     },
 
     viewUsersFull: (callback) => {
