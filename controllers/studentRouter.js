@@ -121,7 +121,7 @@ router.post('/addstudentuploaded', async (req, res) => {
 });
 
 router.post('/viewstudent', async (req, res) => {
-    const token=req.headers["token"]
+   const token=req.headers["token"]
    jwt.verify(token,"eventAdmin",(error,decoded)=>{
     if (decoded && decoded.adminUsername) {
         studentModel.viewStudent((error, results) => {
@@ -135,6 +135,82 @@ router.post('/viewstudent', async (req, res) => {
     }
     })
 })
+
+router.post('/viewstud1', async (req, res) => {
+    try {
+        const { student_id } = req.body;
+        const token = req.headers["token"];
+
+        // Verify the token
+        jwt.verify(token, "stud-eventapp", (error, decoded) => {
+            if (error) {
+                return res.status(401).json({ "error": "Unauthorized" });
+            }
+
+            studentModel.viewstud1(student_id, (error, results) => {
+                if (error) {
+                    return res.status(500).json({ "error": "Internal Server Error" });
+                }
+                res.json(results);
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error": "Internal Server Error" });
+    }
+});
+
+router.post('/viewstudevent', async (req, res) => {
+    try {
+        const { student_id } = req.body;
+        const token = req.headers["token"];
+
+        // Verify the token
+        jwt.verify(token, "stud-eventapp", (error, decoded) => {
+            if (error) {
+                return res.status(401).json({ "error": "Unauthorized" });
+            }
+
+            studentModel.viewstudevent(student_id, (error, results) => {
+                if (error) {
+                    return res.status(500).json({ "error": "Internal Server Error" });
+                }
+                res.json(results);
+            });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error": "Internal Server Error" });
+    }
+});
+// router.post('/viewstud1', async (req, res) => {
+//     try {
+//         const { student_id } = req.body;
+//          // Extracting student_id from req.body using object destructuring
+        
+//         // Assuming studentModel is properly defined and has viewstud1 method
+//         const token=req.headers["token"]
+//    jwt.verify(token,"stud-eventapp",(error,decoded)=>{
+//     if (decoded && decoded.student_email) {
+//         studentModel.viewstud1(student_id, (error, results) => {
+//             if (error) {
+//                 return res.status(500).json({ "error": "Internal Server Error" });
+//             }
+//             res.json(results);
+//         });
+//     }
+//     else{
+//         res.json({
+//             "status":"Unauthorized user"
+//         })
+//     }
+//     })
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ "error": "Internal Server Error" });
+//     }
+// });
+
 
 router.post('/loginstudent', (req, res) => {
     const { student_email, student_password } = req.body;
