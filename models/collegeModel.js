@@ -56,7 +56,7 @@ insertCollege: (collegeData, callback) => {
     },
 
     findCollege:(callback)=>{
-        const query='SELECT * FROM college';
+        const query='SELECT * FROM college WHERE delete_status=0';
         pool.query(query,callback)
     },
     deleteCollegeById: (college_id, callback) => {
@@ -129,6 +129,20 @@ findCollegeStudents: (student_college_id_obj, callback) => {
     });
 },
 
+
+findEventsByCollegeId: (collegeId, callback) => {
+    const query = `
+        SELECT event_private_id,event_private_name, event_private_amount, event_private_description,event_private_date, event_private_time, event_private_image 
+        FROM event_private WHERE event_private_clgid = ?;`;
+    pool.query(query, [collegeId], callback);
+},
+
+findEventsByEventId: (eventId, callback) => {
+    const query = `
+    SELECT student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
+    pool.query(query, [eventId], callback);
+},
+  
    insertStudent: (studentData, callback) => {
         try {
             const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id, student_college_id } = studentData;

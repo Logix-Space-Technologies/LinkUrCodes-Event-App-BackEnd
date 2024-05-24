@@ -29,11 +29,13 @@ const userModel = {
             // Return the first user found (there should only be one due to the 'LIMIT 1' in the query)
             return callback(null, results[0]);
         });
-    }
-    ,
 
+    },
 
     findUserByName: (term, callback) => {
+        if (!term) {
+            return callback(null, []); // Return an empty array if the search term is empty
+        }
         const query = 'SELECT * FROM user WHERE user_name LIKE ?';
         const searchTermPattern = `%${term}%`;
         pool.query(query, [searchTermPattern], callback);

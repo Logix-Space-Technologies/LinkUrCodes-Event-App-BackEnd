@@ -42,7 +42,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
                         return;
                     }
 
-                    res.status(201).send('College added with ID: ' + results.insertId);
+                    res.json({status:"success"});
                 });
             }
             else {
@@ -425,6 +425,45 @@ router.post('/collegeEvents', async(req, res) => {
                     }
                 });
         } 
+    });
+});
+
+router.post('/viewEvents', (req, res) => {
+    const collegeId = req.body.college_id;
+    const collegeToken = req.headers["collegetoken"];
+    if (!collegeId || !collegeToken) {
+        return res.status(400).send('College ID and college token are required.');
+    }
+    jwt.verify(collegeToken, "collegelogin", (error, decoded) => {
+        if (error) {
+            return res.status(401).send('Unauthorized user');
+        }
+        collegeModel.findEventsByCollegeId(collegeId, (error, results) => {
+            if (error) {
+                return res.status(500).send('Error fetching event details: ' + error);
+            }
+            res.status(200).json(results);
+        });
+    });
+});
+
+
+router.post('/viewStudents', (req, res) => {
+    const eventId = req.body.event_id;
+    const collegeToken = req.headers["collegetoken"];
+    if (!eventId || !collegeToken) {
+        return res.status(400).send('Event ID and college token are required.');
+    }
+    jwt.verify(collegeToken, "collegelogin", (error, decoded) => {
+        if (error) {
+            return res.status(401).send('Unauthorized user');
+        }
+        collegeModel.findEventsByEventId(eventId, (error, results) => {
+            if (error) {
+                return res.status(500).send('Error fetching event details: ' + error);
+            }
+            res.status(200).json(results);
+        });
     });
 });
 
