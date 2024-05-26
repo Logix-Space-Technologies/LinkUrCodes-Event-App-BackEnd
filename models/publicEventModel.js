@@ -13,7 +13,7 @@ const publicEventModel = {
         pool.query(query, eventData, callback);
     },
     viewPublicEvents: (callback) => {
-        const query = 'SELECT * FROM event_public';
+        const query = 'SELECT * FROM event_public WHERE delete_status=0';
         pool.query(query, callback);
     },
     updatePublicEvents: (event_public_id, updatedFields, callback) => {
