@@ -42,7 +42,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
                         return;
                     }
 
-                    res.json({status:"success"});
+                    res.json({ status: "success" });
                 });
             }
             else {
@@ -106,7 +106,7 @@ router.post('/searchCollege', (req, res) => {
                     res.status(200).json(results);
                 } else {
                     res.status(404).send('No College found');
-                } 
+                }
             });
         }
         else {
@@ -234,7 +234,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
             return res.status(400).json({ error: 'No file uploaded' });
         }
         const collegetoken = req.headers["collegetoken"];
-        console.log('Received token:',collegetoken);
+        console.log('Received token:', collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (decoded && decoded.college_email) {
                 const workbook = xlsx.readFile(req.file.path);
@@ -242,6 +242,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                 const worksheet = workbook.Sheets[sheetName];
                 const data = xlsx.utils.sheet_to_json(worksheet);
                 const collegeId = req.body.college_id;
+                const eventId = req.body.event_id
                 const newStudentData = data.map(student => ({
                     student_name: student.student_name,
                     student_rollno: student.student_rollno,
@@ -249,11 +250,8 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                     student_email: student.student_email,
                     student_phone_no: student.student_phone_no,
                     student_password: student.student_admno.toString(),
-                    event_id: student.event_id,
-                    student_college_id: student.student_college_id,
-                    student_password: student.student_admno.toString(),
-                    event_id: student.event_id,
-                    student_college_id:collegeId
+                    event_id: eventId,
+                    student_college_id: collegeId
                 }));
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
@@ -281,31 +279,31 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
 
 
 
-router.put('/update_college',uploadModel.CollegeImageupload.single('image'), (req, res) => {
+router.put('/update_college', uploadModel.CollegeImageupload.single('image'), (req, res) => {
     const { college_id, updatedFields } = req.body;
 
     if (!college_id || !updatedFields) {
         return res.status(400).json({ error: 'College ID and updated fields are required' });
     }
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    collegeModel.updateCollege(college_id, updatedFields, (error, result) => {
-        if (error) {
-            console.error('Error updating event:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('College updated successfully');
-            res.status(200).json({ message: 'College updated successfully' });
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            collegeModel.updateCollege(college_id, updatedFields, (error, result) => {
+                if (error) {
+                    console.error('Error updating event:', error);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                } else {
+                    console.log('College updated successfully');
+                    res.status(200).json({ message: 'College updated successfully' });
+                }
+            });
         }
-    });
-    }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        })
-    }
-})
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
 });
 
 router.post('/deleteCollege', async (req, res) => {
@@ -389,7 +387,7 @@ function generateNewDefaultPassword() {
     return password;
 }
 
-router.post('/collegeStudentDetails', async(req, res) => {
+router.post('/collegeStudentDetails', async (req, res) => {
     const collegetoken = req.headers["collegetoken"];
     jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
         if (error) {
@@ -397,18 +395,18 @@ router.post('/collegeStudentDetails', async(req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.college_email) {
-            const data=req.body
-                const college = await collegeModel.findCollegeStudents(data, (error, results) => {
-                    if (error) {
-                        return res.json({ "status": "error" });
-                    } else {
-                        res.json(results)
-                    }
-                });
-        } 
+            const data = req.body
+            const college = await collegeModel.findCollegeStudents(data, (error, results) => {
+                if (error) {
+                    return res.json({ "status": "error" });
+                } else {
+                    res.json(results)
+                }
+            });
+        }
     });
 });
-router.post('/collegeEvents', async(req, res) => {
+router.post('/collegeEvents', async (req, res) => {
     const collegetoken = req.headers["collegetoken"];
     jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
         if (error) {
@@ -416,15 +414,15 @@ router.post('/collegeEvents', async(req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.college_email) {
-            const event_private_clgid=req.body
-                const college = await privateEventModel.viewEventSByCollege(event_private_clgid, (error, results) => {
-                    if (error) {
-                        return res.json({ "status": "error" });
-                    } else {
-                        res.json(results)
-                    }
-                });
-        } 
+            const event_private_clgid = req.body
+            const college = await privateEventModel.viewEventSByCollege(event_private_clgid, (error, results) => {
+                if (error) {
+                    return res.json({ "status": "error" });
+                } else {
+                    res.json(results)
+                }
+            });
+        }
     });
 });
 
