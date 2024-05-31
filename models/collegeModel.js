@@ -142,6 +142,25 @@ findEventsByEventId: (eventId, callback) => {
     SELECT student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
     pool.query(query, [eventId], callback);
 },
+
+  getEventsByCollegeId: (collegeId, callback) => {
+    const query = `
+    SELECT event_private_id,event_private_name,event_private_amount,event_private_description,event_private_date,event_private_time,event_private_image,event_private_clgid,delete_status,cancel_status,
+        CASE
+            WHEN delete_status = 1 THEN 'Deleted'
+            WHEN cancel_status = 1 THEN 'Cancelled'
+            WHEN CONCAT(event_private_date, ' ', event_private_time) < NOW() THEN 'Expired'
+            ELSE 'Active'
+        END AS status FROM event_private WHERE event_private_clgid = ? AND delete_status = 0 ORDER BY
+        CASE
+            WHEN delete_status = 1 THEN 4
+            WHEN cancel_status = 1 THEN 3
+            WHEN CONCAT(event_private_date, ' ', event_private_time) < NOW() THEN 2
+            ELSE 1
+        END,
+        event_private_date DESC,event_private_time DESC`;
+    pool.query(query, [collegeId], callback);
+},
   
    insertStudent: (studentData, callback) => {
         try {
