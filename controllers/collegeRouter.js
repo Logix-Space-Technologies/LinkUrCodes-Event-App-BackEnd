@@ -177,7 +177,7 @@ router.post('/Viewcollegedetail', (req, res) => {
 
 router.post('/student/add', async (req, res) => {
     try {
-        const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id, student_college_id } = req.body;
+        const { student_name, student_rollno, student_admno, student_email, student_phone_no, event_id} = req.body;
         const collegetoken = req.headers["collegetoken"];
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (error) {
@@ -193,8 +193,7 @@ router.post('/student/add', async (req, res) => {
                     student_admno,
                     student_email,
                     student_phone_no,
-                    event_id,
-                    student_college_id
+                    event_id
                 }, async (error, results) => {
                     if (error) {
                         console.error('Error inserting student data:', error);
@@ -241,7 +240,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const data = xlsx.utils.sheet_to_json(worksheet);
-                const collegeId = req.body.college_id;
+                // const collegeId = req.body.college_id;
                 const eventId = req.body.event_id
                 const newStudentData = data.map(student => ({
                     student_name: student.student_name,
@@ -250,8 +249,8 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                     student_email: student.student_email,
                     student_phone_no: student.student_phone_no,
                     student_password: student.student_admno.toString(),
-                    event_id: eventId,
-                    student_college_id: collegeId
+                    event_id: eventId
+                    // student_college_id: collegeId
                 }));
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
