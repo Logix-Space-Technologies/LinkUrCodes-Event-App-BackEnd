@@ -277,6 +277,24 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
 });
 
 
+router.post('/getallevents', (req, res) => {
+    const collegeId = req.body.college_id;
+    const collegeToken = req.headers["collegetoken"];
+    if (!collegeId || !collegeToken) {
+        return res.status(400).send('College ID and college token are required.');
+    }
+    jwt.verify(collegeToken, "collegelogin", (error, decoded) => {
+        if (error) {
+            return res.status(401).send('Unauthorized user');
+        }
+        collegeModel.getEventsByCollegeId(collegeId, (err, events) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to retrieve events' });
+            }
+            res.status(200).json(events);
+        });
+    });
+});
 
 
 router.put('/update_college', uploadModel.CollegeImageupload.single('image'), (req, res) => {
