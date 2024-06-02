@@ -175,7 +175,7 @@ router.post('/view_private_events', (req, res) => {
     });
 })
 
-router.post('/update_private_events', uploadModel.EventImageUpload.single('image'), async (req, res) => {
+router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
     const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
@@ -190,12 +190,20 @@ router.post('/update_private_events', uploadModel.EventImageUpload.single('image
                 event_private_description: data.event_private_description,
                 event_private_date: data.event_private_date,
                 event_private_time: data.event_private_time,
+                event_private_duration: data.event_private_duration,
+                event_private_online: data.event_private_online,
+                event_private_offline: data.event_private_offline,
+                event_private_recorded: data.event_private_recorded,
                 event_updatedby: data.event_updatedby
             };
-
             // Conditionally add image path if an image was uploaded
-            if (req.file && req.file.path) {
-                newData.event_private_image = req.file.path; // Add only if image is uploaded
+            if (req.files && req.files['image'] && req.files['image'][0] && req.files['image'][0].path) {
+                newData.event_private_image = req.files['image'][0].path;
+            }
+
+            // Conditionally add syllabus path if a PDF was uploaded
+            if (req.files && req.files['pdf'] && req.files['pdf'][0] && req.files['pdf'][0].path) {
+                newData.event_private_syllabus = req.files['pdf'][0].path;
             }
 
             console.log(newData);
@@ -233,7 +241,7 @@ router.put('/update_public_events', uploadModel.EventImageUpload.single('image')
                     res.status(500).json({ error: 'Internal Server Error' });
                 } else {
                     console.log('Event updated successfully');
-                    res.status(200).json({ message: 'Event updated successfully' });
+                    res.status(200).json({ message: "success" });
                 }
             });
         }
@@ -488,7 +496,7 @@ router.post('/complete_private_event', async (req, res) => {
             if (decoded && decoded.adminUsername) {
                 privateEventModel.setEventComplete(event_private_id, (error, result) => {
                     if (error) {
-                        return res.status(500).json({ status: 'error'});
+                        return res.status(500).json({ status: 'error' });
                     }
                     res.json({ status: 'success' });
                 });

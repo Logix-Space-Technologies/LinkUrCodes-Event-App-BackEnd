@@ -265,12 +265,12 @@ router.put('/updatepassword', async (req, res) => {
         // Check if the email exists in the database studtoken
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
-                return res.status(500).json({ message: error.message });
+                return res.status(500).json({status: 'error', message: error.message });
             }
 
             if (!student) {
                 // Email not found in the table
-                return res.status(404).json({ message: 'Invalid email' });
+                return res.status(404).json({status: 'error', message: 'Invalid email' });
             }
 
             // Update the password in the database
