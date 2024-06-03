@@ -13,6 +13,9 @@ const path = require('path');
 const uploadModel = require("../models/uploadModel")
 const privateEventModel = require("../models/privateEventModel")
 const { sendEmail } = require('../models/mailerModel');
+const departmentModel = require('../models/departmentModel');
+const mailerModel=require("../models/mailerModel")
+const adminModel=require("../models/adminModel")
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -61,7 +64,8 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
                         res.json({"status": "error","error": error});
                         return;
                     }
-
+                    //log action
+                    adminModel.logAdminAction(data.college_addedby, `Added college: ${newData.college_name} `);
                     res.json({
                         "status": "success"
                     });
@@ -77,6 +81,281 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+router.post('/addDepartment', async (req, res) => {
+    try {
+      let data = req.body;
+      const newData = {
+        college_id: data.college_id,
+        department_name: data.department_name,
+        faculty_name: data.faculty_name,
+        faculty_email: data.faculty_email,
+        faculty_phone: data.faculty_phone,
+        faculty_password: data.faculty_phone // This will be hashed in the model
+      };
+  
+      const token = req.headers["token"];
+      jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+          // Check if the college_id exists
+          collegeModel.findCollegeById(newData.college_id, (err, result) => {
+            if (err || !result.length) {
+              res.status(400).json({ status: "error", message: "Invalid college_id. College does not exist." });
+              return;
+            }
+  
+            // If college_id exists, proceed with department insertion
+            departmentModel.insertDepartment(newData, async (error, results) => {
+              if (error) {
+                res.json({ "status": "error", "error": error });
+                return;
+              }
+  
+              try {
+                const faculty_name = newData.faculty_name;
+                const faculty_email = newData.faculty_email;
+                const textContent = `
+                  Dear ${faculty_name},
+  
+                  You have successfully registered as a faculty member.
+  
+                  Username: ${faculty_email}
+                  Password is your phone number
+  
+                  Note: You can reset your password at any time.
+  
+                  Best regards,
+                  Link Ur Codes Team
+                `;
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Registration Successful</title>
+                    <style>
+                      body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                      .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                      .logo-header img { max-width: 30%; height: auto; }
+                      .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                      h2 { text-align: center; }
+                      .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="logo-header">
+                        <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                      </div>
+                      <div class="content">
+                        <h2>Registration Successful</h2>
+                        <p>Dear ${faculty_name},</p>
+                        <p>You have successfully registered as a faculty member.</p>
+                        <p><strong>Username:</strong> ${faculty_email}</p>
+                        <p><strong>Password:</strong> Your phone number</p>
+                        <p>Note: You can reset your password at any time.</p>
+                        <p>Best regards,</p>
+                        <p>Link Ur Codes Team</p>
+                      </div>
+                      <div class="footer">
+                        <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+  
+                // Send confirmation email
+                await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
+                res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
+              } catch (emailError) {
+                res.status(500).json({ "status": "error sending mail", "error": emailError.message });
+              }
+            });
+          });
+        } else {
+          res.json({ "status": "Unauthorized user" });
+        }
+      });
+    } catch (error) {
+      console.error('Error in addDepartment route:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/addFaculty', async (req, res) => {
+    try {
+      let data = req.body;
+      const newData = {
+        college_id: data.college_id,
+        department_name: data.department_name,
+        faculty_name: data.faculty_name,
+        faculty_email: data.faculty_email,
+        faculty_phone: data.faculty_phone,
+        faculty_password: data.faculty_phone // This will be hashed in the model
+      };
+  
+      const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            return res.json({ "status": "error", "message": "Failed to verify token" });
+        }
+        if (decoded && decoded.college_email) {
+          // Check if the college_id exists
+          collegeModel.findCollegeById(newData.college_id, (err, result) => {
+            if (err || !result.length) {
+              res.status(400).json({ status: "error", message: "Invalid college_id. College does not exist." });
+              return;
+            }
+  
+            // If college_id exists, proceed with department insertion
+            departmentModel.insertDepartment(newData, async (error, results) => {
+              if (error) {
+                res.json({ "status": "error", "error": error });
+                return;
+              }
+  
+              try {
+                const faculty_name = newData.faculty_name;
+                const faculty_email = newData.faculty_email;
+                const textContent = `
+                  Dear ${faculty_name},
+  
+                  You have successfully registered as a faculty member.
+  
+                  Username: ${faculty_email}
+                  Password is your phone number
+  
+                  Note: You can reset your password at any time.
+  
+                  Best regards,
+                  Link Ur Codes Team
+                `;
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Registration Successful</title>
+                    <style>
+                      body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                      .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                      .logo-header img { max-width: 30%; height: auto; }
+                      .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                      h2 { text-align: center; }
+                      .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="logo-header">
+                        <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                      </div>
+                      <div class="content">
+                        <h2>Registration Successful</h2>
+                        <p>Dear ${faculty_name},</p>
+                        <p>You have successfully registered as a faculty member.</p>
+                        <p><strong>Username:</strong> ${faculty_email}</p>
+                        <p><strong>Password:</strong> Your phone number</p>
+                        <p>Note: You can reset your password at any time.</p>
+                        <p>Best regards,</p>
+                        <p>Link Ur Codes Team</p>
+                      </div>
+                      <div class="footer">
+                        <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+  
+                // Send confirmation email
+                await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
+                res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
+              } catch (emailError) {
+                res.status(500).json({ "status": "error sending mail", "error": emailError.message });
+              }
+            });
+          });
+        } else {
+          res.json({ "status": "Unauthorized user" });
+        }
+      });
+    } catch (error) {
+      console.error('Error in addDepartment route:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+router.post("/departmentLogin", async (req, res) => {
+    try {
+        const { faculty_email, faculty_password } = req.body;
+
+        // Fetch faculty using the provided email
+        const faculty = await new Promise((resolve, reject) => {
+            departmentModel.findFacultyByEmail(faculty_email, (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(result);
+            });
+        });
+
+        // If no faculty is found
+        if (!faculty) {
+            return res.status(404).json({ status: "error", error: "Faculty not found" });
+        }
+
+        // Compare passwords
+        const match = await bcrypt.compare(faculty_password, faculty.faculty_password);
+        if (!match) {
+            return res.status(401).json({ status: "error", error: "Incorrect password" });
+        }
+
+        // Generate JWT token using "collegelogin" as the secret key
+        jwt.sign({ faculty_email: faculty_email }, "collegelogin", { expiresIn: "1d" }, (error, facultyToken) => {
+            if (error) {
+                return res.status(500).json({ status: "error", error: "Token generation failed" });
+            } else {
+                return res.json({ status: "success", facultyData: faculty, collegetoken: facultyToken });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: "Failed to login faculty" });
+    }
+});
+
+router.post('/viewFaculty', (req, res) => { 
+    const college_id = req.body.college_id; // Assuming college_id is sent in the request body
+
+    // Verify college token
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+        // Call the findFacultyByCollegeId function from the DepartmentModel
+        departmentModel.findFacultyByCollegeId(college_id, (error, results) => {
+            if (error) {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+            
+            // If no results found, return a custom message
+            if (results.length === 0) {
+                return res.json({ status:"No Faculties Found",message: 'No Faculties Found' });
+            }
+
+            // If results found, return the results
+            return res.status(200).json(results);
+        });
+    });
+});
+
+
 
 router.post("/collegeLogin", async (req, res) => {
     try {
@@ -112,6 +391,7 @@ router.post("/collegeLogin", async (req, res) => {
         return res.status(500).json({ "status": "error", "message": "Failed to login college" });
     }
 });
+
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var term = req.body.term; // Use req.body.name to retrieve college name
@@ -476,6 +756,33 @@ router.post('/viewStudents', (req, res) => {
             }
             res.status(200).json(results);
         });
+    });
+});
+
+router.post('/viewSession', (req, res) => {
+    const collegeToken = req.headers["collegetoken"];
+    jwt.verify(collegeToken, "collegelogin", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        const { event_private_id } = req.body;
+        privateEventModel.getSessions(event_private_id)
+            .then(results => {
+                // Format the session_date for each result
+                const formattedResults = results.map(session => {
+                    const sessionDate = new Date(session.session_date);
+                    const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                    session.session_date = formattedDate; // DD-MM-YYYY format
+                    return session;
+                });
+
+                res.json({ "status": "success", "data": formattedResults });
+            })
+            .catch(err => {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            });
     });
 });
 

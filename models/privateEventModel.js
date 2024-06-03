@@ -86,6 +86,7 @@ const privateEventModel = {
         });
     },
 
+
     viewStudentPrivateEvents: (student_email, callback) => {
         const query = `SELECT  e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time,e.event_private_duration, e.event_private_online,e.event_private_offline,e.event_private_recorded, e.event_private_image,e.event_private_syllabus FROM event_private e JOIN student s ON e.event_private_id = s.event_id  WHERE s.student_email = ? ORDER BY  e.event_private_id`;
         pool.query(query, [student_email], callback);
@@ -93,6 +94,39 @@ const privateEventModel = {
 
 
 
+
+
+    addSession: (data, callback) => {
+        const query = "INSERT INTO session_private SET  ?";
+        pool.query(query, [data], callback);
+    },
+    getSessions: (event_private_id) => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT 
+                    session_private_id, 
+                    event_private_id, 
+                    session_start_time,
+                    session_date,
+                    session_topic_description, 
+                    type, 
+                    venue 
+                FROM session_private 
+                WHERE event_private_id = ?`;
+            pool.query(query, [event_private_id], (error, results) => {
+                if (error) return reject(error);
+                resolve(results);
+            });
+        });
+    },
+    updateSessionStatus: (event_private_id, session_private_id, callback) => {
+        const query = "UPDATE session_private SET is_completed = 1 WHERE event_private_id = ? AND session_private_id = ?";
+        pool.query(query, [event_private_id, session_private_id], callback);
+    },
+    addAttendance: (data, callback) => {
+        const query = "INSERT INTO attendance SET ?";
+        pool.query(query, [data], callback);
+    }
 
 }
 
