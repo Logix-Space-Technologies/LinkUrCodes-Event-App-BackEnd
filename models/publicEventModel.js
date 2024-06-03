@@ -35,9 +35,9 @@ const publicEventModel = {
             callback(null, result);
         });
     },
-    retrivePublicEvent: (event_ptivate_id, callback) => {
+    retrivePublicEvent: (event_public_id, callback) => {
         const query = 'UPDATE event_public SET delete_status=0 , cancel_status=0 WHERE event_public_id = ?';
-        pool.query(query, [event_ptivate_id], (error, result) => {
+        pool.query(query, [event_public_id], (error, result) => {
             if (error) {
                 console.error('Error executing query:', error);
                 return callback(error);

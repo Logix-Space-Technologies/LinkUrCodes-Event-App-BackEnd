@@ -116,27 +116,35 @@ router.post('/view_user_public_events', (req, res) => {
     });
 })
 
-router.post("/add_private_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
-    const token = req.headers["token"]
+router.post("/add_private_events", uploadModel.EventImageUpload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'pdf', maxCount: 1 }
+]), async (req, res) => {
+    const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
-
         if (decoded && decoded.adminUsername) {
-            if (!req.file) {
-                return res.status(400).json({ error: 'No file uploaded' });
+            if (!req.files || !req.files['image'] || !req.files['pdf']) {
+                return res.status(400).json({ error: 'Image or PDF file not uploaded' });
             }
-            const imagePath = req.file.path; //image path
-            let data = req.body
+            const imagePath = req.files['image'][0].path;
+            const pdfPath = req.files['pdf'][0].path;
+            let data = req.body;
             const newData = {
                 event_private_name: data.event_private_name,
                 event_private_amount: data.event_private_amount,
                 event_private_description: data.event_private_description,
                 event_private_date: data.event_private_date,
                 event_private_time: data.event_private_time,
+                event_private_duration: data.event_private_duration,
+                event_private_online: data.event_private_online,
+                event_private_offline: data.event_private_offline,
+                event_private_recorded: data.event_private_recorded,
                 event_private_image: imagePath,
+                event_private_syllabus: pdfPath,
                 event_private_clgid: data.event_private_clgid,
                 event_addedby: data.event_addedby,
                 event_updatedby: data.event_addedby
-            }
+            };
             privateEventModel.insertPrivateEvents(newData, (error, results) => {
                 if (error) {
                     return res.status(500).json({ message: error.message });
@@ -167,7 +175,7 @@ router.post('/view_private_events', (req, res) => {
     });
 })
 
-router.post('/update_private_events', uploadModel.EventImageUpload.single('image'), async (req, res) => {
+router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
     const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
@@ -182,12 +190,20 @@ router.post('/update_private_events', uploadModel.EventImageUpload.single('image
                 event_private_description: data.event_private_description,
                 event_private_date: data.event_private_date,
                 event_private_time: data.event_private_time,
+                event_private_duration: data.event_private_duration,
+                event_private_online: data.event_private_online,
+                event_private_offline: data.event_private_offline,
+                event_private_recorded: data.event_private_recorded,
                 event_updatedby: data.event_updatedby
             };
-
             // Conditionally add image path if an image was uploaded
-            if (req.file && req.file.path) {
-                newData.event_private_image = req.file.path; // Add only if image is uploaded
+            if (req.files && req.files['image'] && req.files['image'][0] && req.files['image'][0].path) {
+                newData.event_private_image = req.files['image'][0].path;
+            }
+
+            // Conditionally add syllabus path if a PDF was uploaded
+            if (req.files && req.files['pdf'] && req.files['pdf'][0] && req.files['pdf'][0].path) {
+                newData.event_private_syllabus = req.files['pdf'][0].path;
             }
 
             console.log(newData);
@@ -225,7 +241,7 @@ router.put('/update_public_events', uploadModel.EventImageUpload.single('image')
                     res.status(500).json({ error: 'Internal Server Error' });
                 } else {
                     console.log('Event updated successfully');
-                    res.status(200).json({ message: 'Event updated successfully' });
+                    res.status(200).json({ message: "success" });
                 }
             });
         }
@@ -379,11 +395,11 @@ router.post('/view_deleted_private_events', (req, res) => {
         }
         if (decoded && decoded.adminUsername) {
             privateEventModel.viewDeletedEvents((error, results) => {
-                if (results.length > 0){
+                if (results.length > 0) {
                     res.json(results);
                 }
-                else{
-                    res.json({status:'No events found'});
+                else {
+                    res.json({ status: 'No events found' });
                 }
             })
         }
@@ -460,17 +476,82 @@ router.post('/view_deleted_public_events', (req, res) => {
         }
         if (decoded && decoded.adminUsername) {
             publicEventModel.viewDeletedPublicEvents((error, results) => {
-                if (results.length > 0){
+                if (results.length > 0) {
                     res.json(results);
                 }
-                else{
-                    res.json({status:'No events found'});
+                else {
+                    res.json({ status: 'No events found' });
                 }
-                   
+
             })
         }
     });
 })
+
+router.post('/complete_private_event', async (req, res) => {
+    try {
+        const { event_private_id } = req.body;
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
+            if (decoded && decoded.adminUsername) {
+                privateEventModel.setEventComplete(event_private_id, (error, result) => {
+                    if (error) {
+                        return res.status(500).json({ status: 'error' });
+                    }
+                    res.json({ status: 'success' });
+                });
+            }
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
+    }
+});
+
+router.post('/view_completed_private_events', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            privateEventModel.viewCompletedEvents((error, results) => {
+                if (results.length > 0) {
+                    res.json(results);
+                }
+                else {
+                    res.json({ status: 'No events found' });
+                }
+            })
+        }
+    });
+})
+
+router.post('/view_notcompleted_private_events', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            privateEventModel.viewNotCompletedEvents((error, results) => {
+                if (results.length > 0) {
+                    res.json(results);
+                }
+                else {
+                    res.json({ status: 'No events found' });
+                }
+            })
+        }
+    });
+})
+
+
 
 
 
