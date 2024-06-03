@@ -8,6 +8,7 @@ const adminRouter=require('./controllers/adminRouter')
 const eventRouter=require('./controllers/eventRouter')
 const studentRouter=require('./controllers/studentRouter')
 const feedbackRouter=require("./controllers/feedbackRouter")
+const razorpayRouter=require("./controllers/razorpayRouter")
 
 
 const app=express()
@@ -36,6 +37,8 @@ app.use("/api/feedback", feedbackRouter)
 app.use("/api/certificate", certificateRouter)
 
 app.use('/uploads', express.static('uploads'));
+
+app.use("/api/payment",razorpayRouter)
 
 app.listen(port, ()=>{
     console.log("Server running on",port)
