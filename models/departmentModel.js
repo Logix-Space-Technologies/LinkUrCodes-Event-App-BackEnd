@@ -44,6 +44,17 @@ const departmentModel = {
         return callback(null, results[0]);
     });
   },
+
+  findFacultyByCollegeId: (college_id, callback) => {
+    const query = 'SELECT department_name, faculty_name, faculty_email, faculty_phone FROM department WHERE college_id = ?';
+    pool.query(query, [college_id], (error, results) => {
+        if (error) {
+            return callback(error, null);
+        }
+        return callback(null, results);
+    });
+},
+
 };
   
   module.exports = departmentModel;
