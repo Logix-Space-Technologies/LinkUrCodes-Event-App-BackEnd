@@ -30,8 +30,20 @@ const adminModel={
           // Return the first admin found (there should only be one due to the 'LIMIT 1' in the query)
           return callback(null, results[0]);
         });
-      }
+      },
 
+      logAdminAction: (admin_id, action) => {
+        const adminLog = {
+            admin_id: admin_id,
+            action: action
+        };
+        pool.query("INSERT INTO admin_logs SET ?", adminLog, (logErr, logRes) => {
+            if (logErr) {
+                console.log("error: ", logErr);
+                return;
+            }
+        });
+    },
 
 };
    
