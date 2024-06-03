@@ -235,10 +235,18 @@ router.post('/viewFaculty', (req, res) => {
             if (error) {
                 return res.status(500).json({ error: 'Internal Server Error' });
             }
+            
+            // If no results found, return a custom message
+            if (results.length === 0) {
+                return res.status(404).json({ message: 'No Faculties Found' });
+            }
+
+            // If results found, return the results
             return res.status(200).json(results);
         });
     });
 });
+
 
 
 router.post("/collegeLogin", async (req, res) => {
