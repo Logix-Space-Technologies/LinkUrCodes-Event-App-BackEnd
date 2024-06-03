@@ -11,9 +11,27 @@ const hashPasswordGenerator = async (pass) => {
     return bcrypt.hash(pass, salt)
 }
 
+
+// Function to remove expired verification codes
+function removeExpiredCodes() {
+    console.log("Checking for expired verification codes...");
+    const currentTime = Date.now();
+    for (const email in verificationCodes) {
+        if (currentTime - verificationCodes[email].timestamp > codeExpirationThreshold) {
+            console.log(`Expired code found for ${email}. Removing...`);
+            delete verificationCodes[email];
+        }
+    }
+}
+
+
+
+
+
 router.post('/addstudent', async (req, res) => {
     try {
         let data = req.body;
+
         const dataArray = [data]; // Convert JSON object to an array with a single element
         const newdata = dataArray.map(item => ({
             student_name: item.student_name,
@@ -250,37 +268,57 @@ router.post('/loginstudent', (req, res) => {
     });
 });
 
+// Route for updating password using verification code
 router.put('/updatepassword', async (req, res) => {
     try {
-        const { student_email, student_password } = req.body;
+        const { student_email, verification_code, student_password } = req.body;
 
         // Check if all required fields are provided
-        if (!student_email || !student_password) {
-            return res.status(400).json({ message: 'Email and new password are required' });
+        if (!student_email || !verification_code || !student_password) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
         }
 
-        // Hash the new password
-        const hashedNewPassword = await hashPasswordGenerator(student_password);
-
-        // Check if the email exists in the database studtoken
+        // Check if the email exists in the database
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
-                return res.status(500).json({status: 'error', message: error.message });
+                return res.status(500).json({ status: 'error', message: error.message });
             }
 
             if (!student) {
                 // Email not found in the table
-                return res.status(404).json({status: 'error', message: 'Invalid email' });
+                return res.status(404).json({ status: 'error', message: 'Invalid email' });
             }
 
-            // Update the password in the database
-            studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
-                if (error) {
-                    return res.status(500).json({ message: error.message });
-                }
-                // Password updated successfully
-                res.json({ status: 'success', message: 'Password updated successfully' });
-            });
+            // Check if verification code matches the stored code and has not expired
+            const verificationData = verificationCodes[student_email];
+            if (!verificationData || verificationData.code !== parseInt(verification_code)) {
+                return res.status(400).json({ message: 'Invalid or expired verification code' });
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
+                delete verificationCodes[student_email]; // Remove expired verification code
+                return res.status(400).json({ message: 'Verification code has expired' });
+            }
+
+            try {
+                // Hash the new password
+                const hashedNewPassword = await hashPasswordGenerator(student_password);
+
+                // Update the password in the database
+                studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
+                    if (error) {
+                        return res.status(500).json({ message: error.message });
+                    }
+                    // Password updated successfully
+                    res.json({ status: 'success', message: 'Password updated successfully' });
+
+                    // Remove the verification code after password update
+                    delete verificationCodes[student_email];
+                });
+            } catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -326,11 +364,19 @@ router.post('/sortstudbyevent', (req, res) => {
         res.json({ students });
     });
 });
+// Temporary storage for verification codes
+const verificationCodes = {};
 
+
+// Time threshold for code expiration (in milliseconds)
+const codeExpirationThreshold = 300000; // 5 minutes
+
+// Route for resetting password using verification code
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
-        const subjectheading = 'Password Reset'; 
+        const subjectheading = 'Password Reset';
+
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
                 return res.status(500).json({ error: error.message });
@@ -339,12 +385,22 @@ router.post("/forgotpassword", async (req, res) => {
                 return res.status(400).json({ error: "Invalid student email" });
             }
             try {
-                let student_name=student.student_name;
-                let sending_email=student_email;
-                let textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
+                // Generate a random 6-digit number
+                const randomCode = Math.floor(100000 + Math.random() * 900000);
+
+                // Store the code with timestamp
+                verificationCodes[student_email] = {
+                    code: randomCode,
+                    timestamp: Date.now()
+                };
+
+                let student_name = student.student_name;
+                let sending_email = student_email;
+                let textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
 
                 // Send password reset email
                 await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
                 return res.status(500).json({ error: error.message });
@@ -354,5 +410,47 @@ router.post("/forgotpassword", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
+
+// Route to view logged-in student's profile
+router.post('/view-student-profile', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "stud-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+
+        // Extract student_email from the decoded token
+        const student_email = decoded.email;
+
+        // Fetch student information from the database based on student_email
+        studentModel.getStudentByEmail(student_email, (error, student) => {
+            if (error) {
+                console.error('Error fetching student data:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
+
+            if (!student) {
+                // If student not found
+                return res.status(404).json({ status: "Student Not Found" });
+            }
+
+            // Prepare response data
+            const responseData = {
+                name: student.student_name,
+                rollno: student.student_rollno,
+                admno:student.student_admno
+            };
+
+            return res.json(responseData);
+        });
+    });
+});
+
+
+
 
 module.exports = router;

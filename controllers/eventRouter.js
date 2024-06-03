@@ -109,7 +109,7 @@ router.post('/view_user_public_events', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.email) {
-            publicEventModel.viewPublicEvents((error, results) => {
+            privateEventModel.viewPrivateEvents((error, results) => {
                 res.json(results);
             })
         }
@@ -174,6 +174,35 @@ router.post('/view_private_events', (req, res) => {
         }
     });
 })
+
+router.post('/view-student-private-events', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "stud-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+
+        // Extract student_email from the decoded token
+        const student_email = decoded.email;
+
+        // Fetch private events registered by the student
+        privateEventModel.viewStudentPrivateEvents(student_email, (error, events) => {
+            if (error) {
+                console.error('Error fetching events:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
+
+            if (events.length === 0) {
+                return res.status(404).json({ status: "No Events Found" });
+            }
+
+            return res.json({ status: "Success", events });
+        });
+    });
+});
 
 router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
     const token = req.headers["token"];
