@@ -452,6 +452,7 @@ router.post('/retrive_public_event', async (req, res) => {
     }
 });
 
+
 router.post('/view_active_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
@@ -550,6 +551,7 @@ router.post('/view_notcompleted_private_events', (req, res) => {
         }
     });
 })
+
 
 
 
