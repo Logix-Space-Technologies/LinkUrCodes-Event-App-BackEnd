@@ -19,21 +19,39 @@ hashPasswordgenerator = async (pass) => {
 // Route to add a new College
 router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async (req, res) => {
     try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Image file is required' });
+        }
+
         let { data } = { "data": req.body };
         const imagePath = req.file.path;
+
+        // Validate URL
+        const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|'+ // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+            '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+
+        if (!urlPattern.test(data.college_website)) {
+            return res.status(400).json({ error: 'Invalid college website URL' });
+        }
+
         const newData = {
             college_name: data.college_name,
             college_email: data.college_email,
             college_phone: data.college_phone,
+            college_website: data.college_website,
             college_password: data.college_password,
             college_image: imagePath,
             college_addedby: data.college_addedby,
             college_updatedby: data.college_addedby
         }
-        const token = req.headers["token"]
+
+        const token = req.headers["token"];
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
-
                 collegeModel.insertCollege(newData, (error, results) => {
                     if (error) {
                         res.status(500).send('Error inserting college data: ' + error);
@@ -42,13 +60,12 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
 
                     res.status(201).send('College added with ID: ' + results.insertId);
                 });
-            }
-            else {
+            } else {
                 res.json({
                     "status": "Unauthorized user"
-                })
+                });
             }
-        })
+        });
     } catch (error) {
         console.error('Error in addCollege route:', error);
         res.status(500).json({ error: 'Internal server error' });
