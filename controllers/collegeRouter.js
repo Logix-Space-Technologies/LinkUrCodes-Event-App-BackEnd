@@ -220,6 +220,32 @@ router.post("/departmentLogin", async (req, res) => {
     }
 });
 
+router.post('/viewFaculty', (req, res) => {
+    const collegetoken = req.headers.collegetoken; // Assuming collegetoken is sent in the request headers
+    const college_id = req.body.college_id; // Assuming college_id is sent in the request body
+
+    // Verify college token
+    jwt.verify(collegetoken, "collegelogin", (error, decoded) => {
+        if (error) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // Call the findFacultyByCollegeId function from the DepartmentModel
+        departmentModel.findFacultyByCollegeId(college_id, (error, results) => {
+            if (error) {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+            
+            // If no results found, return a custom message
+            if (results.length === 0) {
+                return res.status(404).json({ message: 'No Faculties Found' });
+            }
+
+            // If results found, return the results
+            return res.status(200).json(results);
+        });
+    });
+});
 
 
 
