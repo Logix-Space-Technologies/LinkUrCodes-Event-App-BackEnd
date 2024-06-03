@@ -13,6 +13,8 @@ const path = require('path');
 const uploadModel = require("../models/uploadModel")
 const privateEventModel = require("../models/privateEventModel")
 const { sendEmail } = require('../models/mailerModel');
+const departmentModel = require('../models/departmentModel');
+const mailerModel=require("../models/mailerModel")
 
 hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
@@ -75,6 +77,157 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+router.post('/addDepartment', async (req, res) => {
+    try {
+      let data = req.body;
+      const newData = {
+        college_id: data.college_id,
+        department_name: data.department_name,
+        faculty_name: data.faculty_name,
+        faculty_email: data.faculty_email,
+        faculty_phone: data.faculty_phone,
+        faculty_password: data.faculty_phone // This will be hashed in the model
+      };
+  
+      const token = req.headers["token"];
+      jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+          // Check if the college_id exists
+          collegeModel.findCollegeById(newData.college_id, (err, result) => {
+            if (err || !result.length) {
+              res.status(400).json({ status: "error", message: "Invalid college_id. College does not exist." });
+              return;
+            }
+  
+            // If college_id exists, proceed with department insertion
+            departmentModel.insertDepartment(newData, async (error, results) => {
+              if (error) {
+                res.json({ "status": "error", "error": error });
+                return;
+              }
+  
+              try {
+                const faculty_name = newData.faculty_name;
+                const faculty_email = newData.faculty_email;
+                const textContent = `
+                  Dear ${faculty_name},
+  
+                  You have successfully registered as a faculty member.
+  
+                  Username: ${faculty_email}
+                  Password is your phone number
+  
+                  Note: You can reset your password at any time.
+  
+                  Best regards,
+                  Link Ur Codes Team
+                `;
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Registration Successful</title>
+                    <style>
+                      body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                      .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                      .logo-header img { max-width: 30%; height: auto; }
+                      .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                      h2 { text-align: center; }
+                      .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="logo-header">
+                        <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                      </div>
+                      <div class="content">
+                        <h2>Registration Successful</h2>
+                        <p>Dear ${faculty_name},</p>
+                        <p>You have successfully registered as a faculty member.</p>
+                        <p><strong>Username:</strong> ${faculty_email}</p>
+                        <p><strong>Password:</strong> Your phone number</p>
+                        <p>Note: You can reset your password at any time.</p>
+                        <p>Best regards,</p>
+                        <p>Link Ur Codes Team</p>
+                      </div>
+                      <div class="footer">
+                        <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+  
+                // Send confirmation email
+                await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
+                res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
+              } catch (emailError) {
+                res.status(500).json({ "status": "error sending mail", "error": emailError.message });
+              }
+            });
+          });
+        } else {
+          res.json({ "status": "Unauthorized user" });
+        }
+      });
+    } catch (error) {
+      console.error('Error in addDepartment route:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+// router.post('/addDepartment', async (req, res) => {
+//     try {
+//       let data = req.body;
+//       const newData = {
+//         college_id: data.college_id,
+//         department_name: data.department_name,
+//         faculty_name: data.faculty_name,
+//         faculty_email: data.faculty_email,
+//         faculty_phone: data.faculty_phone,
+//         faculty_password: data.faculty_phone // This will be hashed in the model
+//       };
+  
+//       const token = req.headers["token"];
+//       jwt.verify(token, "eventAdmin", (error, decoded) => {
+//         if (decoded && decoded.adminUsername) {
+//           departmentModel.insertDepartment(newData, async (error, results) => {
+//             if (error) {
+//               res.json({ "status": "error", "error": error });
+//               return;
+//             }
+  
+//             try {
+//               const faculty_name = newData.faculty_name;
+//               const faculty_email = newData.faculty_email;
+//               const textsend = `
+//                 \n Dear ${faculty_name},\n
+//                 \n You have successfully registered as a faculty member. \n
+//                 \n Username : ${faculty_email} \n
+//                 \n Password is your phone number \n
+//                 \n Note: You can reset your password at any time. \n
+//               `;
+//               const subjectheading = 'Successfully Registered';
+  
+//               // Send confirmation email
+//               await mailerModel.sendEmail(faculty_email, subjectheading, textsend);
+//               res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
+//             } catch (emailError) {
+//               res.status(500).json({ "status": "error sending mail", "error": emailError.message });
+//             }
+//           });
+//         } else {
+//           res.json({ "status": "Unauthorized user" });
+//         }
+//       });
+//     } catch (error) {
+//       console.error('Error in addDepartment route:', error);
+//       res.status(500).json({ error: 'Internal server error' });
+//     }
+//   });
 
 router.post("/collegeLogin", async (req, res) => {
     try {
