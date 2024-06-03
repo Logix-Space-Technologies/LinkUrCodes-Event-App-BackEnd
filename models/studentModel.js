@@ -11,7 +11,8 @@ const pool=mysql.createPool({
 
 const studentModel={
         insertStudent: (studentsData, callback) => {
-            const query = 'INSERT INTO student (student_name,student_rollno, student_admno, student_email,student_phone_no, student_password, event_id, student_college_id) VALUES ?';
+            console.log("data",studentsData)
+            const query = 'INSERT INTO student (student_name,student_rollno, student_admno, student_email,student_phone_no, student_password, event_id) VALUES ?';
             const values = studentsData.map(student => [
                 student.student_name,
                 student.student_rollno,
@@ -19,8 +20,7 @@ const studentModel={
                 student.student_email,
                 student.student_phone_no,
                 student.student_password,
-                student.event_id,
-                student.student_college_id
+                student.event_id
             ]);
             pool.query(query, [values], callback);
         }
@@ -28,6 +28,14 @@ const studentModel={
     viewStudent:(callback)=>{
         const query='SELECT * FROM student';
         pool.query(query,callback);
+    },
+    viewstud1: (student_id, callback) => {
+        const query = 'SELECT s.student_id, s.student_name, s.student_rollno, s.student_admno, s.student_email, s.student_phone_no, s.event_id, c.college_name, c.college_email, c.college_phone FROM student s JOIN college c ON s.student_college_id = c.college_id WHERE s.student_id = ?';
+        pool.query(query, [student_id], callback)
+    },
+    viewstudevent: (student_id, callback) => {
+        const query = 'SELECT ep.* FROM event_private AS ep INNER JOIN student AS s ON ep.event_private_id = s.event_id WHERE s.student_id = ?';
+        pool.query(query, [student_id], callback)
     },
     loginStudent: (student_email, callback) => {
         // Your student table needs to have an 'email' and 'password' column
@@ -48,12 +56,14 @@ const studentModel={
     const query = 'UPDATE student SET student_password = ? WHERE student_email = ?';
     pool.query(query, [hashedPassword, student_email], callback);
     },
-    sortStudentsByCollege: (student_college_id, callback) => {
-        const query = 'SELECT * FROM student WHERE student_college_id = 1 GROUP BY student_name'; // Assuming you want to sort them by name, adjust as necessary
+    sortStudentsByCollege: (student_collegeId, callback) => {
+        const student_college_id=student_collegeId.student_college_id
+        const query = 'SELECT * FROM student WHERE student_college_id = ? GROUP BY student_name'; // Assuming you want to sort them by name, adjust as necessary
         pool.query(query, [student_college_id], callback);
     },
-    sortStudentsByEvent: (event_id, callback) => {
-        const query = 'SELECT * FROM student WHERE event_id = 1 GROUP BY student_name'; 
+    sortStudentsByEvent: (eventId, callback) => {
+        const event_id=eventId.event_id
+        const query = 'SELECT * FROM student WHERE event_id = ? GROUP BY student_name'; 
         pool.query(query, [event_id], callback);
     },
 }

@@ -29,29 +29,22 @@ const userModel = {
             // Return the first user found (there should only be one due to the 'LIMIT 1' in the query)
             return callback(null, results[0]);
         });
-    }
-    ,
 
-
-
-    searchUser: (searchTerm, callback) => {
-        const query = 'SELECT * FROM user WHERE user_email LIKE ? OR user_name LIKE ?';
-        const searchTermPattern = `%${searchTerm}%`;
-        pool.query(query, [searchTermPattern, searchTermPattern], callback);
-    }
-    ,
-
-
-    searchUser: (email, callback) => {
-        const query = 'SELECT * FROM user WHERE user_email = ?';
-        pool.query(query, [email], callback)
     },
 
+    findUserByName: (term, callback) => {
+        if (!term) {
+            return callback(null, []); // Return an empty array if the search term is empty
+        }
+        const query = 'SELECT * FROM user WHERE user_name LIKE ?';
+        const searchTermPattern = `%${term}%`;
+        pool.query(query, [searchTermPattern], callback);
+    },
 
-    // viewUsers: (callback) => {
-    //     const query = 'SELECT * FROM user';
-    //     pool.query(query, callback)
-    // },
+    viewUsersFull: (callback) => {
+        const query = 'SELECT * FROM user';
+        pool.query(query, callback)
+    },
     viewUsers:(callback)=>{
         const query='SELECT * FROM user WHERE user_delete_status=0';
         pool.query(query,callback)
@@ -69,7 +62,7 @@ const userModel = {
     // userModel.js
 
 // Function to fetch user by user_id from the database
-getUserByEmail:(email, callback) => {
+    getUserByEmail:(email, callback) => {
     const query = "SELECT * FROM user WHERE user_email = ?";
     pool.query(query, [email], (error, results) => {
         if (error) {
@@ -85,8 +78,6 @@ getUserByEmail:(email, callback) => {
         }
     });
 }
-
-
 
 
 }

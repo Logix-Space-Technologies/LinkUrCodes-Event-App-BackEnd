@@ -1,15 +1,15 @@
 
 const express = require("express")
 const userModel = require("../models/userModel")
-const validateModel=require("../models/validateModel")
-const mailerModel=require("../models/mailerModel")
-const uploadModel=require("../models/uploadModel")
+const validateModel = require("../models/validateModel")
+const mailerModel = require("../models/mailerModel")
+const uploadModel = require("../models/uploadModel")
 const bcrypt = require("bcryptjs")
 
 
 const { error } = require("console");
 
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 const UploadModel = require("../models/uploadModel")
 
 
@@ -21,12 +21,24 @@ hashPasswordgenerator = async (pass) => {
 const router = express.Router()
 
 
-router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, res) => {
+router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, res) => {
     try {
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
-        
+        const hashedPassword = await hashPasswordgenerator(password);
+        data.user_password = hashedPassword;
+        const imagePath = req.file.path;
+        const newData = {
+            user_name: data.user_name,
+            user_email: data.user_email,
+            user_password: data.user_password,
+            user_contact_no: data.user_contact_no,
+            user_image: imagePath,
+            user_qualification: data.user_qualification,
+            user_skills: data.user_skills
+        }
+
         const { isValid, message } = await validateModel.validateAndCheckEmail(email);
         if (!isValid) {
             return res.status(400).json({ message });
@@ -34,18 +46,17 @@ router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, r
         if (!validateModel.validatePassword(password)) {
             return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
         }
-        const hashedPassword = await hashPasswordgenerator(password);
-        data.user_password = hashedPassword;
+
 
         // Insert the user into the database
-        userModel.insertUser(data, async(error, results) => {
+        userModel.insertUser(newData, async (error, results) => {
             if (error) {
                 res.status(500).send('Error inserting user data: ' + error);
                 return;
             }
 
             try {
-                let user_name=data.user_name;
+                let user_name = data.user_name;
                 let textsend = `Dear ${user_name},\n\nYou have successfully registered.`;
                 let subjectheading = 'Successfully Registered'
                 // Send password reset email
@@ -65,7 +76,7 @@ router.post('/signup',UploadModel.UserImageUpload.single('image'), async (req, r
 router.post('/loginuser', (req, res) => {
     const { user_email, user_password } = req.body;
 
-    userModel.userLogin(user_email, (error, user) => { 
+    userModel.userLogin(user_email, (error, user) => {
         if (error) {
             return res.json({
                 status: "Error"
@@ -88,58 +99,51 @@ router.post('/loginuser', (req, res) => {
                     status: "Invalid Password"
                 });
             }
-           jwt.sign({email:user_email},"user-eventapp",{expiresIn:"1d"},
-           (error,token)=>{
-            if (error) {
-                res.json({
-                    status:"error",
-                    "error":error
+            jwt.sign({ email: user_email }, "user-eventapp", { expiresIn: "1d" },
+                (error, token) => {
+                    if (error) {
+                        res.json({
+                            status: "error",
+                            "error": error
+                        })
+                    } else {
+                        // Successful login
+                        return res.json({
+                            status: "Success",
+                            userData: user, "token": token
+                        });
+                    }
                 })
-            } else {
-                 // Successful login
-            return res.json({
-                status: "Success",
-                userData: user,"token":token
-            });
-            }
-           })
         });
     });
 });
 //route to view a user
+
 router.post('/searchusers', (req, res) => {
-    const searchTerm = req.body.term;
-    const token=req.headers["token"]
-    jwt.verify(token, "eventapp", (error, decoded) => {
-        if (error) {
-            console.error('Error verifying token:', error);
-            return res.status(401).json({ status: "Unauthorized" });
+    var term = req.body.term; 
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.findUserByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving user data');
+                    return;
+                }
+                if (results.length > 0) {
+                    res.status(200).json(results);
+                } else {
+                    res.status(404).json({status:'No users found'});
+                }                
+            });
         }
-        
-        userModel.searchUser(searchTerm, (error, results) => {
-            if (error) {
-                console.error('Error fetching user data:', error);
-                return res.status(500).json({ status: "Internal Server Error" });
-            }
-
-            if (results.length === 0) {
-                // If no users found with the provided search term
-                return res.status(404).json({ status: "Users Not Found" });
-            }
-
-            // Prepare response data
-            const responseData = results.map(userData => ({
-                name: userData.user_name,
-                email: userData.user_email
-            }));
-
-            console.log(responseData);
-
-            return res.json(responseData);
-        });
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
     });
-   
 });
+
 
 router.post('/viewusers',(req,res)=>{
     const token=req.headers["token"]
@@ -167,30 +171,30 @@ router.post('/delete-users', (req, res) => {
     if (!user_id) {
         return res.status(400).json({ error: 'User ID is required in the request body' });
     }
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    userModel.deleteUsers(user_id, (error, result) => {
-        if (error) {
-            console.error('Error deleting user:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            if (result.affectedRows > 0) {
-                console.log('User deleted successfully');
-                res.status(200).json({ message: 'User deleted successfully' });
-            } else {
-                console.log('User not found');
-                res.status(404).json({ error: 'User not found' });
-            }
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.deleteUsers(user_id, (error, result) => {
+                if (error) {
+                    console.error('Error deleting user:', error);
+                    res.status(500).json({ status: "success", error: 'Internal Server Error' });
+                } else {
+                    if (result.affectedRows > 0) {
+                        console.log('User deleted successfully');
+                        res.status(200).json({ status: "success", message: 'User deleted successfully' });
+                    } else {
+                        console.log('User not found');
+                        res.status(404).json({ status: "error", error: 'User not found' });
+                    }
+                }
+            });
         }
-    });
-    }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        })
-    }
-})
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
 });
 
 router.post('/sortuserbyeventid', (req, res) => {
@@ -200,21 +204,21 @@ router.post('/sortuserbyeventid', (req, res) => {
     if (!payment_event_id) {
         return res.status(400).json({ message: 'Event ID is required' });
     }
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    userModel.sortStudentsByevent(payment_event_id, (error, users) => {
-        if (error) {
-            return res.status(500).json({ message: error.message });
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.sortStudentsByevent(payment_event_id, (error, users) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                res.json({ users });
+            });
         }
-        res.json({ users });
-    });
-    }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        }) 
-    }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
     })
 });
 
@@ -247,11 +251,12 @@ router.post('/view-user-profile', (req, res) => {
             // Prepare response data
             const responseData = {
                 name: user.user_name,
-                contact:user.user_contact_no,
-                image:user.user_image,
-                qualification:user.user_qualification,
-                skills:user.user_skills
-                
+                email: user.user_email,
+                contact: user.user_contact_no,
+                image: user.user_image,
+                qualification: user.user_qualification,
+                skills: user.user_skills
+
                 // Add more fields as needed
             };
 
