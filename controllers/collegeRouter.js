@@ -179,55 +179,47 @@ router.post('/addDepartment', async (req, res) => {
   });
   
 
-// router.post('/addDepartment', async (req, res) => {
-//     try {
-//       let data = req.body;
-//       const newData = {
-//         college_id: data.college_id,
-//         department_name: data.department_name,
-//         faculty_name: data.faculty_name,
-//         faculty_email: data.faculty_email,
-//         faculty_phone: data.faculty_phone,
-//         faculty_password: data.faculty_phone // This will be hashed in the model
-//       };
-  
-//       const token = req.headers["token"];
-//       jwt.verify(token, "eventAdmin", (error, decoded) => {
-//         if (decoded && decoded.adminUsername) {
-//           departmentModel.insertDepartment(newData, async (error, results) => {
-//             if (error) {
-//               res.json({ "status": "error", "error": error });
-//               return;
-//             }
-  
-//             try {
-//               const faculty_name = newData.faculty_name;
-//               const faculty_email = newData.faculty_email;
-//               const textsend = `
-//                 \n Dear ${faculty_name},\n
-//                 \n You have successfully registered as a faculty member. \n
-//                 \n Username : ${faculty_email} \n
-//                 \n Password is your phone number \n
-//                 \n Note: You can reset your password at any time. \n
-//               `;
-//               const subjectheading = 'Successfully Registered';
-  
-//               // Send confirmation email
-//               await mailerModel.sendEmail(faculty_email, subjectheading, textsend);
-//               res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
-//             } catch (emailError) {
-//               res.status(500).json({ "status": "error sending mail", "error": emailError.message });
-//             }
-//           });
-//         } else {
-//           res.json({ "status": "Unauthorized user" });
-//         }
-//       });
-//     } catch (error) {
-//       console.error('Error in addDepartment route:', error);
-//       res.status(500).json({ error: 'Internal server error' });
-//     }
-//   });
+router.post("/departmentLogin", async (req, res) => {
+    try {
+        const { faculty_email, faculty_password } = req.body;
+
+        // Fetch faculty using the provided email
+        const faculty = await new Promise((resolve, reject) => {
+            departmentModel.findFacultyByEmail(faculty_email, (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(result);
+            });
+        });
+
+        // If no faculty is found
+        if (!faculty) {
+            return res.status(404).json({ status: "error", error: "Faculty not found" });
+        }
+
+        // Compare passwords
+        const match = await bcrypt.compare(faculty_password, faculty.faculty_password);
+        if (!match) {
+            return res.status(401).json({ status: "error", error: "Incorrect password" });
+        }
+
+        // Generate JWT token using "collegelogin" as the secret key
+        jwt.sign({ faculty_email: faculty_email }, "collegelogin", { expiresIn: "1d" }, (error, facultyToken) => {
+            if (error) {
+                return res.status(500).json({ status: "error", error: "Token generation failed" });
+            } else {
+                return res.json({ status: "success", facultyData: faculty, collegetoken: facultyToken });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: "Failed to login faculty" });
+    }
+});
+
+
+
 
 router.post("/collegeLogin", async (req, res) => {
     try {
@@ -263,6 +255,7 @@ router.post("/collegeLogin", async (req, res) => {
         return res.status(500).json({ "status": "error", "message": "Failed to login college" });
     }
 });
+
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var term = req.body.term; // Use req.body.name to retrieve college name

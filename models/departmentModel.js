@@ -30,8 +30,21 @@ const departmentModel = {
         }
         return callback(null, result);
       });
-    }
-  };
+    },
+
+  findFacultyByEmail : (faculty_email, callback) => {
+    const query = 'SELECT * FROM department WHERE faculty_email = ? LIMIT 1';
+    pool.query(query, [faculty_email], (error, results) => {
+        if (error) {
+            return callback(error, null);
+        }
+        if (results.length === 0) {
+            return callback(null, null);
+        }
+        return callback(null, results[0]);
+    });
+  },
+};
   
   module.exports = departmentModel;
   
