@@ -66,6 +66,23 @@ const studentModel={
         const query = 'SELECT * FROM student WHERE event_id = ? GROUP BY student_name'; 
         pool.query(query, [event_id], callback);
     },
+
+    getStudentByEmail:(email, callback) => {
+        const query = "SELECT * FROM student WHERE student_email = ?";
+        pool.query(query, [email], (error, results) => {
+            if (error) {
+                return callback(error, null);
+            }
+            
+            // If user is found, return the user object
+            if (results.length > 0) {
+                return callback(null, results[0]);
+            } else {
+                // If user is not found, return null
+                return callback(null, null);
+            }
+        });
+    }
 }
 
 module.exports=studentModel
