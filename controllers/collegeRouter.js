@@ -625,4 +625,31 @@ router.post('/viewStudents', (req, res) => {
     });
 });
 
+router.post('/viewSession', (req, res) => {
+    const collegeToken = req.headers["collegetoken"];
+    jwt.verify(collegeToken, "collegelogin", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        const { event_private_id } = req.body;
+        privateEventModel.getSessions(event_private_id)
+            .then(results => {
+                // Format the session_date for each result
+                const formattedResults = results.map(session => {
+                    const sessionDate = new Date(session.session_date);
+                    const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                    session.session_date = formattedDate; // DD-MM-YYYY format
+                    return session;
+                });
+
+                res.json({ "status": "success", "data": formattedResults });
+            })
+            .catch(err => {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            });
+    });
+});
+
 module.exports = router;

@@ -139,7 +139,7 @@ findEventsByCollegeId: (collegeId, callback) => {
 
 findEventsByEventId: (eventId, callback) => {
     const query = `
-    SELECT student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
+    SELECT student_id,student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
     pool.query(query, [eventId], callback);
 },
 
