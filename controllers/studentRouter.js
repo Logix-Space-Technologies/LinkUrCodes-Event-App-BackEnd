@@ -4,6 +4,7 @@ const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
 const jwt=require("jsonwebtoken")
+const privateEventModel = require("../models/privateEventModel")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
@@ -353,6 +354,32 @@ router.post("/forgotpassword", async (req, res) => {
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
+});
+
+router.post('/viewSession', (req, res) => {
+    const token = req.headers["token"];
+        // Verify the token
+        jwt.verify(token, "stud-eventapp", (error, decoded) => {
+            if (error) {
+                return res.status(401).json({ "error": "Unauthorized" });
+            }
+        const { event_private_id } = req.body;
+        privateEventModel.getSessions(event_private_id)
+            .then(results => {
+                // Format the session_date for each result
+                const formattedResults = results.map(session => {
+                    const sessionDate = new Date(session.session_date);
+                    const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                    session.session_date = formattedDate; // DD-MM-YYYY format
+                    return session;
+                });
+
+                res.json({ "status": "success", "data": formattedResults });
+            })
+            .catch(err => {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            });
+    });
 });
 
 module.exports = router;
