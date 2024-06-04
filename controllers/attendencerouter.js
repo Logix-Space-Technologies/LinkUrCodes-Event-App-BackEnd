@@ -6,11 +6,7 @@ const router = express.Router();
 // Middleware to parse JSON bodies
 router.use(express.json());
 
-/**
- * Update attendance
- * Route: POST /updateAttendence
- * Body: { student_id: number, session_id: number }
- */
+
 router.post('/updateAttendence', (req, res) => {
   const admintoken = req.headers['token'];
   const { student_id, session_id } = req.body;
@@ -38,5 +34,20 @@ router.post('/updateAttendence', (req, res) => {
     });
   });
 });
+
+router.post('/viewattendence', (req, res) => {
+  const admintoken = req.headers["token"];
+  jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+      if (error) {
+          console.log({ "status": "error", "message": "Failed to verify token" })
+          return res.json({ "status": "unauthorised user" });
+      }
+      if (decoded && decoded.adminUsername) {
+          attendencemodel.viewattendence((error, results) => {
+              res.json(results);
+          })
+      }
+  });
+})
 
 module.exports = router;

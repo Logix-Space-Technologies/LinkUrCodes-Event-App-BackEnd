@@ -16,6 +16,10 @@ const attendencemodel = {
     const query = 'UPDATE attendance SET status = 1, added_date = CURDATE() WHERE student_id = ? AND session_id = ?';
     pool.query(query, [student_id, session_id], callback);
   },
+  viewattendence:(session_id,callback)=>{
+    const query='SELECT a.id, a.session_id, s.student_name,s.student_rollno ,a.student_id, a.status, a.added_date FROM attendance a JOIN student s ON a.student_id=s.student_id WHERE a.session_id= ? ;'
+    pool.query(query, [session_id], callback);
+  }
 };
 
 module.exports = attendencemodel;
