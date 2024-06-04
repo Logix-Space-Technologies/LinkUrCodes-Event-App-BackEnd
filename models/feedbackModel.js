@@ -27,7 +27,17 @@ const packageModel = {
     viewFeedbackUser: (callback) => {
         const query = 'SELECT u.user_name, e.event_public_name,f.feedback_content FROM user u join event_public e join feedback_user f on f.feedback_user_id = u.user_id where f.feedback_event_id = e.event_public_id';
         pool.query(query, callback);
-    }
+    },
+
+    // session feedback
+    insertFeedbackSessionStud: (feedbackSessionStudData, callback) => {
+        const query = 'INSERT INTO feedback_session_private SET ? ';
+        pool.query(query, feedbackSessionStudData, callback);
+    },
+    viewFeedbackSessionStud: (callback) => {
+        const query = 'SELECT fs.feedback_id,s.student_name,sp.session_topic_description,sp.type,fs.feedback_contents,fs.addedby_date FROM feedback_session_private fs JOIN  student s ON fs.student_id = s.student_id  JOIN  session_private sp ON fs.session_id = sp.session_private_id;';
+        pool.query(query, callback);
+    },
 }
 
 module.exports = packageModel;
