@@ -6,6 +6,7 @@ const router = express.Router()
 const jwt = require("jsonwebtoken")
 const uploadModel = require("../models/uploadModel")
 const collegeModel = require('../models/collegeModel');
+const attendenceModel = require('../models/attendenceModel');
 
 // router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
 //     let data = req.body
@@ -618,7 +619,7 @@ router.post('/addSession', (req, res) => {
                                 added_date: date
                             };
 
-                            privateEventModel.addAttendance(newAttendance, (err) => {
+                            attendenceModel.addAttendance(newAttendance, (err) => {
                                 if (err) {
                                     console.error('Error adding attendance: ' + err);
                                     return res.json({ status: 'error', message: error });

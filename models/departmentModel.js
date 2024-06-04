@@ -32,6 +32,8 @@ const departmentModel = {
       });
     },
 
+    
+
   findFacultyByEmail : (faculty_email, callback) => {
     const query = 'SELECT * FROM department WHERE faculty_email = ? LIMIT 1';
     pool.query(query, [faculty_email], (error, results) => {
@@ -65,8 +67,19 @@ findFacultyById : (id, callback) => {
       }
       return callback(null, results[0]);
   });
+},
+ updatePassword : (faculty_email, new_password, callback) => {
+  const query = 'UPDATE department SET faculty_password = ? WHERE faculty_email = ?';
+  console.log('Hashed Password to be stored:', new_password); // Debug logging
+  pool.query(query, [new_password, faculty_email], (error, result) => {
+    if (error) {
+      console.error('Database error:', error.message); // Debug logging
+      return callback(error, null);
+    }
+    console.log('Database update result:', result); // Debug logging
+    return callback(null, result);
+  });
 }
-
 };
   
   module.exports = departmentModel;
