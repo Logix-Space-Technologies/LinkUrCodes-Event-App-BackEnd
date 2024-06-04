@@ -106,7 +106,8 @@ const privateEventModel = {
                     session_date,
                     session_topic_description, 
                     type, 
-                    venue 
+                    venue ,
+                    is_completed
                 FROM session_private 
                 WHERE event_private_id = ?`;
             pool.query(query, [event_private_id], (error, results) => {
