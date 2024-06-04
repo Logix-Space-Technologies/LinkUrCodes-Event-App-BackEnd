@@ -21,6 +21,28 @@ hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
 }
+
+const hashPasswordGenerator = async (pass) => {
+    console.log(pass)
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(pass, salt)
+}
+
+
+// Function to remove expired verification codes
+function removeExpiredCodes() {
+    console.log("Checking for expired verification codes...");
+    const currentTime = Date.now();
+    for (const email in verificationCodes) {
+        if (currentTime - verificationCodes[email].timestamp > codeExpirationThreshold) {
+            console.log(`Expired code found for ${email}. Removing...`);
+            delete verificationCodes[email];
+        }
+    }
+}
+
+
+
 // Route to add a new College
 router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async (req, res) => {
     try {
@@ -53,7 +75,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
             college_password: data.college_password,
             college_image: imagePath,
             college_addedby: data.college_addedby,
-            college_updatedby: data.college_addedby
+            college_updatedby: data.college_updatedby
         }
 
         const token = req.headers["token"];
@@ -199,7 +221,7 @@ router.post('/addDepartment', async (req, res) => {
         if (error) {
             return res.json({ "status": "error", "message": "Failed to verify token" });
         }
-        if (decoded && decoded.college_email) {
+        if (decoded && decoded.faculty_email) {
           // Check if the college_id exists
           collegeModel.findCollegeById(newData.college_id, (err, result) => {
             if (err || !result.length) {
@@ -302,26 +324,26 @@ router.post("/departmentLogin", async (req, res) => {
 
         // If no faculty is found
         if (!faculty) {
-            return res.status(404).json({ status: "error", error: "Faculty not found" });
+            return res.json({ status: "incorrect email", error: "Faculty not found" });
         }
 
         // Compare passwords
         const match = await bcrypt.compare(faculty_password, faculty.faculty_password);
         if (!match) {
-            return res.status(401).json({ status: "error", error: "Incorrect password" });
+            return res.json({ status: "incorrect password", error: "Incorrect password" });
         }
 
         // Generate JWT token using "collegelogin" as the secret key
         jwt.sign({ faculty_email: faculty_email }, "collegelogin", { expiresIn: "1d" }, (error, facultyToken) => {
             if (error) {
-                return res.status(500).json({ status: "error", error: "Token generation failed" });
+                return res.json({ status: "error", error: "Token generation failed" });
             } else {
                 return res.json({ status: "success", facultyData: faculty, collegetoken: facultyToken });
             }
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: "error", message: "Failed to login faculty" });
+        return res.json({ status: "error", message: "Failed to login faculty" });
     }
 });
 
@@ -355,42 +377,172 @@ router.post('/viewFaculty', (req, res) => {
     });
 });
 
+router.post('/viewFacultyProfile', (req, res) => { 
+    const id = req.body.id;
+    // Verify college token
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            return res.json({ "status": "error", "message": "Failed to verify token" });
+        }
+        if (decoded && decoded.faculty_email) {
 
-
-router.post("/collegeLogin", async (req, res) => {
-    try {
-        const { college_email, college_password } = req.body;
-        const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+        departmentModel.findFacultyById(id, (error, results) => {
             if (error) {
-                res.status(500).send({ status: "error", error: 'Error retrieving college data' });
-                return;
+                return res.status(500).json({ error: 'Internal Server Error' });
             }
-            if (results.length > 0) {
-                res.status(200).json(results[0]);
-            } else {
-                res.status(404).send({ status: "error", error: 'College not found' });
+            
+            // If no results found, return a custom message
+            if (results.length === 0) {
+                return res.json({ status:"No Faculties Found",message: 'No Faculties Found' });
+            }
+
+            // If results found, return the results
+            return res.status(200).json(results);
+        });
+    }
+    });
+});
+
+router.put('/updateDepartmentPassword', async (req, res) => {
+    try {
+        const { faculty_email, verification_code, faculty_password } = req.body;
+
+        // Check if all required fields are provided
+        if (!faculty_email || !verification_code || !faculty_password) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
+        }
+
+        // Check if the email exists in the database
+        departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
+            if (error) {
+                return res.status(500).json({ status: 'error', message: error.message });
+            }
+
+            if (!faculty) {
+                // Email not found in the table
+                return res.status(404).json({ status: 'error', message: 'Invalid email' });
+            }
+
+            // Check if verification code matches the stored code and has not expired
+            const verificationData = verificationCodes[faculty_email];
+            if (!verificationData || verificationData.code !== parseInt(verification_code)) {
+                return res.status(400).json({ message: 'Invalid or expired verification code' });
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
+                delete verificationCodes[faculty_email]; // Remove expired verification code
+                return res.status(400).json({ message: 'Verification code has expired' });
+            }
+
+            try {
+                // Hash the new password
+                const hashedNewPassword = await hashPasswordGenerator(faculty_password);
+
+                // Update the password in the database
+                departmentModel.updatePassword(faculty_email, hashedNewPassword, (error, updateResult) => {
+                    if (error) {
+                        return res.status(500).json({ message: error.message });
+                    }
+                    // Password updated successfully
+                    res.json({ status: 'success', message: 'Password updated successfully' });
+
+                    // Remove the verification code after password update
+                    delete verificationCodes[faculty_email];
+                });
+            } catch (error) {
+                return res.status(500).json({ message: error.message });
             }
         });
-        console.log(college)
-        if (!college) {
-            return res.json({ status: "Incorrect mailid" });
-        }
-        const match = await bcrypt.compare(college_password, college.college_password);
-        if (!match) {
-            return res.json({ status: "Incorrect password" });
-        }
-        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+
+// Temporary storage for verification codes
+const verificationCodes = {};
+
+// Time threshold for code expiration (in milliseconds)
+const codeExpirationThreshold = 300000; // 5 minutes
+
+// Route for resetting password using verification code
+router.post("/forgotDepartmentpassword", async (req, res) => {
+    try {
+        const { faculty_email } = req.body;
+        const subjectheading = 'Password Reset';
+
+        departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
             if (error) {
-                return res.json({ status: "error", "error": error });
-            } else {
-                return res.json({ status: "success", "collegedata": college, "collegetoken": collegetoken });
+                return res.status(500).json({ error: error.message });
+            }
+            if (!faculty) {
+                return res.status(400).json({ error: "Invalid faculty email" });
+            }
+            try {
+                // Generate a random 6-digit number
+                const randomCode = Math.floor(100000 + Math.random() * 900000);
+
+                // Store the code with timestamp
+                verificationCodes[faculty_email] = {
+                    code: randomCode,
+                    timestamp: Date.now()
+                };
+
+                let faculty_name = faculty.faculty_name;
+                let sending_email = faculty_email;
+                let textsend = `Dear ${faculty_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+
+                // Send password reset email
+                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+
+                return res.json({ status: "success", message: "Password reset message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
             }
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ "status": "error", "message": "Failed to login college" });
+        return res.status(500).json({ error: error.message });
     }
 });
+
+
+// router.post("/collegeLogin", async (req, res) => {
+//     try {
+//         const { college_email, college_password } = req.body;
+//         const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+//             if (error) {
+//                 res.status(500).send({ status: "error", error: 'Error retrieving college data' });
+//                 return;
+//             }
+//             if (results.length > 0) {
+//                 res.status(200).json(results[0]);
+//             } else {
+//                 res.status(404).send({ status: "error", error: 'College not found' });
+//             }
+//         });
+//         console.log(college)
+//         if (!college) {
+//             return res.json({ status: "Incorrect mailid" });
+//         }
+//         const match = await bcrypt.compare(college_password, college.college_password);
+//         if (!match) {
+//             return res.json({ status: "Incorrect password" });
+//         }
+//         jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+//             if (error) {
+//                 return res.json({ status: "error", "error": error });
+//             } else {
+//                 return res.json({ status: "success", "collegedata": college, "collegetoken": collegetoken });
+//             }
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ "status": "error", "message": "Failed to login college" });
+//     }
+// });
 
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
@@ -486,7 +638,7 @@ router.post('/student/add', async (req, res) => {
                 res.status(401).json({ error: 'Unauthorized: Invalid token.' });
                 return;
             }
-            if (decoded && decoded.college_email) {
+            if (decoded && decoded.faculty_email) {
                 // Call insertStudent function from collegeModel
                 collegeModel.insertStudent({
                     student_name,
@@ -536,7 +688,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
         const collegetoken = req.headers["collegetoken"];
         console.log('Received token:', collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
-            if (decoded && decoded.college_email) {
+            if (decoded && decoded.faculty_email) {
                 const workbook = xlsx.readFile(req.file.path);
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
@@ -707,7 +859,7 @@ router.post('/collegeEvents', async (req, res) => {
             console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
-        if (decoded && decoded.college_email) {
+        if (decoded && decoded.faculty_email) {
             const event_private_clgid = req.body
             const college = await privateEventModel.viewEventSByCollege(event_private_clgid, (error, results) => {
                 if (error) {
