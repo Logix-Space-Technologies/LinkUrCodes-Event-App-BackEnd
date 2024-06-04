@@ -90,11 +90,7 @@ const privateEventModel = {
     viewStudentPrivateEvents: (student_email, callback) => {
         const query = `SELECT  e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time,e.event_private_duration, e.event_private_online,e.event_private_offline,e.event_private_recorded, e.event_private_image,e.event_private_syllabus FROM event_private e JOIN student s ON e.event_private_id = s.event_id  WHERE s.student_email = ? ORDER BY  e.event_private_id`;
         pool.query(query, [student_email], callback);
-    }
-
-
-
-
+    },
 
     addSession: (data, callback) => {
         const query = "INSERT INTO session_private SET  ?";

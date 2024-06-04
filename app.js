@@ -9,6 +9,7 @@ const eventRouter=require('./controllers/eventRouter')
 const studentRouter=require('./controllers/studentRouter')
 const feedbackRouter=require("./controllers/feedbackRouter")
 const razorpayRouter=require("./controllers/razorpayRouter")
+const attendencerouter=require("./controllers/attendencerouter")
 
 
 const app=express()
@@ -40,6 +41,7 @@ app.use('/uploads', express.static('uploads'));
 
 app.use("/api/payment",razorpayRouter)
 
+app.use("/api/attendence",attendencerouter)
 app.listen(port, ()=>{
     console.log("Server running on",port)
 })
