@@ -493,10 +493,45 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
                 let faculty_name = faculty.faculty_name;
                 let sending_email = faculty_email;
-                let textsend = `Dear ${faculty_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+                let textContent = `Dear ${faculty_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Password Reset</title>
+                        <style>
+                            body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                            .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                            .logo-header img { max-width: 30%; height: auto; }
+                            .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                            h2 { text-align: center; }
+                            .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="logo-header">
+                                <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                            </div>
+                            <div class="content">
+                                <h2>Password Reset</h2>
+                                <p>Dear ${faculty_name},</p>
+                                <p>You have requested to reset your password. Your verification code is: <strong style="color: blue;">${randomCode}</strong>.</p>
+                                <p>Please use this code to reset your password. If you did not request this, please contact the administrator.</p>
+                                <p>Best regards,</p>
+                                <p>Link Ur Codes Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
 
                 // Send password reset email
-                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+                await mailerModel.sendEmail(sending_email, subjectheading, htmlContent, textContent);
 
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
@@ -507,6 +542,7 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
 
 
 // router.post("/collegeLogin", async (req, res) => {
