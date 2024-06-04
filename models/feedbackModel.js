@@ -34,9 +34,9 @@ const packageModel = {
         const query = 'INSERT INTO feedback_session_private SET ? ';
         pool.query(query, feedbackSessionStudData, callback);
     },
-    viewFeedbackSessionStud: (callback) => {
-        const query = 'SELECT fs.feedback_id,s.student_name,sp.session_topic_description,sp.type,fs.feedback_contents,fs.addedby_date FROM feedback_session_private fs JOIN  student s ON fs.student_id = s.student_id  JOIN  session_private sp ON fs.session_id = sp.session_private_id;';
-        pool.query(query, callback);
+    viewFeedbackSessionStud: (sessionId, callback) => {
+        const query = 'SELECT fs.feedback_id, s.student_name, sp.session_topic_description, sp.type, fs.feedback_contents, fs.addedby_date FROM feedback_session_private fs JOIN student s ON fs.student_id = s.student_id JOIN session_private sp ON fs.session_id = sp.session_private_id WHERE session_id = ?';
+        pool.query(query, [sessionId], callback);
     },
 }
 
