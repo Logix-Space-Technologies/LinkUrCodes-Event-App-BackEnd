@@ -21,6 +21,10 @@ const attendencemodel = {
   viewattendence:(session_id,callback)=>{
     const query='SELECT a.id, a.session_id, s.student_name,s.student_rollno ,a.student_id, a.status, a.added_date FROM attendance a JOIN student s ON a.student_id=s.student_id WHERE a.session_id= ? ;'
     pool.query(query, [session_id], callback);
+  },
+  viewAbsentattendence:(session_id,callback)=>{
+    const query='SELECT a.id, a.session_id, s.student_name,s.student_rollno ,a.student_id, a.status, a.added_date FROM attendance a JOIN student s ON a.student_id=s.student_id WHERE a.status=0 AND a.session_id = ? ;'
+    pool.query(query, [session_id], callback);
   }
 };
 
