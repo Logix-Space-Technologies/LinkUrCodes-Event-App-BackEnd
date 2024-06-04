@@ -427,13 +427,13 @@ router.put('/updateDepartmentPassword', async (req, res) => {
             // Check if verification code matches the stored code and has not expired
             const verificationData = verificationCodes[faculty_email];
             if (!verificationData || verificationData.code !== parseInt(verification_code)) {
-                return res.status(400).json({ message: 'Invalid or expired verification code' });
+                return res.json({status:"invalid",message:"Invalid or expired verification code"})
             }
 
             const currentTime = Date.now();
             if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
                 delete verificationCodes[faculty_email]; // Remove expired verification code
-                return res.status(400).json({ message: 'Verification code has expired' });
+                return res.json({status:"expired",message:"Verification code has expired"})
             }
 
             try {
