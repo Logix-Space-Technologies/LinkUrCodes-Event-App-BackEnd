@@ -57,4 +57,42 @@ router.post('/viewallfeedbackuser', (req, res) => {
     });
 });
 
+router.post('/addSessionStudFeedback', (req, res) => {
+    const token = req.headers['token'];
+    const secretKey = "stud-eventapp"; // Your secret key for token verification
+
+    if (!token) {
+        return res.status(403).json({ success: false, message: 'No token provided' });
+    }
+
+    jwt.verify(token, secretKey, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ success: false, message: 'Invalid token', error: err.message });
+        }
+        const data = req.body;
+
+        feedbackModel.insertFeedbackSessionStud(data, (err, results) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error', error: err });
+            }
+            res.status(200).json({ success: true, message: 'Feedback added successfully', data: results });
+        });
+    });
+});
+
+router.post('/viewSessionStudFeedback', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            feedbackModel.viewFeedbackSessionStud((error, results) => {
+                res.json(results);
+            })
+        }
+    });
+});
+
 module.exports = router
