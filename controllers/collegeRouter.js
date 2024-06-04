@@ -53,7 +53,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
             college_password: data.college_password,
             college_image: imagePath,
             college_addedby: data.college_addedby,
-            college_updatedby: data.college_addedby
+            college_updatedby: data.college_updatedby
         }
 
         const token = req.headers["token"];
