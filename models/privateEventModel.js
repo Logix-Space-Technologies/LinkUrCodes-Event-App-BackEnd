@@ -118,10 +118,6 @@ const privateEventModel = {
     updateSessionStatus: (event_private_id, session_private_id, callback) => {
         const query = "UPDATE session_private SET is_completed = 1 WHERE event_private_id = ? AND session_private_id = ?";
         pool.query(query, [event_private_id, session_private_id], callback);
-    },
-    addAttendance: (data, callback) => {
-        const query = "INSERT INTO attendance SET ?";
-        pool.query(query, [data], callback);
     }
 
 }

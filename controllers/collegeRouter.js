@@ -21,6 +21,28 @@ hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
 }
+
+const hashPasswordGenerator = async (pass) => {
+    console.log(pass)
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(pass, salt)
+}
+
+
+// Function to remove expired verification codes
+function removeExpiredCodes() {
+    console.log("Checking for expired verification codes...");
+    const currentTime = Date.now();
+    for (const email in verificationCodes) {
+        if (currentTime - verificationCodes[email].timestamp > codeExpirationThreshold) {
+            console.log(`Expired code found for ${email}. Removing...`);
+            delete verificationCodes[email];
+        }
+    }
+}
+
+
+
 // Route to add a new College
 router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async (req, res) => {
     try {
@@ -381,6 +403,111 @@ router.post('/viewFacultyProfile', (req, res) => {
     }
     });
 });
+
+router.put('/updateDepartmentPassword', async (req, res) => {
+    try {
+        const { faculty_email, verification_code, faculty_password } = req.body;
+
+        // Check if all required fields are provided
+        if (!faculty_email || !verification_code || !faculty_password) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
+        }
+
+        // Check if the email exists in the database
+        departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
+            if (error) {
+                return res.status(500).json({ status: 'error', message: error.message });
+            }
+
+            if (!faculty) {
+                // Email not found in the table
+                return res.status(404).json({ status: 'error', message: 'Invalid email' });
+            }
+
+            // Check if verification code matches the stored code and has not expired
+            const verificationData = verificationCodes[faculty_email];
+            if (!verificationData || verificationData.code !== parseInt(verification_code)) {
+                return res.status(400).json({ message: 'Invalid or expired verification code' });
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
+                delete verificationCodes[faculty_email]; // Remove expired verification code
+                return res.status(400).json({ message: 'Verification code has expired' });
+            }
+
+            try {
+                // Hash the new password
+                const hashedNewPassword = await hashPasswordGenerator(faculty_password);
+
+                // Update the password in the database
+                departmentModel.updatePassword(faculty_email, hashedNewPassword, (error, updateResult) => {
+                    if (error) {
+                        return res.status(500).json({ message: error.message });
+                    }
+                    // Password updated successfully
+                    res.json({ status: 'success', message: 'Password updated successfully' });
+
+                    // Remove the verification code after password update
+                    delete verificationCodes[faculty_email];
+                });
+            } catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+
+// Temporary storage for verification codes
+const verificationCodes = {};
+
+// Time threshold for code expiration (in milliseconds)
+const codeExpirationThreshold = 300000; // 5 minutes
+
+// Route for resetting password using verification code
+router.post("/forgotDepartmentpassword", async (req, res) => {
+    try {
+        const { faculty_email } = req.body;
+        const subjectheading = 'Password Reset';
+
+        departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            if (!faculty) {
+                return res.status(400).json({ error: "Invalid faculty email" });
+            }
+            try {
+                // Generate a random 6-digit number
+                const randomCode = Math.floor(100000 + Math.random() * 900000);
+
+                // Store the code with timestamp
+                verificationCodes[faculty_email] = {
+                    code: randomCode,
+                    timestamp: Date.now()
+                };
+
+                let faculty_name = faculty.faculty_name;
+                let sending_email = faculty_email;
+                let textsend = `Dear ${faculty_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+
+                // Send password reset email
+                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+
+                return res.json({ status: "success", message: "Password reset message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+
 
 // router.post("/collegeLogin", async (req, res) => {
 //     try {

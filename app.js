@@ -42,6 +42,7 @@ app.use('/uploads', express.static('uploads'));
 app.use("/api/payment",razorpayRouter)
 
 app.use("/api/attendence",attendencerouter)
+
 app.listen(port, ()=>{
     console.log("Server running on",port)
 })
