@@ -62,20 +62,19 @@ router.post('/addSessionStudFeedback', (req, res) => {
     const secretKey = "stud-eventapp"; // Your secret key for token verification
 
     if (!token) {
-        return res.status(403).json({ success: false, message: 'No token provided' });
+        return res.json({ status: "error", message: 'No token provided' });
     }
 
     jwt.verify(token, secretKey, (err, decoded) => {
         if (err) {
-            return res.status(403).json({ success: false, message: 'Invalid token', error: err.message });
+            return res.json({ status: "error", message: 'Invalid token', error: err.message });
         }
         const data = req.body;
-
         feedbackModel.insertFeedbackSessionStud(data, (err, results) => {
             if (err) {
-                return res.status(500).json({ success: false, message: 'Database error', error: err });
+                return res.json({ status: "error", message: 'Database error', error: err });
             }
-            res.status(200).json({ success: true, message: 'Feedback added successfully', data: results });
+            res.json({ status: "success", message: 'Feedback added successfully', data: results });
         });
     });
 });
