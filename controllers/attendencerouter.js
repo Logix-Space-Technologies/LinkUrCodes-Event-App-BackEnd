@@ -9,11 +9,7 @@ router.use(express.json());
 
 router.post('/updateAttendence', (req, res) => {
   const admintoken = req.headers['token'];
-  console.log(req.body)
   const { student_id, session_id } = req.body;
-
-  console.log("Received student_id:", student_id);
-  console.log("Received session_id:", session_id);
 
   jwt.verify(admintoken, 'eventAdmin', async (error, decoded) => {
     if (error) {
