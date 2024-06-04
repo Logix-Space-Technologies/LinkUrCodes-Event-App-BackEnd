@@ -5,7 +5,7 @@ const privateEventModel = require("../models/privateEventModel")
 const router = express.Router()
 const jwt = require("jsonwebtoken")
 const uploadModel = require("../models/uploadModel")
-
+const collegeModel = require('../models/collegeModel');
 
 // router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
 //     let data = req.body
@@ -109,7 +109,7 @@ router.post('/view_user_public_events', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.email) {
-            publicEventModel.viewPublicEvents((error, results) => {
+            privateEventModel.viewPrivateEvents((error, results) => {
                 res.json(results);
             })
         }
@@ -174,6 +174,35 @@ router.post('/view_private_events', (req, res) => {
         }
     });
 })
+
+router.post('/view-student-private-events', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "stud-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+
+        // Extract student_email from the decoded token
+        const student_email = decoded.email;
+
+        // Fetch private events registered by the student
+        privateEventModel.viewStudentPrivateEvents(student_email, (error, events) => {
+            if (error) {
+                console.error('Error fetching events:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
+
+            if (events.length === 0) {
+                return res.status(404).json({ status: "No Events Found" });
+            }
+
+            return res.json({ status: "Success", events });
+        });
+    });
+});
 
 router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
     const token = req.headers["token"];
@@ -551,6 +580,111 @@ router.post('/view_notcompleted_private_events', (req, res) => {
         }
     });
 })
+
+router.post('/addSession', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        const data = req.body
+        privateEventModel.addSession(data, (err, results) => {
+            if (err) {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            }
+            else {
+                const sessionId = results.insertId;
+                const eventID = req.body.event_private_id
+                const date = req.body.session_date
+                // Fetching students
+                collegeModel.findEventsByEventId(eventID, (error, students) => {
+                    if (error) {
+                        return res.json({ status: 'error', message: error });
+                    } else {
+                        let completed = 0;
+                        const totalStudents = students.length;
+                        if (totalStudents === 0) {
+                            return res.json({ status: "success", "message": "Session added successfully" });
+                        }
+
+                        students.forEach(student => {
+                            let studentId = student.student_id;
+                            const newAttendance = {
+                                session_id: sessionId,
+                                student_id: studentId,
+                                added_date: date
+                            };
+
+                            privateEventModel.addAttendance(newAttendance, (err) => {
+                                if (err) {
+                                    console.error('Error adding attendance: ' + err);
+                                    return res.json({ status: 'error', message: error });
+                                }
+                                completed++;
+                                if (completed === totalStudents) {
+                                    // Respond with success after processing all students
+                                    return res.json({ "status": "success", "message": "Session and attendance added successfully" });
+                                }
+                            });
+                        });
+                    }
+                });
+                // res.json({ "status": "success", "message": "Session added successfully" });
+            }
+        });
+    });
+})
+
+
+router.post('/viewSession', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        const { event_private_id } = req.body;
+        privateEventModel.getSessions(event_private_id)
+            .then(results => {
+                // Format the session_date for each result
+                const formattedResults = results.map(session => {
+                    const sessionDate = new Date(session.session_date);
+                    const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                    session.session_date = formattedDate; // DD-MM-YYYY format
+                    return session;
+                });
+
+                res.json({ "status": "success", "data": formattedResults });
+            })
+            .catch(err => {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            });
+    });
+});
+
+router.post('/updateSession', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        const { event_private_id, session_private_id } = req.body;
+        privateEventModel.updateSessionStatus(event_private_id, session_private_id, (err, results) => {
+            if (err) {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            }
+            res.json({ "status": "success", "message": "Session status updated successfully" });
+        });
+    });
+});
 
 
 
