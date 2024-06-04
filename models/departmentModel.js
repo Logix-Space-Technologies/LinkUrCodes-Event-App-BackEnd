@@ -54,6 +54,18 @@ const departmentModel = {
         return callback(null, results);
     });
 },
+findFacultyById : (id, callback) => {
+  const query = 'SELECT d.id, c.college_name,d.department_name,d.faculty_name,d.faculty_email,d.faculty_phone FROM department d JOIN college c ON d.college_id=c.college_id WHERE d.id = ?';
+  pool.query(query, [id], (error, results) => {
+      if (error) {
+          return callback(error, null);
+      }
+      if (results.length === 0) {
+          return callback(null, null);
+      }
+      return callback(null, results[0]);
+  });
+}
 
 };
   
