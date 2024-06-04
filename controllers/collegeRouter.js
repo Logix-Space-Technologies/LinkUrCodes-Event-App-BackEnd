@@ -199,7 +199,7 @@ router.post('/addDepartment', async (req, res) => {
         if (error) {
             return res.json({ "status": "error", "message": "Failed to verify token" });
         }
-        if (decoded && decoded.college_email) {
+        if (decoded && decoded.faculty_email) {
           // Check if the college_id exists
           collegeModel.findCollegeById(newData.college_id, (err, result) => {
             if (err || !result.length) {
@@ -355,42 +355,67 @@ router.post('/viewFaculty', (req, res) => {
     });
 });
 
-
-
-router.post("/collegeLogin", async (req, res) => {
-    try {
-        const { college_email, college_password } = req.body;
-        const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
-            if (error) {
-                res.status(500).send({ status: "error", error: 'Error retrieving college data' });
-                return;
-            }
-            if (results.length > 0) {
-                res.status(200).json(results[0]);
-            } else {
-                res.status(404).send({ status: "error", error: 'College not found' });
-            }
-        });
-        console.log(college)
-        if (!college) {
-            return res.json({ status: "Incorrect mailid" });
+router.post('/viewFacultyProfile', (req, res) => { 
+    const id = req.body.id;
+    // Verify college token
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            return res.json({ "status": "error", "message": "Failed to verify token" });
         }
-        const match = await bcrypt.compare(college_password, college.college_password);
-        if (!match) {
-            return res.json({ status: "Incorrect password" });
-        }
-        jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+        if (decoded && decoded.faculty_email) {
+
+        departmentModel.findFacultyById(id, (error, results) => {
             if (error) {
-                return res.json({ status: "error", "error": error });
-            } else {
-                return res.json({ status: "success", "collegedata": college, "collegetoken": collegetoken });
+                return res.status(500).json({ error: 'Internal Server Error' });
             }
+            
+            // If no results found, return a custom message
+            if (results.length === 0) {
+                return res.json({ status:"No Faculties Found",message: 'No Faculties Found' });
+            }
+
+            // If results found, return the results
+            return res.status(200).json(results);
         });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ "status": "error", "message": "Failed to login college" });
     }
+    });
 });
+
+// router.post("/collegeLogin", async (req, res) => {
+//     try {
+//         const { college_email, college_password } = req.body;
+//         const college = await collegeModel.findCollegeByEmail(college_email, (error, results) => {
+//             if (error) {
+//                 res.status(500).send({ status: "error", error: 'Error retrieving college data' });
+//                 return;
+//             }
+//             if (results.length > 0) {
+//                 res.status(200).json(results[0]);
+//             } else {
+//                 res.status(404).send({ status: "error", error: 'College not found' });
+//             }
+//         });
+//         console.log(college)
+//         if (!college) {
+//             return res.json({ status: "Incorrect mailid" });
+//         }
+//         const match = await bcrypt.compare(college_password, college.college_password);
+//         if (!match) {
+//             return res.json({ status: "Incorrect password" });
+//         }
+//         jwt.sign({ college_email: college_email }, "collegelogin", { expiresIn: "1d" }, (error, collegetoken) => {
+//             if (error) {
+//                 return res.json({ status: "error", "error": error });
+//             } else {
+//                 return res.json({ status: "success", "collegedata": college, "collegetoken": collegetoken });
+//             }
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ "status": "error", "message": "Failed to login college" });
+//     }
+// });
 
 // Rote to get a college by college name
 router.post('/searchCollege', (req, res) => {
@@ -486,7 +511,7 @@ router.post('/student/add', async (req, res) => {
                 res.status(401).json({ error: 'Unauthorized: Invalid token.' });
                 return;
             }
-            if (decoded && decoded.college_email) {
+            if (decoded && decoded.faculty_email) {
                 // Call insertStudent function from collegeModel
                 collegeModel.insertStudent({
                     student_name,
@@ -536,7 +561,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
         const collegetoken = req.headers["collegetoken"];
         console.log('Received token:', collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
-            if (decoded && decoded.college_email) {
+            if (decoded && decoded.faculty_email) {
                 const workbook = xlsx.readFile(req.file.path);
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
@@ -707,7 +732,7 @@ router.post('/collegeEvents', async (req, res) => {
             console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
-        if (decoded && decoded.college_email) {
+        if (decoded && decoded.faculty_email) {
             const event_private_clgid = req.body
             const college = await privateEventModel.viewEventSByCollege(event_private_clgid, (error, results) => {
                 if (error) {
