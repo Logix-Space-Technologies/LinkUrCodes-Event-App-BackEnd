@@ -49,7 +49,7 @@ router.post('/addstudent', async (req, res) => {
         newdata[0].student_password = hashedPassword;
         const collegetoken = req.headers["collegetoken"];
         jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
-        if (decoded && decoded.college_email)
+        if (decoded && decoded.faculty_email)
         {
         studentModel.insertStudent(newdata, async (error, results) => {
             if (error) {
