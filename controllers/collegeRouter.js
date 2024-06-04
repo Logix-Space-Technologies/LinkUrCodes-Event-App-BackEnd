@@ -302,26 +302,26 @@ router.post("/departmentLogin", async (req, res) => {
 
         // If no faculty is found
         if (!faculty) {
-            return res.status(404).json({ status: "error", error: "Faculty not found" });
+            return res.json({ status: "incorrect email", error: "Faculty not found" });
         }
 
         // Compare passwords
         const match = await bcrypt.compare(faculty_password, faculty.faculty_password);
         if (!match) {
-            return res.status(401).json({ status: "error", error: "Incorrect password" });
+            return res.json({ status: "incorrect password", error: "Incorrect password" });
         }
 
         // Generate JWT token using "collegelogin" as the secret key
         jwt.sign({ faculty_email: faculty_email }, "collegelogin", { expiresIn: "1d" }, (error, facultyToken) => {
             if (error) {
-                return res.status(500).json({ status: "error", error: "Token generation failed" });
+                return res.json({ status: "error", error: "Token generation failed" });
             } else {
                 return res.json({ status: "success", facultyData: faculty, collegetoken: facultyToken });
             }
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: "error", message: "Failed to login faculty" });
+        return res.json({ status: "error", message: "Failed to login faculty" });
     }
 });
 
