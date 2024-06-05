@@ -79,8 +79,22 @@ findFacultyById : (id, callback) => {
     console.log('Database update result:', result); // Debug logging
     return callback(null, result);
   });
+},
+updateFaculty : (newData,id, callback) => {
+  const query = 'UPDATE department SET ? WHERE id = ?';
+  pool.query(query, [newData,id], (error, result) => {
+    if (error) {
+      console.error('Database error:', error.message); // Debug logging
+      return callback(error, null);
+    }
+    console.log('Database update result:', result); // Debug logging
+    return callback(null, result);
+  });
 }
+
+
 };
   
-  module.exports = departmentModel;
+
+module.exports = departmentModel;
   
