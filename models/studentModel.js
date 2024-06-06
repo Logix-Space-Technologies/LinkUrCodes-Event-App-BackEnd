@@ -5,8 +5,8 @@ const pool=mysql.createPool({
     host:process.env.DB_HOST,
     user:process.env.DB_USER,
     database:process.env.DB_NAME,
-    password:'',
-    port:process.env.DB_PORT
+    port:process.env.DB_PORT,
+    password:process.env.DB_PASS
 })
 
 const studentModel={
