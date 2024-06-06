@@ -189,7 +189,7 @@ router.post('/view-student-private-events', (req, res) => {
     const token = req.headers["token"];
 
     // Verify the token
-    jwt.verify(token, "stud-eventapp", (error, decoded) => {
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
             console.error('Error verifying token:', error);
             return res.status(401).json({ status: "Unauthorized" });

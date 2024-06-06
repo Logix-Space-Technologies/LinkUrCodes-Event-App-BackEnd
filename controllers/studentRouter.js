@@ -303,43 +303,43 @@ router.post('/viewstudevent', async (req, res) => {
 // });
 
 
-router.post('/loginstudent', (req, res) => {
-    const { student_email, student_password } = req.body;
+// router.post('/loginstudent', (req, res) => {
+//     const { student_email, student_password } = req.body;
 
-    studentModel.loginStudent(student_email, (error, student) => {
-        if (error) {
-            return res.json({status: "Error"});
-        }
-        if (!student) {
-            return res.json({status: "Invalid Email ID"});
-        }
-        // Now student is found, let's compare the password
-        bcrypt.compare(student_password, student.student_password, (err, isMatch) => {
-            if (err) {
-                return res.json({status: "Error is"});
-            }
-            if (!isMatch) {
-                return res.json({status: "Invalid Password"});
-            }
-            // Successful login
-            jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
-            (error,token)=>{
-                if (error) {
-                    res.json({
-                        "status":"error",
-                        "error":error
-                    })
-                } else {
-                    return res.json({
-                        status: "Success",
-                        studentData: student,
-                        "token":token
-                    }); 
-                }
-            })
-        });
-    });
-});
+//     studentModel.loginStudent(student_email, (error, student) => {
+//         if (error) {
+//             return res.json({status: "Error"});
+//         }
+//         if (!student) {
+//             return res.json({status: "Invalid Email ID"});
+//         }
+//         // Now student is found, let's compare the password
+//         bcrypt.compare(student_password, student.student_password, (err, isMatch) => {
+//             if (err) {
+//                 return res.json({status: "Error is"});
+//             }
+//             if (!isMatch) {
+//                 return res.json({status: "Invalid Password"});
+//             }
+//             // Successful login
+//             jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
+//             (error,token)=>{
+//                 if (error) {
+//                     res.json({
+//                         "status":"error",
+//                         "error":error
+//                     })
+//                 } else {
+//                     return res.json({
+//                         status: "Success",
+//                         studentData: student,
+//                         "token":token
+//                     }); 
+//                 }
+//             })
+//         });
+//     });
+// });
 
 // Route for updating password using verification code
 router.put('/updatepassword', async (req, res) => {
@@ -563,11 +563,13 @@ router.post('/view-student-profile', (req, res) => {
 
 router.post('/viewSession', (req, res) => {
     const token = req.headers["token"];
-        // Verify the token
-        jwt.verify(token, "stud-eventapp", (error, decoded) => {
-            if (error) {
-                return res.status(401).json({ "error": "Unauthorized" });
-            }
+
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
         const { event_private_id } = req.body;
         privateEventModel.getSessions(event_private_id)
             .then(results => {
