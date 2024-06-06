@@ -8,6 +8,7 @@ const pool=mysql.createPool({
     database:process.env.DB_NAME,
     port:process.env.DB_PORT,
     password:process.env.DB_PASS
+});
 
 
 const attendencemodel = {
