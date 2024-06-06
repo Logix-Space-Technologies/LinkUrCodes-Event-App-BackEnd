@@ -2,6 +2,7 @@ const express = require('express');
 const collegeModel = require('../models/collegeModel');
 const studentModel = require("../models/studentModel")
 const multer = require('multer');
+const moment = require('moment-timezone');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const axios = require('axios');
@@ -1004,5 +1005,34 @@ router.post('/viewSession', (req, res) => {
             });
     });
 });
+
+
+//college
+router.post('/displayPaymentsCollege', (req, res) => {
+    const collegetoken = req.headers["collegetoken"];
+    console.log('Received token:', collegetoken);
+    jwt.verify(collegetoken, "collegelogin", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error.message);
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        console.log('Decoded token:', decoded);
+        const { college_id } = req.body;
+        if (!college_id) {
+            return res.status(400).json({ error: 'college_id is required' });
+        }
+        collegeModel.getPaymentsByCollege(college_id, (error, results) => {
+            if (error) {
+                console.error('Error fetching payments:', error);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+            results.forEach(payment => {
+                payment.Date = moment(payment.Date).tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+            });
+            res.status(200).json({ status: 'success', data: results });
+        });
+    });
+});
+
 
 module.exports = router;

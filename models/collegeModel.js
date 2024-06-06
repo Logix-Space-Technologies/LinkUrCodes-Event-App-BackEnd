@@ -114,6 +114,14 @@ updateCollegePassword: (college_id, newPassword, callback) => {
   });
 },
 
+getPaymentsByCollege: (college_id, callback) => {
+    const query = `SELECT p.payment_college_id AS paymentId,c.college_name AS College,e.event_private_name AS Event,
+               e.event_private_description AS EventDescription,p.amount AS Amount,p.invoice_no AS Invoice,
+               p.college_payment_date AS Date FROM payment_college p INNER JOIN college c ON p.college_id = c.college_id INNER JOIN event_private e ON p.private_event_id = e.event_private_id
+                WHERE p.college_id = ?;`;
+    pool.query(query, [college_id], callback);
+},
+
 findCollegeStudents: (student_college_id_obj, callback) => {
     console.log("clg", student_college_id_obj)
     const student_college_id=student_college_id_obj.student_college_id
