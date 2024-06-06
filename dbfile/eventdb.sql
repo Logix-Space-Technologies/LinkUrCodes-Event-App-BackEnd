@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 04, 2024 at 09:01 AM
+-- Generation Time: Jun 06, 2024 at 02:28 PM
 -- Server version: 10.4.27-MariaDB
 -- PHP Version: 7.4.33
 
@@ -64,7 +64,12 @@ CREATE TABLE `admin_logs` (
 --
 
 INSERT INTO `admin_logs` (`id`, `admin_id`, `action`, `date_time`) VALUES
-(1, 1, 'Admin logged in', '2024-06-04 11:21:36');
+(1, 1, 'Admin logged in', '2024-06-04 11:21:36'),
+(2, 7, 'Admin logged in', '2024-06-06 11:59:25'),
+(3, 7, 'Admin logged in', '2024-06-06 12:32:51'),
+(5, 7, 'Payment done for college: St.josephs', '2024-06-06 12:55:45'),
+(6, 7, 'Payment done for college: Sahrdaya', '2024-06-06 13:30:45'),
+(7, 7, 'Admin logged in', '2024-06-06 17:41:52');
 
 -- --------------------------------------------------------
 
@@ -191,19 +196,6 @@ INSERT INTO `college` (`college_id`, `college_name`, `college_email`, `college_p
 -- --------------------------------------------------------
 
 --
--- Table structure for table `college_logs`
---
-
-CREATE TABLE `college_logs` (
-  `id` int(11) NOT NULL,
-  `college_id` int(11) NOT NULL,
-  `action` varchar(1000) NOT NULL,
-  `date_time` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `counter`
 --
 
@@ -244,7 +236,8 @@ INSERT INTO `department` (`department_id`, `college_id`, `department_name`, `fac
 (2, 14, 'Btech', 'Anna W ', 'Anna123@gmail.com', 7536204120, '$2a$10$93RwlOdp16SQWAiLs/FBBO92ZnHnDnZLsmiXdTv5MJ.MTwRLdyzJi'),
 (3, 1, 'BCA', 'Jasmine M ', 'Jasmine123@gmail.com', 9642301570, '$2a$10$WztW4dhzeIwS.KJpBXH1tu.Arp3olqSDvXRyEMj3aSrQeWeGYWT26'),
 (4, 15, 'EEE', 'Taniya', 'itaniya122001@gmail.com', 8578321060, '$2a$10$B.nBzVYVrz0EvVIM.Qcs6ur5fh7ibBbdjrtB5gP7FxI3I4QWj9urC'),
-(5, 15, 'EEE', 'Flower R', 'Flower123@gmail.com', 7634205312, '$2a$10$hBedJT9NYl246m5/izQ6c.b4.fUzZXPbizsDkfk7vDQaQVHpNg9G2');
+(5, 15, 'EEE', 'Flower R', 'Flower123@gmail.com', 7634205312, '$2a$10$hBedJT9NYl246m5/izQ6c.b4.fUzZXPbizsDkfk7vDQaQVHpNg9G2'),
+(6, 16, 'MCA', 'Anex', 'axpauly@gmail.com', 7025637399, '$2a$10$UcXTlxlPrBWf4rX169TjfO.VXARkRZzFiR/AoiWnNIlPCzkbmPgI.');
 
 -- --------------------------------------------------------
 
@@ -330,6 +323,19 @@ INSERT INTO `event_public` (`event_public_id`, `event_public_name`, `event_publi
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `faculty_logs`
+--
+
+CREATE TABLE `faculty_logs` (
+  `id` int(11) NOT NULL,
+  `department_id` int(11) NOT NULL,
+  `action` varchar(1000) NOT NULL,
+  `date_time` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `feedback_session_private`
 --
 
@@ -388,7 +394,8 @@ CREATE TABLE `payment_college` (
   `payment_college_id` int(11) NOT NULL,
   `college_id` int(11) NOT NULL,
   `private_event_id` int(11) NOT NULL,
-  `college_payment_date` date NOT NULL DEFAULT current_timestamp(),
+  `college_payment_date` datetime NOT NULL DEFAULT current_timestamp(),
+  `amount` int(11) NOT NULL,
   `invoice_no` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -396,10 +403,9 @@ CREATE TABLE `payment_college` (
 -- Dumping data for table `payment_college`
 --
 
-INSERT INTO `payment_college` (`payment_college_id`, `college_id`, `private_event_id`, `college_payment_date`, `invoice_no`) VALUES
-(3, 1, 1, '2024-03-20', 0),
-(4, 1, 2, '2024-03-20', 0),
-(6, 1, 1, '2024-03-21', 0);
+INSERT INTO `payment_college` (`payment_college_id`, `college_id`, `private_event_id`, `college_payment_date`, `amount`, `invoice_no`) VALUES
+(11, 16, 14, '2024-06-06 11:08:12', 50000, 2147483647),
+(12, 14, 11, '2024-06-06 12:31:17', 30000, 2147483647);
 
 -- --------------------------------------------------------
 
@@ -463,7 +469,6 @@ CREATE TABLE `student` (
   `student_admno` varchar(255) NOT NULL,
   `student_email` varchar(255) NOT NULL,
   `student_phone_no` bigint(11) NOT NULL,
-  `student_password` varchar(255) NOT NULL,
   `event_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -471,75 +476,62 @@ CREATE TABLE `student` (
 -- Dumping data for table `student`
 --
 
-INSERT INTO `student` (`student_id`, `student_name`, `student_rollno`, `student_admno`, `student_email`, `student_phone_no`, `student_password`, `event_id`) VALUES
-(2, 'Aj', 0, '1001', 'aj@gmail.com', 0, 'aj@123', 1),
-(3, 'AP', 0, '1002', 'ap@gmail.com', 0, 'ap@123', 2),
-(4, 'basil', 0, '4001', 'basil@gmail.com', 0, 'basil@123', 1),
-(7, 'Ammu k.k', 0, '090MCA22', 'ammu@gmail.com', 0, '$2a$10$zpACbAgK5j.Rim41.g8fVeUvyQrSB5FFHhnTGcSST.y9Lehd6DW5a', 1),
-(8, 'Leon', 0, '1231', 'leon@gmail.com', 0, '$2a$10$85X.hK0fVmX.oIYkZx0UX.zMZ2fMia92K9pMAxZ7HKfyE983c.A8C', 3),
-(9, 'Ciril', 0, '1232', 'ciril@gmail.com', 0, '$2a$10$xl7bvn1jgd2etDhJeDwdi.9pQeGEgK0pMfMaCD8OhnDiwgjy39316', 3),
-(10, 'Arjun', 0, '1233', 'arjun@gmail.com', 0, '$2a$10$D4LPE8tpVkV2NVRTfiDsOeEEeLlmHwFn3s24J.978X6p9rZZDs09O', 3),
-(11, 'Vivek', 0, '1234', 'vivek@gmail.com', 0, '$2a$10$5ug62kWFO.dTNYLTNtTyR.XxTDSA.1Bv.NwOGmItU2NdmYI0wk4vm', 3),
-(22, 'Bezos', 0, '092MCA22', 'jeffinjosev1@gmail.com', 0, '$2a$10$sWeHGFy33gWgRW4yNmZtmeilsRgkIHF.f7gLuSL/wMUNVmpaEe2Vq', 1),
-(24, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, '$2a$10$PoZ5iYWop6Kw.z/cFx8nSeKKT6B6U/rLNOc.riA4X3Eb4pGCKdX9a', 1),
-(25, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, '$2a$10$GAAl.e8HN8jZvua6ZtCIBuC2IyU1X4.rnzc73NJ6n5iZoG6k9A4t6', 1),
-(26, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, '$2a$10$Ol8WBrfC8EZTmZUxKdntnOv4HgTc9o.D4HxlNeEFT8hqm2sLz56oy', 1),
-(27, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, '$2a$10$8R6.spav6m/UOPjH4uWSGu.MlrDWl9Mqnv3fN4XkvrIGIHL.ymu9e', 1),
-(28, 'jeff', 0, '104MCA22', 'jeffinmjtcr@gmail.com', 0, '$2a$10$J/pPICvBFf6T4J6LTbkUV.C926.a.l3rv9aCNnv14qG7E5pswTlV2', 1),
-(29, 'Anex', 0, '1522', 'anex@gmail.com', 0, '$2a$10$8AUnfky3pNnYZAECNijDAO4E4yjSBA1QsotZlD9CQ1RVlNoJlRHO6', 1),
-(30, 'Jeffin', 0, '9638', 'jeffin@gmail.com', 0, '$2a$10$7Cg.H28LW.PqAPBtBBFxyuzxqQO1b0JjWUCJ6U3BfVEbruff0ziOm', 1),
-(31, 'Mahadevan', 0, '7531', 'mahadevan@gmail.com', 0, '$2a$10$qGSw5AI7Fucn85sgOEzlZeARfnpnGizBBsQe5EL9ufp40UKk8FJ5.', 1),
-(60, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$HXlQvnWTVCeOGTLuYzLIZ.DBN16OLfNeVX8BFlHado7iJFe49A8Fa', 1),
-(61, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$tnx7tOg5jlmALe0B4eKmXuy0cbOCAbyxlT37tCCMdkWNfMIHHAsz.', 1),
-(62, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$1GZnAbTT3GnY6bj0uk2mauQpT37MH0tXR5fLRqwpTvrd68ozaOj7m', 1),
-(63, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$8cizPGvOEYeXZj5AyEA7zODZCkVFtuvONSMCZcCYLY735djhkyqFS', 1),
-(64, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$iGtPHOl7.2BugN0cff6N5OebqvZrbLxmmaYCJrG9zCQkcQhbA9qxO', 1),
-(65, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$UjfmR.dSTzIl8.I/ji0Vfu5K7TtKwVvffp.DqDekLCvURysEVwaLy', 1),
-(66, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$ZiNHTRZ70/.gVMcrUi5mKeHTEvRu6Y2TLwJd8gpag7IRB4Gu2Oypu', 1),
-(67, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$KU.5EN5y/SGvFoutJ2wQwe4QTXCHf93/FEUimml8pXD5.pOzu.kai', 1),
-(68, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$ffNMTClsrGRlU0Qnq913q.qN2HGcDiZFBZW4LP.Hq/GMf2wF5zPd.', 1),
-(69, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$c9rHVmo.pIE8Sep2gmNjS.8B/u4PXin3pYoVgwU0jz7hRs/ZyCS0a', 1),
-(70, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$y7JwP0jqeR8jvhMazZTQKeKJux7quxXrUyLtnoZ1czoy0ki3lnNDa', 1),
-(71, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$BSNQilNepmd.S7GpCD9oneMYv7dWxb5ZgGJSoU7CtvBwOVKbEYRhW', 1),
-(72, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$SdVjDsHqiHJAuOIpKbAUQeFAEplkkCh7zMpqTtA7cQAsv6UhsNa2.', 1),
-(73, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$QNztrHi34afK8EdMuIPSQeQCQHOE3668c33Y84WAjkbefn2YgCteG', 1),
-(74, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$85JkPgZt0IbSDrreJzlH3u91eWMxVlGFvuw/FO9SVOc0BO3O9eMIa', 1),
-(75, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$3i3QcCaREn5u3Sn/qcmeSOwAGScp/CTkdJx5pFBine0Hk0iagS.rS', 1),
-(76, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$QiYYvdScMNxJPNcEx/KbVepVc72Ha1Zfcc.zNBeNx0WK9Xx7KBtI.', 1),
-(77, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$vfPKg/pS14uFSfqPmk1QKuBLhVCLKlso/X8FR7lzOCrlxTtptqR3y', 1),
-(78, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$JPeJqMj1.HPuw4HZ3Nv9g.h9wfjpF31gQd8eJq2iHARH7Ts0N9m42', 1),
-(79, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$vhue9nSWQxmCT2GZU.6lKuqGUkoLYVuBEG3O2vF1bUwmHzZGzIYe2', 1),
-(80, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$z/LxbcxZiwJ9rQDg0AeXyOpKfpvI5gL8pdAhwiG6AWOfZHAssN/J.', 1),
-(81, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$z1qZ6m.QkScdS0xf9Y/6hOot3JzDqLhzmqd2rmxUZDbxOTTIM3Wbm', 1),
-(82, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$oE1xcalsDyszO08Zn2EnneA4MbfaJTyQkFnIOiRMEtQBlJzqZrDaS', 1),
-(83, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$0yxE2ix4GGVf5u7FH6SFUuJXGWb7QLXpFzeMh5wJEs64FUEfcJmu6', 1),
-(84, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$SSDfpb7KHlHZq6Y1BsfDXunb1vz6rMMDihH7o9CgVOn77Rzw9gK1G', 1),
-(85, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$gLgsp1fgzs2YgjczhnPP5OE1L.02D0xVIJ4ZVzHlhCITg7aq8Xmrm', 1),
-(86, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$yMOjnLGpvYjoVseuweX3HeaJ2x0J09g68DCyyp7NeNC0hTCMdZk1K', 1),
-(87, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$WwQk5Dh1H7vpgemvY4jxj.V/KypHr0ZuvhbduxqBPsAFVaYYL7de6', 1),
-(88, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, '$2a$10$AqeD3oQF6mReSEvA5mxIh.TvZqYym2llBCXomJjEgNqhqYaD6a5L2', 1),
-(89, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, '$2a$10$i6gR1TZJ.9xWMC/9xbgqXe9snKJ3Z2j9iE2/NHU7VlfJjvfPTJvri', 1),
-(90, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, '$2a$10$N1F18neZJQtqdKUvLMEYz.Mzzy6RB6NSbMYMmHrsjYWBNEEUn1Wg6', 1),
-(91, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, '$2a$10$7lQvKZB0CI7Ed8CWaGSHcuTKCi2TJpHj/znjCzNpKhx6b2AEf.lo2', 1),
-(92, 'Arun', 1, 'mca01', 'arun@gmail.com', 96385207410, '$2a$10$h11wTE75ZUMtZiO1.Yeq8ex3XNr3Ws7/DFbex8tSRI1DK73X.3cnm', 17),
-(93, 'Mahadevan', 2, 'mca02', 'mahi17700@gmail.com', 9638527411, '$2a$10$2nWv9a9YW8bTq2tAnGNoeOO34odVY1p2wAojghwW7v04NFRi8dLXu', 17),
-(94, 'Taniya', 3, 'mca03', 'taniya@gmail.com', 9638527412, '$2a$10$BJv4RtfflhWVIfP9csUgj.99hDij9w9FDcCXq3vU4hH.EfDCv6ngG', 17),
-(95, 'Arun', 1, 'mca01', 'arun@gmail.com', 96385207410, '$2a$10$XvZL/A6rYOX71Ru1qwlMc.X7EShIlg9mP8/.2KkrvfvbZcar4Cnoe', 17),
-(96, 'Mahadevan', 2, 'mca02', 'mahi17700@gmail.com', 9638527411, '$2a$10$sYOGmnaoSiopIrzQOEK7C.UmgHeSC6YIkStCvFpZgdpbTXi1JSxiq', 17),
-(97, 'Taniya', 3, 'mca03', 'taniya@gmail.com', 9638527412, '$2a$10$M6DM5KM2U6j.IXBei831b.v1TQwFDor7M/QtykHBBUMW0rGc26M8q', 17);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `student_logs`
---
-
-CREATE TABLE `student_logs` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `action` varchar(1000) NOT NULL,
-  `date_time` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `student` (`student_id`, `student_name`, `student_rollno`, `student_admno`, `student_email`, `student_phone_no`, `event_id`) VALUES
+(2, 'Aj', 0, '1001', 'aj@gmail.com', 0, 1),
+(3, 'AP', 0, '1002', 'ap@gmail.com', 0, 2),
+(4, 'basil', 0, '4001', 'basil@gmail.com', 0, 1),
+(7, 'Ammu k.k', 0, '090MCA22', 'ammu@gmail.com', 0, 1),
+(8, 'Leon', 0, '1231', 'leon@gmail.com', 0, 3),
+(9, 'Ciril', 0, '1232', 'ciril@gmail.com', 0, 3),
+(10, 'Arjun', 0, '1233', 'arjun@gmail.com', 0, 3),
+(11, 'Vivek', 0, '1234', 'vivek@gmail.com', 0, 3),
+(22, 'Bezos', 0, '092MCA22', 'jeffinjosev1@gmail.com', 0, 1),
+(24, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, 1),
+(25, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, 1),
+(26, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, 1),
+(27, 'jeff', 0, '104MCA22', 'jeffinjosev2@gmail.com', 0, 1),
+(28, 'jeff', 0, '104MCA22', 'jeffinmjtcr@gmail.com', 0, 1),
+(29, 'Anex', 0, '1522', 'anex@gmail.com', 0, 1),
+(30, 'Jeffin', 0, '9638', 'jeffin@gmail.com', 0, 1),
+(31, 'Mahadevan', 0, '7531', 'mahadevan@gmail.com', 0, 1),
+(60, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(61, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(62, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(63, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(64, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(65, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(66, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(67, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(68, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(69, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(70, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(71, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(72, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(73, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(74, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(75, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(76, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(77, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(78, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(79, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(80, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(81, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(82, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(83, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(84, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(85, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(86, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(87, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(88, 'Alex', 0, '21548', 'arunkp1515@gmail.com', 0, 1),
+(89, 'Geomon', 0, '18547', 'arunkp1515@gmail.com', 0, 1),
+(90, 'Elphin', 0, '47586', 'arunkp1515@gmail.com', 0, 1),
+(91, 'Amal', 0, '84514', 'arunkp1515@gmail.com', 0, 1),
+(92, 'Arun', 1, 'mca01', 'arun@gmail.com', 96385207410, 17),
+(93, 'Mahadevan', 2, 'mca02', 'mahi17700@gmail.com', 9638527411, 17),
+(94, 'Taniya', 3, 'mca03', 'taniya@gmail.com', 9638527412, 17),
+(95, 'Arun', 1, 'mca01', 'arun@gmail.com', 96385207410, 17),
+(96, 'Mahadevan', 2, 'mca02', 'mahi17700@gmail.com', 9638527411, 17),
+(97, 'Taniya', 3, 'mca03', 'taniya@gmail.com', 9638527412, 17);
 
 -- --------------------------------------------------------
 
@@ -649,13 +641,6 @@ ALTER TABLE `college`
   ADD KEY `college_updatedby` (`college_updatedby`);
 
 --
--- Indexes for table `college_logs`
---
-ALTER TABLE `college_logs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `college_id` (`college_id`);
-
---
 -- Indexes for table `counter`
 --
 ALTER TABLE `counter`
@@ -684,6 +669,13 @@ ALTER TABLE `event_public`
   ADD PRIMARY KEY (`event_public_id`),
   ADD KEY `event_addedby` (`event_addedby`),
   ADD KEY `event_updatedby` (`event_updatedby`);
+
+--
+-- Indexes for table `faculty_logs`
+--
+ALTER TABLE `faculty_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `college_id` (`department_id`);
 
 --
 -- Indexes for table `feedback_session_private`
@@ -740,12 +732,6 @@ ALTER TABLE `student`
   ADD KEY `event_id` (`event_id`);
 
 --
--- Indexes for table `student_logs`
---
-ALTER TABLE `student_logs`
-  ADD KEY `student_id` (`student_id`);
-
---
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
@@ -772,7 +758,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `admin_logs`
 --
 ALTER TABLE `admin_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `attendance`
@@ -805,12 +791,6 @@ ALTER TABLE `college`
   MODIFY `college_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
--- AUTO_INCREMENT for table `college_logs`
---
-ALTER TABLE `college_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `counter`
 --
 ALTER TABLE `counter`
@@ -820,7 +800,7 @@ ALTER TABLE `counter`
 -- AUTO_INCREMENT for table `department`
 --
 ALTER TABLE `department`
-  MODIFY `department_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `department_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `event_private`
@@ -833,6 +813,12 @@ ALTER TABLE `event_private`
 --
 ALTER TABLE `event_public`
   MODIFY `event_public_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `faculty_logs`
+--
+ALTER TABLE `faculty_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `feedback_session_private`
@@ -856,7 +842,7 @@ ALTER TABLE `feedback_user`
 -- AUTO_INCREMENT for table `payment_college`
 --
 ALTER TABLE `payment_college`
-  MODIFY `payment_college_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `payment_college_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `payment_user`
@@ -927,12 +913,6 @@ ALTER TABLE `college`
   ADD CONSTRAINT `college_ibfk_2` FOREIGN KEY (`college_updatedby`) REFERENCES `admin` (`admin_id`);
 
 --
--- Constraints for table `college_logs`
---
-ALTER TABLE `college_logs`
-  ADD CONSTRAINT `college_logs_ibfk_1` FOREIGN KEY (`college_id`) REFERENCES `college` (`college_id`);
-
---
 -- Constraints for table `department`
 --
 ALTER TABLE `department`
@@ -952,6 +932,12 @@ ALTER TABLE `event_private`
 ALTER TABLE `event_public`
   ADD CONSTRAINT `event_public_ibfk_1` FOREIGN KEY (`event_addedby`) REFERENCES `admin` (`admin_id`),
   ADD CONSTRAINT `event_public_ibfk_2` FOREIGN KEY (`event_updatedby`) REFERENCES `admin` (`admin_id`);
+
+--
+-- Constraints for table `faculty_logs`
+--
+ALTER TABLE `faculty_logs`
+  ADD CONSTRAINT `faculty_logs_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`);
 
 --
 -- Constraints for table `feedback_session_private`
@@ -999,12 +985,6 @@ ALTER TABLE `session_private`
 --
 ALTER TABLE `student`
   ADD CONSTRAINT `student_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `event_private` (`event_private_id`);
-
---
--- Constraints for table `student_logs`
---
-ALTER TABLE `student_logs`
-  ADD CONSTRAINT `student_logs_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `student` (`student_id`);
 
 --
 -- Constraints for table `user_logs`
