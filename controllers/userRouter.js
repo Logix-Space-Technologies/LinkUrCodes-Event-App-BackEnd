@@ -23,6 +23,9 @@ const router = express.Router()
 
 router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, res) => {
     try {
+        if (!req.file) {
+            return res.json({ status: "file not chosen", message: "Choose a file" });
+        }
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
@@ -41,10 +44,10 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
 
         const { isValid, message } = await validateModel.validateAndCheckEmail(email);
         if (!isValid) {
-            return res.status(400).json({ message });
+            return res.json({ status:"enter Password",message:"Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit" });
         }
         if (!validateModel.validatePassword(password)) {
-            return res.status(400).send('Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit');
+            return res.json({status:"check Password",message:"Password should be 8 character long with atleast one uppercase,lowercase,special character and a digit"});
         }
 
 
