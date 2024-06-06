@@ -4,7 +4,8 @@ const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT
+    port: process.env.DB_PORT,
+    password:process.env.DB_PASS
 })
 
 const privateEventModel = {
@@ -106,7 +107,8 @@ const privateEventModel = {
                     session_date,
                     session_topic_description, 
                     type, 
-                    venue 
+                    venue ,
+                    is_completed
                 FROM session_private 
                 WHERE event_private_id = ?`;
             pool.query(query, [event_private_id], (error, results) => {
@@ -118,10 +120,6 @@ const privateEventModel = {
     updateSessionStatus: (event_private_id, session_private_id, callback) => {
         const query = "UPDATE session_private SET is_completed = 1 WHERE event_private_id = ? AND session_private_id = ?";
         pool.query(query, [event_private_id, session_private_id], callback);
-    },
-    addAttendance: (data, callback) => {
-        const query = "INSERT INTO attendance SET ?";
-        pool.query(query, [data], callback);
     }
 
 }

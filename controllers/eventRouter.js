@@ -6,6 +6,7 @@ const router = express.Router()
 const jwt = require("jsonwebtoken")
 const uploadModel = require("../models/uploadModel")
 const collegeModel = require('../models/collegeModel');
+const attendenceModel = require('../models/attendenceModel');
 
 // router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
 //     let data = req.body
@@ -43,7 +44,10 @@ const collegeModel = require('../models/collegeModel');
 // })
 // })
 
-router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
+router.post("/add_public_events", uploadModel.EventImageUpload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'pdf', maxCount: 1 }
+]), async (req, res) => {
     try {
         const token = req.headers["token"];
         const decoded = await new Promise((resolve, reject) => {
@@ -57,7 +61,12 @@ router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), 
         });
 
         if (decoded && decoded.adminUsername) {
-            const imagePath = req.file.path; // Image path
+            if (!req.files || !req.files['image'] || !req.files['pdf']) {
+                return res.status(400).json({ error: 'Image or PDF file not uploaded' });
+            }
+
+            const imagePath = req.files['image'][0].path;
+            const pdfPath = req.files['pdf'][0].path;
             const data = req.body;
             const newData = {
                 event_public_name: data.event_public_name,
@@ -66,12 +75,12 @@ router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), 
                 event_public_date: data.event_public_date,
                 event_public_time: data.event_public_time,
                 event_public_image: imagePath,
-                event_syllabus: data.event_syllabus,
+                event_syllabus: pdfPath,
                 event_venue: data.event_venue,
                 event_addedby: data.event_addedby,
                 event_updatedby: data.event_addedby
             };
-            console.log(newData)
+
             publicEventModel.insertPublicEvents(newData, (error, results) => {
                 if (error) {
                     return res.status(500).json({ message: error.message });
@@ -85,6 +94,7 @@ router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), 
         res.status(500).json({ message: error.message });
     }
 });
+
 
 router.post('/view_public_events', (req, res) => {
     const admintoken = req.headers["token"];
@@ -618,7 +628,7 @@ router.post('/addSession', (req, res) => {
                                 added_date: date
                             };
 
-                            privateEventModel.addAttendance(newAttendance, (err) => {
+                            attendenceModel.addAttendance(newAttendance, (err) => {
                                 if (err) {
                                     console.error('Error adding attendance: ' + err);
                                     return res.json({ status: 'error', message: error });
