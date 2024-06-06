@@ -13,7 +13,10 @@ const userModel = {
         const query = 'INSERT INTO user SET ?';
         pool.query(query, userData, callback)
     },
-
+    updatePassword :(user_email, hashedPassword, callback) => {
+        const query = 'UPDATE user SET user_email = ? WHERE user_email = ?';
+        pool.query(query, [hashedPassword, user_email], callback);
+        },
 
     userLogin: (user_email, callback) => { // Remove user_password parameter
         // Your user table needs to have an 'email' and 'password' column

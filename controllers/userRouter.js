@@ -13,9 +13,21 @@ const jwt = require("jsonwebtoken")
 const UploadModel = require("../models/uploadModel")
 
 
-hashPasswordgenerator = async (pass) => {
+const hashPasswordgenerator = async (pass) => {
     const salt = await bcrypt.genSalt(10)
     return bcrypt.hash(pass, salt)
+}
+
+// Function to remove expired verification codes
+function removeExpiredCodes() {
+    console.log("Checking for expired verification codes...");
+    const currentTime = Date.now();
+    for (const email in verificationCodes) {
+        if (currentTime - verificationCodes[email].timestamp > codeExpirationThreshold) {
+            console.log(`Expired code found for ${email}. Removing...`);
+            delete verificationCodes[email];
+        }
+    }
 }
 
 const router = express.Router()
@@ -268,7 +280,143 @@ router.post('/view-user-profile', (req, res) => {
     });
 });
 
+// Temporary storage for verification codes
+const verificationCodes = {};
 
+
+// Time threshold for code expiration (in milliseconds)
+const codeExpirationThreshold = 300000; // 5 minutes
+
+router.post("/forgotpassword", async (req, res) => {
+    try {
+        const { user_email } = req.body;
+        const subjectheading = 'Password Reset';
+
+        userModel.userLogin(user_email, async (error, user) => {
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            if (!user) {
+                return res.status(400).json({ error: "Invalid user email" });
+            }
+            try {
+                // Generate a random 6-digit number
+                const randomCode = Math.floor(100000 + Math.random() * 900000);
+
+                // Store the code with timestamp
+                verificationCodes[user_email] = {
+                    code: randomCode,
+                    timestamp: Date.now()
+                };
+
+                let user_name = user.user_name;
+                let sending_email = user_email;
+                let textContent = `Dear ${user_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Password Reset</title>
+                        <style>
+                            body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                            .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                            .logo-header img { max-width: 30%; height: auto; }
+                            .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                            h2 { text-align: center; }
+                            .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="logo-header">
+                                <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                            </div>
+                            <div class="content">
+                                <h2>Password Reset</h2>
+                                <p>Dear ${user_name},</p>
+                                <p>You have requested to reset your password. Your verification code is: <strong>${randomCode}</strong>.</p>
+                                <p>Please use this code to reset your password. If you did not request this, please contact the administrator.</p>
+                                <p>Best regards,</p>
+                                <p>Link Ur Codes Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                // Send password reset email
+                await mailerModel.sendEmail(sending_email, subjectheading, htmlContent, textContent);
+
+                return res.json({ status: "success", message: "Password reset message has been sent to your email" });
+            } catch (error) {
+                return res.status(500).json({ error: error.message });
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+
+// Route for updating password using user_email and user_password
+router.put('/updatePassword', async (req, res) => {
+    try {
+        const { user_email, verification_code, user_password } = req.body;
+
+        // Check if all required fields are provided
+        if (!user_email || !verification_code || !user_password) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
+        }
+
+        // Check if the email exists in the database
+        userModel.userLogin(user_email, async (error, user) => {
+            if (error) {
+                return res.status(500).json({ status: 'error', message: error.message });
+            }
+
+            if (!user) {
+                // Email not found in the table
+                return res.status(404).json({ status: 'error', message: 'Invalid email' });
+            }
+
+            // Check if verification code matches the stored code and has not expired
+            const verificationData = verificationCodes[user_email];
+            if (!verificationData || verificationData.code !== parseInt(verification_code)) {
+                return res.json({ status: "invalid", message: "Invalid or expired verification code" });
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
+                delete verificationCodes[user_email]; // Remove expired verification code
+                return res.json({ status: "expired", message: "Verification code has expired" });
+            }
+
+            try {
+                // Hash the new password
+                const hashedNewPassword = await hashPasswordgenerator(user_password);
+
+                // Update the password in the database
+                userModel.updatePassword(user_email, hashedNewPassword, (error, updateResult) => {
+                    if (error) {
+                        return res.status(500).json({ message: error.message });
+                    }
+                    // Password updated successfully
+                    res.json({ status: 'success', message: 'Password updated successfully' });
+
+                    // Remove the verification code after password update
+                    delete verificationCodes[user_email];
+                });
+            } catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 module.exports = router
