@@ -58,16 +58,13 @@ router.post('/viewallfeedbackuser', (req, res) => {
 });
 
 router.post('/addSessionStudFeedback', (req, res) => {
-    const token = req.headers['token'];
-    const secretKey = "stud-eventapp"; // Your secret key for token verification
+    const token = req.headers["token"];
 
-    if (!token) {
-        return res.json({ status: "error", message: 'No token provided' });
-    }
-
-    jwt.verify(token, secretKey, (err, decoded) => {
-        if (err) {
-            return res.json({ status: "error", message: 'Invalid token', error: err.message });
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
         }
         const data = req.body;
         feedbackModel.insertFeedbackSessionStud(data, (err, results) => {
