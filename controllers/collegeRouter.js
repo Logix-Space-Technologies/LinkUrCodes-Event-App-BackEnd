@@ -54,31 +54,18 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
         let { data } = { "data": req.body };
         const imagePath = req.file.path;
 
-        // Validate URL
-
-        const urlPattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|' + // domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-            '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-
-
-        if (!urlPattern.test(data.college_website)) {
-            return res.status(400).json({ error: 'Invalid college website URL' });
-        }
-
+      
         const newData = {
             college_name: data.college_name,
             college_email: data.college_email,
             college_phone: data.college_phone,
             college_website: data.college_website,
-            college_password: data.college_password,
+            college_password: data.college_phone,
             college_image: imagePath,
             college_addedby: data.college_addedby,
-            college_updatedby: data.college_updatedby
+            college_updatedby: data.college_addedby
         }
-
+        
         const token = req.headers["token"];
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
@@ -753,7 +740,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
     try {
         console.log('Received file:', req.file.originalname);
         if (!req.file) {
-            return res.json({status: "error", error: 'No file uploaded' });
+            return res.status(400).json({ error: 'No file uploaded' });
         }
         const collegetoken = req.headers["collegetoken"];
         console.log('Received token:', collegetoken);
@@ -770,24 +757,25 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                     student_admno: student.student_admno,
                     student_email: student.student_email,
                     student_phone_no: student.student_phone_no,
+                    student_password: student.student_admno.toString(),
                     event_id: eventId
                 }))
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
                     console.log('Successfully inserted students:', response.data);
-                    res.json({ status: 'Success', message: 'Students inserted', data: response.data });
+                    res.status(200).json({ status: 'Success', message: 'Students inserted', data: response.data });
                 } catch (apiError) {
                     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-                    res.json({status: "error", error: 'Failed to insert students via the API.' });
+                    res.status(400).json({ error: 'Failed to insert students via the API.' });
                 }
             }
             else {
-                return res.json({ "status": "Unauthorized user" });
+                return res.status(401).json({ "status": "Unauthorized user" });
             }
         })
     } catch (error) {
         console.error('Processing Error:', error.message);
-        res.json({ status: "error",error: 'An error occurred while processing the file.' });
+        res.status(500).json({ error: 'An error occurred while processing the file.' });
     } finally {
         fs.unlink(req.file.path, (unlinkError) => {
             if (unlinkError) console.error('Error deleting file:', unlinkError);
