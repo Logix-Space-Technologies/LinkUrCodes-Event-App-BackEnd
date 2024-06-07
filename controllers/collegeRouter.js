@@ -411,18 +411,18 @@ router.put('/updateDepartmentPassword', async (req, res) => {
         console.log(req.body)
         // Check if all required fields are provided
         if (!faculty_email || !verification_code || !faculty_password) {
-            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
+            return res.json({ status: "all fields required",message: 'Email, verification code, and new password are required' });
         }
 
         // Check if the email exists in the database
         departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
             if (error) {
-                return res.status(500).json({ status: 'error', message: error.message });
+                return res.json({ status: 'error', message: error.message });
             }
 
             if (!faculty) {
                 // Email not found in the table
-                return res.status(404).json({ status: 'error', message: 'Invalid email' });
+                return res.json({ status: 'error', message: 'Invalid email' });
             }
 
             // Check if verification code matches the stored code and has not expired
@@ -444,7 +444,7 @@ router.put('/updateDepartmentPassword', async (req, res) => {
                 // Update the password in the database
                 departmentModel.updatePassword(faculty_email, hashedNewPassword, (error, updateResult) => {
                     if (error) {
-                        return res.status(500).json({ message: error.message });
+                        return res.json({ status: "error", message: error.message });
                     }
                     // Password updated successfully
                     res.json({ status: 'success', message: 'Password updated successfully' });
@@ -453,11 +453,11 @@ router.put('/updateDepartmentPassword', async (req, res) => {
                     delete verificationCodes[faculty_email];
                 });
             } catch (error) {
-                return res.status(500).json({ message: error.message });
+                return res.json({ status: "error", message: error.message });
             }
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json({ status: "error", message: err.message });
     }
 });
 
@@ -477,10 +477,10 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
         departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
             if (error) {
-                return res.status(500).json({ error: error.message });
+                return res.json({ status: "error",error: error.message });
             }
             if (!faculty) {
-                return res.status(400).json({ error: "Invalid faculty email" });
+                return res.json({ status: "inavaild email", error: "Invalid faculty email" });
             }
             try {
                 // Generate a random 6-digit number
@@ -536,11 +536,11 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
-                return res.status(500).json({ error: error.message });
+                return res.json({ status: "error", error: error.message });
             }
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.json({ status: "error", error: error.message });
     }
 });
 
@@ -648,7 +648,7 @@ router.post('/Viewcollege', (req, res) => {
         const token = req.headers["token"]
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
-                res.status(200).json(results);
+                res.json(results);
             }
             else {
                 res.json({
