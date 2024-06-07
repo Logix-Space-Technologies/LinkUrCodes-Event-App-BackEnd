@@ -4,6 +4,7 @@ constpaycollegeModel = require("../models/payment_collegeModel")
 const { error } = require("console");
 const paymentcollegeModel = require("../models/payment_collegeModel");
 const jwt = require("jsonwebtoken")
+const adminModel = require("../models/adminModel")
 const router = express.Router()
 
 router.post('/adduserpayment', (req, res) => {
@@ -117,5 +118,68 @@ router.post('/searchbyevntmonth', (req, res) => {
       res.json({ details });
   });
 });
+  
+
+//admin
+  router.post('/addPaymentCollege', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const { college_id, private_event_id, amount, invoice_no } = req.body;
+        if (!college_id || !private_event_id || !amount || !invoice_no) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+        const paymentData = {
+            college_id,
+            private_event_id,
+            amount,
+            invoice_no,
+        };
+        adminModel.insertPayment(paymentData, (error, results) => {
+          if (error) {
+              console.error('Error inserting payment data:', error);
+              return res.status(500).json({ error: 'Internal server error' });
+          }
+          adminModel.getCollegeNameById(college_id, (error, college_name) => {
+              if (error) {
+                  console.error('Error fetching college name:', error);
+                  return res.status(500).json({ error: 'Internal server error' });
+              }
+              adminModel.logAdminAction(decoded.admin_id, `Payment done for college: ${college_name}`);
+              res.status(200).json({ status: 'success', data: results });
+          });
+      });
+  });
+});
+
+
+//admin
+router.post('/viewPaymentsCollege', (req, res) => {
+  const token = req.headers.token;
+  console.log('Received token:', token);
+  jwt.verify(token, "eventAdmin", async (error, decoded) => {
+      if (error) {
+          console.error('Error verifying token:', error);
+          return res.status(401).json({ error: 'Unauthorized' });
+      }
+      if (decoded && decoded.adminUsername) {
+          adminModel.getAllPayments((error, results) => {
+              if (error) {
+                  console.error('Error fetching payments:', error);
+                  return res.status(500).json({ error: 'Internal server error' });
+              }
+              res.status(200).json({ status: 'success', data: results });
+          });
+      } else {
+          res.status(401).json({ status: 'Unauthorized', message: 'Unauthorized user' });
+      }
+  });
+});
+
+
 
 module.exports = router;
