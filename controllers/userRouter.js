@@ -19,7 +19,6 @@ hashPasswordgenerator = async (pass) => {
 }
 
 const hashPasswordGenerator = async (pass) => {
-    console.log(pass)
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hash(pass, salt)
 }
@@ -357,10 +356,10 @@ router.post("/forgotpassword", async (req, res) => {
 
         userModel.findUserByEmail(user_email, async (error, user) => {
             if (error) {
-                return res.status(500).json({ error: error.message });
+                return res.json({ status: "success",message: error.message });
             }
             if (!user) {
-                return res.status(400).json({ error: "Invalid user email" });
+                return res.json({status: "Invalid user email", message: "Invalid user email" });
             }
             try {
                 // Generate a random 6-digit number
@@ -416,11 +415,11 @@ router.post("/forgotpassword", async (req, res) => {
 
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
-                return res.status(500).json({ error: error.message });
+                return res.json({status: "error", message: error.message });
             }
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.json({ status: "error",message: error.message });
     }
 });
 
@@ -429,10 +428,9 @@ router.post("/forgotpassword", async (req, res) => {
 router.put('/updatePassword', async (req, res) => {
     try {
         const { user_email, verification_code, user_password } = req.body;
-
         // Check if all required fields are provided
         if (!user_email || !verification_code || !user_password) {
-            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
+            return res.json({status: "all fields required", message: 'Email, verification code, and new password are required' });
         }
 
         // Check if the email exists in the database
@@ -443,7 +441,7 @@ router.put('/updatePassword', async (req, res) => {
 
             if (!user) {
                 // Email not found in the table
-                return res.status(404).json({ status: 'error', message: 'Invalid email' });
+                return res.status(404).json({ status: 'Invalid email', message: 'Invalid email' });
             }
 
             // Check if verification code matches the stored code and has not expired
@@ -465,7 +463,7 @@ router.put('/updatePassword', async (req, res) => {
                 // Update the password in the database
                 userModel.updatePassword(user_email, hashedNewPassword, (error, updateResult) => {
                     if (error) {
-                        return res.status(500).json({ message: error.message });
+                        return res.json({status: 'error', message: error.message });
                     }
                     // Password updated successfully
                     res.json({ status: 'success', message: 'Password updated successfully' });
@@ -474,11 +472,11 @@ router.put('/updatePassword', async (req, res) => {
                     delete verificationCodes[user_email];
                 });
             } catch (error) {
-                return res.status(500).json({ message: error.message });
+                return res.json({status: 'error', message: error.message });
             }
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json({status: 'error', message: err.message });
     }
 });
 
