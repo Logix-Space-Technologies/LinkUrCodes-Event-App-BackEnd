@@ -696,7 +696,21 @@ router.post('/updateSession', (req, res) => {
     });
 });
 
-
+router.post('/view_private_events_byId', (req, res) => {
+    const admintoken = req.headers["token"];
+    const { event_private_id } = req.body;
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            privateEventModel.viewPrivateEventsById(event_private_id,(error, results) => {
+                res.json(results);
+            })
+        }
+    });
+})
 
 
 
