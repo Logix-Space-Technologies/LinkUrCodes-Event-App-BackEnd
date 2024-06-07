@@ -77,8 +77,31 @@ const userModel = {
             return callback(null, null);
         }
     });
-}
+},
+ updatePassword : (user_email, hashedPassword, callback) => {
+    const query = 'UPDATE user SET user_password = ? WHERE user_email = ?';
+    pool.query(query, [hashedPassword, user_email], callback);
+},
+    
+     findUserByEmail: (user_email, callback) => {
+        const query = 'SELECT * FROM user WHERE user_email = ?';
+        pool.query(query, [user_email], callback);
+    },
 
+     logUserAction : (user_id, action) => {
+        const userLog = {
+            user_id: user_id,
+            action: action,
+            date_time: new Date() // Optional: Add a timestamp for when the action was logged
+        };
+        pool.query("INSERT INTO user_logs SET ?", userLog, (logErr, logRes) => {
+            if (logErr) {
+                console.log("error: ", logErr);
+                return;
+            }
+        });
+    }
+    
 
 }
 

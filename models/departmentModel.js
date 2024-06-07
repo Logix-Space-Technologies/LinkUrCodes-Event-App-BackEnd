@@ -90,7 +90,21 @@ updateFaculty : (newData,id, callback) => {
     console.log('Database update result:', result); // Debug logging
     return callback(null, result);
   });
-}
+},
+
+logFacultyAction : (department_id, action) => {
+  const facultyLogs = {
+      department_id: department_id,
+      action: action,
+      date_time: new Date() // Optional: Add a timestamp for when the action was logged
+  };
+  pool.query("INSERT INTO faculty_logs SET ?", facultyLogs, (logErr, logRes) => {
+      if (logErr) {
+          console.log("error: ", logErr);
+          return;
+      }
+  });
+},
 
 
 };
