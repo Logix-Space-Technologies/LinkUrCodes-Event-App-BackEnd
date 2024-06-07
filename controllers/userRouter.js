@@ -84,7 +84,7 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
             }
 
             try {
-                let user_name = data.user_name;
+                let user_name = newData.user_name;
                 let textContent = `Dear ${user_name},\n\nYou have successfully registered.`;
                 let subjectheading = 'Successfully Registered';
                 
@@ -125,7 +125,7 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
 
                 // Send registration email
                 await mailerModel.sendEmail(email, subjectheading, htmlContent, textContent);
-                
+                userModel.logUserAction(results.insertId, 'User Signup');
                 return res.json({ status: "success", message: "Message has been sent to your email" });
             } catch (error) {
                 return res.status(500).json({ error: error.message });
@@ -172,7 +172,7 @@ router.post('/loginuser', (req, res) => {
                             "error": error
                         })
                     } else {
-                        // Successful login
+                        userModel.logUserAction(user.user_id, 'User logged in');
                         return res.json({
                             status: "Success",
                             userData: user, "token": token
@@ -185,29 +185,42 @@ router.post('/loginuser', (req, res) => {
 //route to view a user
 
 router.post('/searchusers', (req, res) => {
-    var term = req.body.term; 
-    const token = req.headers["token"]
+    const term = req.body.term;
+    const token = req.headers["token"];
+
     jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (error) {
+            return res.status(401).json({
+                status: "Unauthorized user",
+                message: "Invalid token"
+            });
+        }
+
         if (decoded && decoded.adminUsername) {
             userModel.findUserByName(term, (error, results) => {
                 if (error) {
-                    res.status(500).send('Error retrieving user data');
-                    return;
+                    return res.status(500).send('Error retrieving user data');
                 }
+
                 if (results.length > 0) {
-                    res.status(200).json(results);
+                    // Log the search action for the admin user
+                    userModel.logUserAction(decoded.adminUsername, 'Search Users');
+                    return res.status(200).json(results);
                 } else {
-                    res.status(404).json({status:'No users found'});
-                }                
+                    return res.status(404).json({
+                        status: 'No users found'
+                    });
+                }
             });
-        }
-        else {
-            res.json({
-                "status": "Unauthorized user"
-            })
+        } else {
+            return res.status(401).json({
+                status: "Unauthorized user",
+                message: "Admin privileges required"
+            });
         }
     });
 });
+
 
 
 router.post('/viewusers',(req,res)=>{
