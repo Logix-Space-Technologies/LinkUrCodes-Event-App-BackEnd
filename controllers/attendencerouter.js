@@ -1,6 +1,7 @@
 const express = require('express');
 const attendencemodel = require('../models/attendenceModel');
 const jwt = require('jsonwebtoken');
+const adminModel = require("../models/adminModel")
 const router = express.Router();
 
 // Middleware to parse JSON bodies
@@ -16,6 +17,8 @@ router.post('/updateAttendence', (req, res) => {
       console.error('JWT verification error:', error);
       return res.json({ status: "error", error: 'Unauthorized' });
     }
+
+    const admin_id = decoded.admin_id;
 
     if (!student_id || !session_id) {
       console.error('Missing student_id or session_id');
@@ -46,6 +49,7 @@ router.post('/updateAttendence', (req, res) => {
         });
       });
       const results = await Promise.all(updatePromises);
+      adminModel.logAdminAction(admin_id, `Updated attendance for session_id: ${session_id} and student_ids: ${studentIds.join(', ')}`);
       res.json({ status: "success", results });
     } catch (error) {
       console.error('Error processing updatePromises:', error);
@@ -69,12 +73,14 @@ router.post('/updateAttendence', (req, res) => {
           if (error) {
             return res.json({ status: "error", error })
           }
+          const admin_id = decoded.admin_id;
           const formattedResults = results.map(attendence => {
             const added_date = new Date(attendence.added_date);
             const formattedDate = `${added_date.getDate().toString().padStart(2, '0')}-${(added_date.getMonth() + 1).toString().padStart(2, '0')}-${added_date.getFullYear()}`;
             attendence.added_date = formattedDate; // DD-MM-YYYY format
             return attendence;
           });
+          adminModel.logAdminAction(admin_id, `Viewed attendance`);
           res.json({ formattedResults });
         })
       }
@@ -94,12 +100,14 @@ router.post('/updateAttendence', (req, res) => {
           if (error) {
             return res.json({ status: "error", error })
           }
+          const admin_id = decoded.admin_id;
           const formattedResults = results.map(attendence => {
             const added_date = new Date(attendence.added_date);
             const formattedDate = `${added_date.getDate().toString().padStart(2, '0')}-${(added_date.getMonth() + 1).toString().padStart(2, '0')}-${added_date.getFullYear()}`;
             attendence.added_date = formattedDate; // DD-MM-YYYY format
             return attendence;
           });
+          adminModel.logAdminAction(admin_id, `Viewed absent attendance`);
           res.json({ formattedResults });
         })
       }
