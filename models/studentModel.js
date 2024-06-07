@@ -12,14 +12,13 @@ const pool=mysql.createPool({
 const studentModel={
         insertStudent: (studentsData, callback) => {
             console.log("data",studentsData)
-            const query = 'INSERT INTO student (student_name,student_rollno, student_admno, student_email,student_phone_no, student_password, event_id) VALUES ?';
+            const query = 'INSERT INTO student (student_name,student_rollno, student_admno, student_email,student_phone_no, event_id) VALUES ?';
             const values = studentsData.map(student => [
                 student.student_name,
                 student.student_rollno,
                 student.student_admno,
                 student.student_email,
                 student.student_phone_no,
-                student.student_password,
                 student.event_id
             ]);
             pool.query(query, [values], callback);
