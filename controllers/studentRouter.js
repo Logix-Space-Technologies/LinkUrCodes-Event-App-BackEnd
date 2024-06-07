@@ -37,25 +37,21 @@ router.post('/addstudent', async (req, res) => {
             student_admno: item.student_admno,
             student_email: item.student_email,
             student_phone_no: item.student_phone_no,
-            student_password: item.student_admno.toString(),
             event_id: item.event_id,
             student_college_id: item.student_college_id
         }));
-        let password = newdata[0].student_password;
-        const hashedPassword = await hashPasswordgenerator(password);
-        newdata[0].student_password = hashedPassword;
         const collegetoken = req.headers["collegetoken"];
         
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (error) {
-                return res.status(401).json({ "status": "Unauthorized user", "message": error.message });
+                return res.json({ "status": "Unauthorized user", "message": error.message });
             }
             
             if (decoded && decoded.faculty_email) {
                 studentModel.insertStudent(newdata, async (error, results) => {
                     if (error) {
                         console.error('Database Error:', error);
-                        return res.status(500).json({ status: "error", message: 'Error inserting student data' });
+                        return res.json({ status: "error", message: 'Error inserting student data' });
                     } else {
                         try {
                             let user_name = newdata[0].student_name;
@@ -66,9 +62,6 @@ router.post('/addstudent', async (req, res) => {
                                 You have successfully registered.
 
                                 Username: ${email}
-                                Password: Your admission number
-
-                                Note: You can reset your password at any time.
                             `;
                             const htmlContent = `
                                 <!DOCTYPE html>
@@ -94,8 +87,6 @@ router.post('/addstudent', async (req, res) => {
                                       <p>Dear ${user_name},</p>
                                       <p>You have successfully registered as a student.</p>
                                       <p><strong>Username:</strong> ${email}</p>
-                                      <p><strong>Password:</strong> Your admission number</p>
-                                      <p>Note: You can reset your password at any time.</p>
                                       <p>Best regards,</p>
                                       <p>Link Ur Codes Team</p>
                                     </div>
@@ -110,42 +101,42 @@ router.post('/addstudent', async (req, res) => {
                             await mailerModel.sendEmail(email, 'Successfully Registered', htmlContent, textContent);
                             res.json({ "status": "success", "message": "Student added, message has been sent to the student's email" });
                         } catch (emailError) {
-                            res.status(500).json({ "status": "error sending mail", "error": emailError.message });
+                            res.json({ "status": "error sending mail", "error": emailError.message });
                         }
                     }
                 });
             } else {
-                res.status(401).json({ "status": "Unauthorized user" });
+                res.json({ "status": "Unauthorized user" });
             }
         });
     } catch (error) {
         console.error('Error in addStudent route:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.json({"status":"error", error: 'Internal server error' });
     }
 });
 
 router.post('/addstudentuploaded', async (req, res) => {
     try {
         let data = req.body;
-        // Hash passwords for each student
-        const promises = data.map(async (student) => {
-            student.student_password = await hashPasswordGenerator(student.student_password);
-            return student; // Return the modified student object
-        });
+        // // Hash passwords for each student
+        // const promises = data.map(async (student) => {
+        //     student.student_password = await hashPasswordGenerator(student.student_password);
+        //     return student; // Return the modified student object
+        // });
 
-        // Wait for all the passwords to be hashed
-        const studentsWithHashedPasswords = await Promise.all(promises);
+        // // Wait for all the passwords to be hashed
+        // const studentsWithHashedPasswords = await Promise.all(promises);
 
         // Insert students into the database
-        studentModel.insertStudent(studentsWithHashedPasswords, async (error, results) => {
+        studentModel.insertStudent(data, async (error, results) => {
             if (error) {
                 console.error('Database Error:', error);
-                return res.status(500).json({ message: 'Error inserting student data' });
+                return res.json({"status":"error", message: 'Error inserting student data' });
             }
 
             try {
                 // Send email to each student
-                for (let student of studentsWithHashedPasswords) {
+                for (let student of data) {
                     let user_name = student.student_name;
                     let email = student.student_email;
                     let textContent = `
@@ -154,9 +145,6 @@ router.post('/addstudentuploaded', async (req, res) => {
                         You have successfully registered.
                         
                         Username: ${email}
-                        Password is your admission number
-                        
-                        Note: You can reset your password at any time.
                     `;
                     const htmlContent = `
                         <!DOCTYPE html>
@@ -182,8 +170,6 @@ router.post('/addstudentuploaded', async (req, res) => {
                                     <p>Dear ${user_name},</p>
                                     <p>You have successfully registered as a student.</p>
                                     <p><strong>Username:</strong> ${email}</p>
-                                    <p><strong>Password:</strong> Your admission number</p>
-                                    <p>Note: You can reset your password at any time.</p>
                                     <p>Best regards,</p>
                                     <p>Link Ur Codes Team</p>
                                 </div>
@@ -198,15 +184,15 @@ router.post('/addstudentuploaded', async (req, res) => {
                     await mailerModel.sendEmail(email, 'Successfully Registered', htmlContent, textContent);
                 }
 
-                res.status(201).json({ status: "success", message: "Students added successfully and emails sent" });
+                res.json({ status: "success", message: "Students added successfully and emails sent" });
             } catch (emailError) {
                 console.error('Error sending email:', emailError);
-                res.status(500).json({ status: "error", message: "Students added but error sending emails", error: emailError.message });
+                res.json({ status: "error", message: "Students added but error sending emails", error: emailError.message });
             }
         });
     } catch (error) {
         console.error('Error in addStudent route:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.json({status: "error", error: 'Internal server error' });
     }
 });
 

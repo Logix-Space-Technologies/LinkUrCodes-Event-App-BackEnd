@@ -753,7 +753,7 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
     try {
         console.log('Received file:', req.file.originalname);
         if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            return res.json({status: "error", error: 'No file uploaded' });
         }
         const collegetoken = req.headers["collegetoken"];
         console.log('Received token:', collegetoken);
@@ -770,25 +770,24 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                     student_admno: student.student_admno,
                     student_email: student.student_email,
                     student_phone_no: student.student_phone_no,
-                    student_password: student.student_admno.toString(),
                     event_id: eventId
                 }))
                 try {
                     const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
                     console.log('Successfully inserted students:', response.data);
-                    res.status(200).json({ status: 'Success', message: 'Students inserted', data: response.data });
+                    res.json({ status: 'Success', message: 'Students inserted', data: response.data });
                 } catch (apiError) {
                     console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-                    res.status(400).json({ error: 'Failed to insert students via the API.' });
+                    res.json({status: "error", error: 'Failed to insert students via the API.' });
                 }
             }
             else {
-                return res.status(401).json({ "status": "Unauthorized user" });
+                return res.json({ "status": "Unauthorized user" });
             }
         })
     } catch (error) {
         console.error('Processing Error:', error.message);
-        res.status(500).json({ error: 'An error occurred while processing the file.' });
+        res.json({ status: "error",error: 'An error occurred while processing the file.' });
     } finally {
         fs.unlink(req.file.path, (unlinkError) => {
             if (unlinkError) console.error('Error deleting file:', unlinkError);
