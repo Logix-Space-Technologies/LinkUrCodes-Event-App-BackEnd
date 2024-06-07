@@ -189,6 +189,7 @@ router.post('/addDepartment', async (req, res) => {
 
                             // Send confirmation email
                             await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
+                            collegeModel.logCollegeAction(data.college_id, `Added Department: ${newData.department_name} `);
                             res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
                         } catch (emailError) {
                             res.status(500).json({ "status": "error sending mail", "error": emailError.message });
@@ -339,6 +340,7 @@ router.post("/departmentLogin", async (req, res) => {
             if (error) {
                 return res.json({ status: "error", error: "Token generation failed" });
             } else {
+                departmentModel.logFacultyAction(faculty.department_id, 'Faculty logged in');
                 return res.json({ status: "success", facultyData: faculty, collegetoken: facultyToken });
             }
         });
@@ -446,7 +448,7 @@ router.put('/updateDepartmentPassword', async (req, res) => {
                     if (error) {
                         return res.status(500).json({ message: error.message });
                     }
-                    // Password updated successfully
+                    departmentModel.logFacultyAction(faculty.department_id, 'Faculty Update Password');
                     res.json({ status: 'success', message: 'Password updated successfully' });
 
                     // Remove the verification code after password update
@@ -533,7 +535,7 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
                 // Send password reset email
                 await mailerModel.sendEmail(sending_email, subjectheading, htmlContent, textContent);
-
+                departmentModel.logFacultyAction(faculty.department_id, 'Faculty Reset Password');
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
                 return res.status(500).json({ error: error.message });

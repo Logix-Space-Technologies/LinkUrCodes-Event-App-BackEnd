@@ -188,6 +188,20 @@ findEventsByEventId: (eventId, callback) => {
             console.error('Error processing request:', error);
             return callback(error, null);
         }
+    },
+
+    logCollegeAction : (college_id, action) => {
+        const collegeLogs = {
+            college_id: college_id,
+            action: action,
+            date_time: new Date() // Optional: Add a timestamp for when the action was logged
+        };
+        pool.query("INSERT INTO college_logs SET ?", collegeLogs, (logErr, logRes) => {
+            if (logErr) {
+                console.log("error: ", logErr);
+                return;
+            }
+        });
     }
 };
 
