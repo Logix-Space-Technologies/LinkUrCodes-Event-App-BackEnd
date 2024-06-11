@@ -74,6 +74,10 @@ router.post("/add_public_events", uploadModel.EventImageUpload.fields([
                 event_public_description: data.event_public_description,
                 event_public_date: data.event_public_date,
                 event_public_time: data.event_public_time,
+                event_public_duration: data.event_public_duration,
+                event_public_online: data.event_public_online,
+                event_public_offline: data.event_public_offline,
+                event_public_recorded: data.event_public_recorded,
                 event_public_image: imagePath,
                 event_syllabus: pdfPath,
                 event_venue: data.event_venue,
@@ -139,6 +143,7 @@ router.post("/add_private_events", uploadModel.EventImageUpload.fields([
             const imagePath = req.files['image'][0].path;
             const pdfPath = req.files['pdf'][0].path;
             let data = req.body;
+            const admin_id = decoded.admin_id;
             const newData = {
                 event_private_name: data.event_private_name,
                 event_private_amount: data.event_private_amount,
@@ -159,6 +164,7 @@ router.post("/add_private_events", uploadModel.EventImageUpload.fields([
                 if (error) {
                     return res.status(500).json({ message: error.message });
                 }
+                adminModel.logAdminAction(admin_id, `Added private event '${newData.event_private_name}' for college ID: ${newData.event_private_clgid}`);
                 res.json({ status: "success" });
             });
         }
@@ -214,6 +220,7 @@ router.post('/view-student-private-events', (req, res) => {
     });
 });
 
+
 router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
     const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
@@ -223,6 +230,7 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
         if (decoded && decoded.adminUsername) {
             let data = req.body;
             let event_id = data.event_private_id;
+            const admin_id = decoded.admin_id;
             const newData = {
                 event_private_name: data.event_private_name,
                 event_private_amount: data.event_private_amount,
@@ -252,6 +260,7 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
                     return res.status(500).json({ status: 'Error', message: 'Failed to update the event' });
                 } else {
                     console.log('Event updated successfully');
+                    adminModel.logAdminAction(admin_id, `Updated private event '${newData.event_private_name}' for college ID: ${data.event_private_clgid}`);
                     return res.status(200).json({ status: 'Event updated successfully' });
                 }
             });
@@ -370,10 +379,12 @@ router.post('/delete_private_event', async (req, res) => {
         const token = req.headers["token"]
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
+                const admin_id = decoded.admin_id; 
                 privateEventModel.deletePrivateEvent(event_private_id, (error, result) => {
                     if (error) {
                         return res.status(500).json({ status: 'error', error: 'Error deleting event' });
                     }
+                    adminModel.logAdminAction(admin_id, `Deleted private event ID: ${event_private_id}`);
                     res.json({ status: 'success' });
                 });
             }
@@ -534,10 +545,12 @@ router.post('/complete_private_event', async (req, res) => {
         const token = req.headers["token"]
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
+                const admin_id = decoded.admin_id;
                 privateEventModel.setEventComplete(event_private_id, (error, result) => {
                     if (error) {
                         return res.status(500).json({ status: 'error' });
                     }
+                    adminModel.logAdminAction(admin_id, `Marked event ID: ${event_private_id} as complete`);
                     res.json({ status: 'success' });
                 });
             }
@@ -600,7 +613,8 @@ router.post('/addSession', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-        const data = req.body
+        const data = req.body;
+        const admin_id = decoded.admin_id;
         privateEventModel.addSession(data, (err, results) => {
             if (err) {
                 return res.status(500).json({ "status": "error", "message": err.message });
@@ -609,6 +623,9 @@ router.post('/addSession', (req, res) => {
                 const sessionId = results.insertId;
                 const eventID = req.body.event_private_id
                 const date = req.body.session_date
+
+
+                adminModel.logAdminAction(admin_id, `Added session ID: ${sessionId} for event ID: ${eventID} on date: ${date}`);
                 // Fetching students
                 collegeModel.findEventsByEventId(eventID, (error, students) => {
                     if (error) {
@@ -687,10 +704,12 @@ router.post('/updateSession', (req, res) => {
             return;
         }
         const { event_private_id, session_private_id } = req.body;
+        const admin_id = decoded.admin_id;
         privateEventModel.updateSessionStatus(event_private_id, session_private_id, (err, results) => {
             if (err) {
                 return res.status(500).json({ "status": "error", "message": err.message });
             }
+            adminModel.logAdminAction(admin_id, `Updated session status for session ID: ${session_private_id} in event ID: ${event_private_id}`);
             res.json({ "status": "success", "message": "Session status updated successfully" });
         });
     });
