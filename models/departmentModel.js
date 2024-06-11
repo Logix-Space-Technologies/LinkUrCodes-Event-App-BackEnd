@@ -57,7 +57,7 @@ const departmentModel = {
     });
 },
 findFacultyById : (id, callback) => {
-  const query = 'SELECT d.id, c.college_name,d.department_name,d.faculty_name,d.faculty_email,d.faculty_phone FROM department d JOIN college c ON d.college_id=c.college_id WHERE d.id = ?';
+  const query = 'SELECT d.department_id, c.college_name,c.college_image,d.department_name,d.faculty_name,d.faculty_email,d.faculty_phone FROM department d JOIN college c ON d.college_id=c.college_id WHERE d.department_id = ?';
   pool.query(query, [id], (error, results) => {
       if (error) {
           return callback(error, null);
@@ -81,7 +81,7 @@ findFacultyById : (id, callback) => {
   });
 },
 updateFaculty : (newData,id, callback) => {
-  const query = 'UPDATE department SET ? WHERE id = ?';
+  const query = 'UPDATE department SET ? WHERE department_id = ?';
   pool.query(query, [newData,id], (error, result) => {
     if (error) {
       console.error('Database error:', error.message); // Debug logging
@@ -111,4 +111,3 @@ logFacultyAction : (department_id, action) => {
   
 
 module.exports = departmentModel;
-  
