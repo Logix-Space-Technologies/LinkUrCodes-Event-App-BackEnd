@@ -700,7 +700,28 @@ router.post('/updateSession', (req, res) => {
     });
 });
 
-
+router.post('/complete_private_session', async (req, res) => {
+    try {
+        const { session_private_id } = req.body;
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
+            if (decoded && decoded.adminUsername) {
+                privateEventModel.setSessionComplete(session_private_id, (error, result) => {
+                    if (error) {
+                        return res.status(500).json({ status: 'error' });
+                    }
+                    res.json({ status: 'success' });
+                });
+            }
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
+    }
+});
 
 
 
