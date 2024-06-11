@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken")
 const uploadModel = require("../models/uploadModel")
 const collegeModel = require('../models/collegeModel');
 const attendenceModel = require('../models/attendenceModel');
+const adminModel=require("../models/adminModel")
 
 // router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
 //     let data = req.body
@@ -617,7 +618,7 @@ router.post('/addSession', (req, res) => {
         const admin_id = decoded.admin_id;
         privateEventModel.addSession(data, (err, results) => {
             if (err) {
-                return res.status(500).json({ "status": "error", "message": err.message });
+                return res.json({ "status": "error", "message": err.message });
             }
             else {
                 const sessionId = results.insertId;
@@ -672,7 +673,7 @@ router.post('/viewSession', (req, res) => {
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
             console.error('Error verifying token: ' + error);
-            res.status(401).json({ error: 'Unauthorized' });
+            res.json({ status:"Unauthorized",error: 'Unauthorized' });
             return;
         }
         const { event_private_id } = req.body;
@@ -689,7 +690,7 @@ router.post('/viewSession', (req, res) => {
                 res.json({ "status": "success", "data": formattedResults });
             })
             .catch(err => {
-                return res.status(500).json({ "status": "error", "message": err.message });
+                return res.json({ "status": "error", "message": err.message });
             });
     });
 });
@@ -700,14 +701,14 @@ router.post('/updateSession', (req, res) => {
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
             console.error('Error verifying token: ' + error);
-            res.status(401).json({ error: 'Unauthorized' });
+            res.json({ status:"Unauthorized",error: 'Unauthorized' });
             return;
         }
         const { event_private_id, session_private_id } = req.body;
         const admin_id = decoded.admin_id;
         privateEventModel.updateSessionStatus(event_private_id, session_private_id, (err, results) => {
             if (err) {
-                return res.status(500).json({ "status": "error", "message": err.message });
+                return res.json({ "status": "error", "message": err.message });
             }
             adminModel.logAdminAction(admin_id, `Updated session status for session ID: ${session_private_id} in event ID: ${event_private_id}`);
             res.json({ "status": "success", "message": "Session status updated successfully" });
