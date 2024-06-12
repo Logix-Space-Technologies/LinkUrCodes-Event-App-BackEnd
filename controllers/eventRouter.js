@@ -739,6 +739,50 @@ router.post('/complete_private_session', async (req, res) => {
     }
 });
 
+router.post('/complete_public_event', async (req, res) => {
+    try {
+        const { event_public_id } = req.body;
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
+            if (decoded && decoded.adminUsername) {
+                const admin_id = decoded.admin_id;
+                publicEventModel.setEventComplete(event_public_id, (error, result) => {
+                    if (error) {
+                        return res.json({ status: 'error' });
+                    }
+                    adminModel.logAdminAction(admin_id, `Marked event ID: ${event_public_id} as complete`);
+                    res.json({ status: 'success' });
+                });
+            }
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
+    } catch (error) {
+        console.error(error);
+        res.json({ status: 'error', error: 'An error occurred while deleting the college' });
+    }
+});
+
+router.post('/view_completed_public_events', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            publicEventModel.viewCompletedEvents((error, results) => {
+                if (results.length > 0) {
+                    res.json(results);
+                }
+                else {
+                    res.json({ status: 'No events found' });
+                }
+            })
+        }
+    });
+})
 
 
 
