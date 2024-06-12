@@ -75,9 +75,9 @@ const privateEventModel = {
         const query = 'SELECT e.event_private_id, e.event_private_name, e.event_private_amount, e.event_private_description, e.event_private_date, e.event_private_time,e.event_private_duration,e.event_private_online,e.event_private_offline,e.event_private_recorded, e.event_private_image,e.event_private_syllabus, c.college_name, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby,e.event_added_date,e.event_updated_date, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status,CASE WHEN e.is_completed=0 THEN "not completed" ELSE "completed" END AS is_completed FROM event_private e JOIN college c ON e.event_private_clgid = c.college_id JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id where e.is_completed=0 ORDER BY e.event_private_id';
         pool.query(query, callback);
     },
-    setEventComplete: (event_ptivate_id, callback) => {
+    setEventComplete: (event_private_id, callback) => {
         const query = 'UPDATE event_private SET is_completed=1 WHERE event_private_id = ?';
-        pool.query(query, [event_ptivate_id], (error, result) => {
+        pool.query(query, [event_private_id], (error, result) => {
             if (error) {
                 console.error('Error executing query:', error);
                 return callback(error);
