@@ -120,6 +120,17 @@ const privateEventModel = {
     updateSessionStatus: (event_private_id, session_private_id, callback) => {
         const query = "UPDATE session_private SET is_completed = 1 WHERE event_private_id = ? AND session_private_id = ?";
         pool.query(query, [event_private_id, session_private_id], callback);
+    },
+    setSessionComplete: (session_private_id, callback) => {
+        const query = 'UPDATE session_private SET is_completed=1 WHERE session_private_id = ?';
+        pool.query(query, [session_private_id], (error, result) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return callback(error);
+            }
+            console.log('Query result:', result);
+            callback(null, result);
+        });
     }
 
 }
