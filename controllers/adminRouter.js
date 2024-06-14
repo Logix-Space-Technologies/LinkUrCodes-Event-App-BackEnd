@@ -46,6 +46,7 @@ router.post('/viewadmin', (req, res) => {
         if (error) {
             return res.status(500).json({ message: error.message });
         }
+        adminModel.logAdminAction(decoded.admin_id, 'View Admin');
         res.json({ status: "success", data: results });
     });
     }
