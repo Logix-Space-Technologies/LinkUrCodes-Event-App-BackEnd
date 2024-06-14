@@ -34,13 +34,15 @@ insertCollege: (collegeData, callback) => {
 
   
 
-    findCollegeByName: (term, callback) => {
-        // SELECT * FROM college WHERE user_email LIKE ? OR user_name LIKE ?
-        const query = 'SELECT * FROM college WHERE college_name LIKE ?';
-        const searchTermPattern = `%${term}%`;
-        pool.query(query, [searchTermPattern], callback);
-    },
-
+findCollegeByName: (term, callback) => {
+    const query = `
+        SELECT * 
+        FROM college 
+        WHERE college_name LIKE ?  AND delete_status = 0
+    `;
+    const searchTermPattern = `%${term}%`;
+    pool.query(query, [searchTermPattern], callback);
+},
     findCollegeByEmail: (college_email) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM college WHERE college_email = ?';

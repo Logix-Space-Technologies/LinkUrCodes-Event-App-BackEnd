@@ -679,7 +679,7 @@ router.post('/Viewcollege', (req, res) => {
             if (decoded && decoded.adminUsername) {
                 // Admin user authenticated, log the action
                 if (results.length > 0) {
-                    collegeModel.logCollegeAction(decoded.adminUsername, 'View College');
+                    collegeModel.logCollegeAction(decoded.adminUsername , 'View College');
                     res.status(200).json(results);
                 } else {
                     res.status(404).send('No colleges found');
@@ -880,25 +880,44 @@ router.put('/update_college', uploadModel.CollegeImageupload.single('image'), (r
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
-        const token = req.headers["token"]
-        jwt.verify(token, "eventAdmin", (error, decoded) => {
+        const token = req.headers["token"];
+
+        // Verify the admin token
+        jwt.verify(token, "eventAdmin", async (error, decoded) => {
+            if (error) {
+                console.error('Error verifying token:', error);
+                return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
+            }
+
             if (decoded && decoded.adminUsername) {
-                collegeModel.deleteCollegeById(college_id, (err, result) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Error deleting college' });
+                // Delete the college by ID
+                collegeModel.deleteCollegeById(college_id, (deleteError, deleteResult) => {
+                    if (deleteError) {
+                        console.error('Error deleting college:', deleteError);
+                        return res.status(500).json({ error: 'Error deleting college.' });
                     }
-                    res.json({ status: 'College deleted successfully' });
+
+                    // Log the action of deleting the college
+                    collegeModel.logCollegeAction(decoded.adminUsername, `Deleted college with ID ${college_id}`, (logError, logResult) => {
+                        if (logError) {
+                            console.error('Error logging college action:', logError);
+                            // Even if logging fails, we should still return success for the delete action
+                        }
+                    });
+
+                    res.status(200).json({ status: 'College deleted successfully' });
                 });
+            } else {
+                return res.status(403).json({ status: 'Unauthorized user' });
             }
-            else {
-                return res.json({ "status": "unauthorised user" });
-            }
-        })
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'An error occurred while deleting the college' });
+        console.error('Error processing request:', error);
+        return res.status(500).json({ error: 'An error occurred while deleting the college.' });
     }
 });
+
+
 
 router.post('/resetPassword', async (req, res) => {
     try {
