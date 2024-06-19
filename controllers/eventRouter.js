@@ -697,8 +697,10 @@ router.post('/updateSession', (req, res) => {
 });
 
 router.post('/view_private_events_byId', (req, res) => {
+    console.log(req.headers["token"])
     const admintoken = req.headers["token"];
     const { event_private_id } = req.body;
+    console.log(event_private_id)
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
             console.log({ "status": "error", "message": "Failed to verify token" })
