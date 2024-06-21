@@ -80,7 +80,11 @@ router.post('/loginadmin', (req, res) => {
                     res.json({ status: "error", error: error });
                 } else {
                     adminModel.logAdminAction(admin.admin_id, 'Admin logged in');
-                    return res.json({ status: "success", adminData: admin, admintoken: token });
+                    return res.json({
+                        status: "success",
+                        adminData: { admin_id: admin.admin_id, admin_username: admin.admin_username },
+                        admintoken: token
+                    });
                 }
             });
         });
