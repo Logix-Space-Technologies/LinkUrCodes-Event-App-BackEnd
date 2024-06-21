@@ -123,12 +123,14 @@ router.post('/view_user_public_events', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.email) {
-            privateEventModel.viewPrivateEvents((error, results) => {
+            publicEventModel.viewPublicEvents((error, results) => {
                 res.json(results);
             })
         }
     });
 })
+
+
 
 router.post("/add_private_events", uploadModel.EventImageUpload.fields([
     { name: 'image', maxCount: 1 },
