@@ -57,4 +57,51 @@ router.post('/viewallfeedbackuser', (req, res) => {
     });
 });
 
+router.post('/addSessionStudFeedback', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+        const data = req.body;
+        feedbackModel.insertFeedbackSessionStud(data, (err, results) => {
+            if (err) {
+                return res.json({ status: "error", message: 'Database error', error: err });
+            }
+            res.json({ status: "success", message: 'Feedback added successfully', data: results });
+        });
+    });
+});
+
+router.post('/viewSessionStudFeedback', (req, res) => {
+    const admintoken = req.headers["token"];
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            const sessionId = req.body.session_id; // Assuming session_id is in the request body
+            feedbackModel.viewFeedbackSessionStud(sessionId, (error, results) => {
+                if (error) {
+                    console.error('Error fetching feedback data:', error);
+                    return res.status(500).json({ error: 'Error fetching feedback data' });
+                } else {
+                    if (results.length === 0) {
+                        // No feedback found for this session
+                        res.json({ message: 'No Feedback For this Session' });
+                    } else {
+                        console.log('Feedback data retrieved successfully:', results);
+                        res.json(results);
+                    }
+                }
+            });
+        }
+    });
+});
+
+
 module.exports = router

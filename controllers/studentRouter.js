@@ -4,6 +4,7 @@ const mailerModel=require("../models/mailerModel")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
 const jwt=require("jsonwebtoken")
+const privateEventModel = require("../models/privateEventModel")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
@@ -11,9 +12,24 @@ const hashPasswordGenerator = async (pass) => {
     return bcrypt.hash(pass, salt)
 }
 
+
+// Function to remove expired verification codes
+function removeExpiredCodes() {
+    console.log("Checking for expired verification codes...");
+    const currentTime = Date.now();
+    for (const email in verificationCodes) {
+        if (currentTime - verificationCodes[email].timestamp > codeExpirationThreshold) {
+            console.log(`Expired code found for ${email}. Removing...`);
+            delete verificationCodes[email];
+        }
+    }
+}
+
+
 router.post('/addstudent', async (req, res) => {
     try {
         let data = req.body;
+
         const dataArray = [data]; // Convert JSON object to an array with a single element
         const newdata = dataArray.map(item => ({
             student_name: item.student_name,
@@ -21,104 +37,165 @@ router.post('/addstudent', async (req, res) => {
             student_admno: item.student_admno,
             student_email: item.student_email,
             student_phone_no: item.student_phone_no,
-            student_password: item.student_admno.toString(),
             event_id: item.event_id,
             student_college_id: item.student_college_id
         }));
-        let password = newdata[0].student_password;
-        const hashedPassword = await hashPasswordgenerator(password);
-        newdata[0].student_password = hashedPassword;
         const collegetoken = req.headers["collegetoken"];
-        jwt.verify(collegetoken,"collegelogin",async(error,decoded)=>{
-        if (decoded && decoded.college_email)
-        {
-        studentModel.insertStudent(newdata, async (error, results) => {
+        
+        jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (error) {
-                console.error('Database Error:', error);
-                return res.status(500).json({ status: "error", message: 'Error inserting student data' });
+                return res.json({ "status": "Unauthorized user", "message": error.message });
             }
-            else {
-                try {
-                    let user_name = newdata[0].student_name;
-                    let email = newdata[0].student_email
-                    let textsend = `
-                                \n Dear ${user_name},\n
-                                \n You have successfully registered. \n
-                                \n Username : ${email} \n
-                                \n Password is your admission number \n
-                                \n Note: You can reset your password at any time. \n
-                                `;
-                    let subjectheading = 'Successfully Registered'
-                    // Send password reset email
-                    await mailerModel.sendEmail(email, subjectheading, textsend);
-                    return res.json({ status: "success", message: "Student added,Message has been sent to your email" });
-                } catch (error) {
-                    return res.status(500).json({ status: "error senting mail", error: error.message });
-                }
+            
+            if (decoded && decoded.faculty_email) {
+                studentModel.insertStudent(newdata, async (error, results) => {
+                    if (error) {
+                        console.error('Database Error:', error);
+                        return res.json({ status: "error", message: 'Error inserting student data' });
+                    } else {
+                        try {
+                            let user_name = newdata[0].student_name;
+                            let email = newdata[0].student_email;
+                            let textContent = `
+                                Dear ${user_name},
+
+                                You have successfully registered.
+
+                                Username: ${email}
+                            `;
+                            const htmlContent = `
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                  <title>Registration Successful</title>
+                                  <style>
+                                    body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                                    .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                                    .logo-header img { max-width: 30%; height: auto; }
+                                    .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                                    h2 { text-align: center; }
+                                    .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                                  </style>
+                                </head>
+                                <body>
+                                  <div class="container">
+                                    <div class="logo-header">
+                                      <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                                    </div>
+                                    <div class="content">
+                                      <h2>Registration Successful</h2>
+                                      <p>Dear ${user_name},</p>
+                                      <p>You have successfully registered as a student.</p>
+                                      <p><strong>Username:</strong> ${email}</p>
+                                      <p>Best regards,</p>
+                                      <p>Link Ur Codes Team</p>
+                                    </div>
+                                    <div class="footer">
+                                      <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                                    </div>
+                                  </div>
+                                </body>
+                                </html>
+                            `;
+
+                            await mailerModel.sendEmail(email, 'Successfully Registered', htmlContent, textContent);
+                            res.json({ "status": "success", "message": "Student added, message has been sent to the student's email" });
+                        } catch (emailError) {
+                            res.json({ "status": "error sending mail", "error": emailError.message });
+                        }
+                    }
+                });
+            } else {
+                res.json({ "status": "Unauthorized user" });
             }
         });
-        }
-        else{
-            return res.json({ "status": "unauthorised user" });
-        }
-    })
-    } catch (err) {
-        res.status(500).json({ status: "error", message: err.message });
+    } catch (error) {
+        console.error('Error in addStudent route:', error);
+        res.json({"status":"error", error: 'Internal server error' });
     }
 });
 
 router.post('/addstudentuploaded', async (req, res) => {
     try {
         let data = req.body;
-        // Hash passwords for each student
-        const promises = data.map(async (student) => {
-            student.student_password = await hashPasswordGenerator(student.student_password);
-            return student; // Return the modified student object
-        });
+        // // Hash passwords for each student
+        // const promises = data.map(async (student) => {
+        //     student.student_password = await hashPasswordGenerator(student.student_password);
+        //     return student; // Return the modified student object
+        // });
 
-        // Wait for all the passwords to be hashed
-        const studentsWithHashedPasswords = await Promise.all(promises);
+        // // Wait for all the passwords to be hashed
+        // const studentsWithHashedPasswords = await Promise.all(promises);
 
         // Insert students into the database
-        studentModel.insertStudent(studentsWithHashedPasswords, (error, results) => {
+        studentModel.insertStudent(data, async (error, results) => {
             if (error) {
                 console.error('Database Error:', error);
-                return res.status(500).json({ message: 'Error inserting student data' });
+                return res.json({"status":"error", message: 'Error inserting student data' });
             }
-            // Send back a success response
-            //res.status(201).json({ status: "success", message: 'Students added successfully', results });
 
             try {
-                // Iterate through each element in the newdata array
-                for (let i = 0; i < studentsWithHashedPasswords.length; i++) {
-                    let user_name = studentsWithHashedPasswords[i].student_name;
-                    let email = studentsWithHashedPasswords[i].student_email;
-                    let textsend = `
-                                    \n Dear ${user_name},\n
-                                    \n You have successfully registered. \n
-                                    \n Username : ${email} \n
-                                    \n Password is your admission number \n
-                                    \n Note: You can reset your password at any time. \n
-                                    `;
-                    let subjectheading = 'Successfully Registered';
+                // Send email to each student
+                for (let student of data) {
+                    let user_name = student.student_name;
+                    let email = student.student_email;
+                    let textContent = `
+                        Dear ${user_name},
+                        
+                        You have successfully registered.
+                        
+                        Username: ${email}
+                    `;
+                    const htmlContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Registration Successful</title>
+                            <style>
+                                body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                                .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                                .logo-header img { max-width: 30%; height: auto; }
+                                .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                                h2 { text-align: center; }
+                                .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="logo-header">
+                                    <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                                </div>
+                                <div class="content">
+                                    <h2>Registration Successful</h2>
+                                    <p>Dear ${user_name},</p>
+                                    <p>You have successfully registered as a student.</p>
+                                    <p><strong>Username:</strong> ${email}</p>
+                                    <p>Best regards,</p>
+                                    <p>Link Ur Codes Team</p>
+                                </div>
+                                <div class="footer">
+                                    <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                    `;
 
-                    // Send password reset email for each element
-                    mailerModel.sendEmail(email, subjectheading, textsend);
+                    await mailerModel.sendEmail(email, 'Successfully Registered', htmlContent, textContent);
                 }
 
-                // Send a success response after sending emails for all elements
-                return res.json({ status: "success", message: "Students added, Messages have been sent to your email" });
-            } catch (error) {
-                // If any error occurs during email sending, return an error response
-                return res.status(500).json({ status: "error sending mail", error: error.message });
+                res.json({ status: "success", message: "Students added successfully and emails sent" });
+            } catch (emailError) {
+                console.error('Error sending email:', emailError);
+                res.json({ status: "error", message: "Students added but error sending emails", error: emailError.message });
             }
-
         });
-    } catch (err) {
-        console.error('Error in /addstudent route:', err);
-        res.status(500).json({ status: "error", message: err.message });
+    } catch (error) {
+        console.error('Error in addStudent route:', error);
+        res.json({status: "error", error: 'Internal server error' });
     }
 });
+
 
 router.post('/viewstudent', async (req, res) => {
    const token=req.headers["token"]
@@ -212,75 +289,95 @@ router.post('/viewstudevent', async (req, res) => {
 // });
 
 
-router.post('/loginstudent', (req, res) => {
-    const { student_email, student_password } = req.body;
+// router.post('/loginstudent', (req, res) => {
+//     const { student_email, student_password } = req.body;
 
-    studentModel.loginStudent(student_email, (error, student) => {
-        if (error) {
-            return res.json({status: "Error"});
-        }
-        if (!student) {
-            return res.json({status: "Invalid Email ID"});
-        }
-        // Now student is found, let's compare the password
-        bcrypt.compare(student_password, student.student_password, (err, isMatch) => {
-            if (err) {
-                return res.json({status: "Error is"});
-            }
-            if (!isMatch) {
-                return res.json({status: "Invalid Password"});
-            }
-            // Successful login
-            jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
-            (error,token)=>{
-                if (error) {
-                    res.json({
-                        "status":"error",
-                        "error":error
-                    })
-                } else {
-                    return res.json({
-                        status: "Success",
-                        studentData: student,
-                        "token":token
-                    }); 
-                }
-            })
-        });
-    });
-});
+//     studentModel.loginStudent(student_email, (error, student) => {
+//         if (error) {
+//             return res.json({status: "Error"});
+//         }
+//         if (!student) {
+//             return res.json({status: "Invalid Email ID"});
+//         }
+//         // Now student is found, let's compare the password
+//         bcrypt.compare(student_password, student.student_password, (err, isMatch) => {
+//             if (err) {
+//                 return res.json({status: "Error is"});
+//             }
+//             if (!isMatch) {
+//                 return res.json({status: "Invalid Password"});
+//             }
+//             // Successful login
+//             jwt.sign({email:student_email},"stud-eventapp",{expiresIn:"1d"},
+//             (error,token)=>{
+//                 if (error) {
+//                     res.json({
+//                         "status":"error",
+//                         "error":error
+//                     })
+//                 } else {
+//                     return res.json({
+//                         status: "Success",
+//                         studentData: student,
+//                         "token":token
+//                     }); 
+//                 }
+//             })
+//         });
+//     });
+// });
 
+// Route for updating password using verification code
 router.put('/updatepassword', async (req, res) => {
     try {
-        const { student_email, student_password } = req.body;
+        const { student_email, verification_code, student_password } = req.body;
 
         // Check if all required fields are provided
-        if (!student_email || !student_password) {
-            return res.status(400).json({ message: 'Email and new password are required' });
+        if (!student_email || !verification_code || !student_password) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
         }
 
-        // Hash the new password
-        const hashedNewPassword = await hashPasswordGenerator(student_password);
-
-        // Check if the email exists in the database studtoken
+        // Check if the email exists in the database
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
-                return res.status(500).json({ message: error.message });
+                return res.status(500).json({ status: 'error', message: error.message });
             }
 
             if (!student) {
                 // Email not found in the table
-                return res.status(404).json({ message: 'Invalid email' });
+                return res.status(404).json({ status: 'error', message: 'Invalid email' });
             }
 
-            // Update the password in the database
-            studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
-                if (error) {
-                    return res.status(500).json({ message: error.message });
-                }
-                // Password updated successfully
-                res.json({ status: 'success', message: 'Password updated successfully' });
-            });
+            // Check if verification code matches the stored code and has not expired
+            const verificationData = verificationCodes[student_email];
+            if (!verificationData || verificationData.code !== parseInt(verification_code)) {
+                return res.json({status:"invalid",message:"Invalid or expired verification code"})
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - verificationData.timestamp > codeExpirationThreshold) {
+                delete verificationCodes[student_email]; // Remove expired verification code
+                return res.json({status:"expired",message:"Verification code has expired"})
+            }
+
+            try {
+                // Hash the new password
+                const hashedNewPassword = await hashPasswordGenerator(student_password);
+
+                // Update the password in the database
+                studentModel.updatePassword(student_email, hashedNewPassword, (error, updateResult) => {
+                    if (error) {
+                        return res.status(500).json({ message: error.message });
+                    }
+                    // Password updated successfully
+                    res.json({ status: 'success', message: 'Password updated successfully' });
+
+                    // Remove the verification code after password update
+                    delete verificationCodes[student_email];
+                });
+            } catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -326,11 +423,18 @@ router.post('/sortstudbyevent', (req, res) => {
         res.json({ students });
     });
 });
+// Temporary storage for verification codes
+const verificationCodes = {};
+
+
+// Time threshold for code expiration (in milliseconds)
+const codeExpirationThreshold = 300000; // 5 minutes
 
 router.post("/forgotpassword", async (req, res) => {
     try {
         const { student_email } = req.body;
-        const subjectheading = 'Password Reset'; 
+        const subjectheading = 'Password Reset';
+
         studentModel.loginStudent(student_email, async (error, student) => {
             if (error) {
                 return res.status(500).json({ error: error.message });
@@ -339,12 +443,57 @@ router.post("/forgotpassword", async (req, res) => {
                 return res.status(400).json({ error: "Invalid student email" });
             }
             try {
-                let student_name=student.student_name;
-                let sending_email=student_email;
-                let textsend = `Dear ${student_name},\n\nYou have requested to reset your password. Please contact the administrator for assistance.`;
+                // Generate a random 6-digit number
+                const randomCode = Math.floor(100000 + Math.random() * 900000);
+
+                // Store the code with timestamp
+                verificationCodes[student_email] = {
+                    code: randomCode,
+                    timestamp: Date.now()
+                };
+
+                let student_name = student.student_name;
+                let sending_email = student_email;
+                let textContent = `Dear ${student_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Password Reset</title>
+                        <style>
+                            body { background-color: #faf4f4; color: #140101; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                            .container { border-radius: 8px; background-color: #ece9e9; padding: 20px; margin: 20px auto; max-width: 600px; }
+                            .logo-header img { max-width: 30%; height: auto; }
+                            .content { margin-top: 20px; border: 2px solid #a3a0a0; padding: 20px; }
+                            h2 { text-align: center; }
+                            .footer { text-align: center; margin-top: 30px; font-size: smaller; color: grey; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="logo-header">
+                                <img src="https://www.linkurcodes.com/images/logo.png" alt="Link Ur Codes Logo">
+                            </div>
+                            <div class="content">
+                                <h2>Password Reset</h2>
+                                <p>Dear ${student_name},</p>
+                                <p>You have requested to reset your password. Your verification code is: <strong>${randomCode}</strong>.</p>
+                                <p>Please use this code to reset your password. If you did not request this, please contact the administrator.</p>
+                                <p>Best regards,</p>
+                                <p>Link Ur Codes Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>© ${new Date().getFullYear()} Link Ur Codes. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
 
                 // Send password reset email
-                await mailerModel.sendEmail(sending_email, subjectheading, textsend);
+                await mailerModel.sendEmail(sending_email, subjectheading, htmlContent, textContent);
+
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
                 return res.status(500).json({ error: error.message });
@@ -354,5 +503,77 @@ router.post("/forgotpassword", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
+
+// Route to view logged-in student's profile
+router.post('/view-student-profile', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "stud-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+
+        // Extract student_email from the decoded token
+        const student_email = decoded.email;
+
+        // Fetch student information from the database based on student_email
+        studentModel.getStudentByEmail(student_email, (error, student) => {
+            if (error) {
+                console.error('Error fetching student data:', error);
+                return res.status(500).json({ status: "Internal Server Error" });
+            }
+
+            if (!student) {
+                // If student not found
+                return res.status(404).json({ status: "Student Not Found" });
+            }
+
+            // Prepare response data
+            const responseData = {
+                name: student.student_name,
+                rollno: student.student_rollno,
+                admno:student.student_admno
+            };
+
+            return res.json(responseData);
+        });
+    });
+});
+
+
+
+
+
+router.post('/viewSession', (req, res) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.status(401).json({ status: "Unauthorized" });
+        }
+        const { event_private_id } = req.body;
+        privateEventModel.getSessions(event_private_id)
+            .then(results => {
+                // Format the session_date for each result
+                const formattedResults = results.map(session => {
+                    const sessionDate = new Date(session.session_date);
+                    const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                    session.session_date = formattedDate; // DD-MM-YYYY format
+                    return session;
+                });
+
+                res.json({ "status": "success", "data": formattedResults });
+            })
+            .catch(err => {
+                return res.status(500).json({ "status": "error", "message": err.message });
+            });
+    });
+});
+
 
 module.exports = router;

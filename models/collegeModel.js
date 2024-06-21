@@ -6,9 +6,9 @@ const bcrypt=require("bcryptjs")
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: '',
   database: process.env.DB_NAME,
-  port:process.env.DB_PORT
+  port:process.env.DB_PORT,
+  password:process.env.DB_PASS
 });
 
 
@@ -34,13 +34,15 @@ insertCollege: (collegeData, callback) => {
 
   
 
-    findCollegeByName: (term, callback) => {
-        // SELECT * FROM college WHERE user_email LIKE ? OR user_name LIKE ?
-        const query = 'SELECT * FROM college WHERE college_name LIKE ?';
-        const searchTermPattern = `%${term}%`;
-        pool.query(query, [searchTermPattern], callback);
-    },
-
+findCollegeByName: (term, callback) => {
+    const query = `
+        SELECT * 
+        FROM college 
+        WHERE college_name LIKE ?  AND delete_status = 0
+    `;
+    const searchTermPattern = `%${term}%`;
+    pool.query(query, [searchTermPattern], callback);
+},
     findCollegeByEmail: (college_email) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM college WHERE college_email = ?';
@@ -114,6 +116,14 @@ updateCollegePassword: (college_id, newPassword, callback) => {
   });
 },
 
+getPaymentsByCollege: (college_id, callback) => {
+    const query = `SELECT p.payment_college_id AS paymentId,c.college_name AS College,e.event_private_name AS Event,
+               e.event_private_description AS EventDescription,p.amount AS Amount,p.invoice_no AS Invoice,
+               p.college_payment_date AS Date FROM payment_college p INNER JOIN college c ON p.college_id = c.college_id INNER JOIN event_private e ON p.private_event_id = e.event_private_id
+                WHERE p.college_id = ?;`;
+    pool.query(query, [college_id], callback);
+},
+
 findCollegeStudents: (student_college_id_obj, callback) => {
     console.log("clg", student_college_id_obj)
     const student_college_id=student_college_id_obj.student_college_id
@@ -139,7 +149,7 @@ findEventsByCollegeId: (collegeId, callback) => {
 
 findEventsByEventId: (eventId, callback) => {
     const query = `
-    SELECT student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
+    SELECT student_id,student_name,student_rollno,student_admno,student_email,student_phone_no FROM student WHERE event_id = ?;`;
     pool.query(query, [eventId], callback);
 },
 
@@ -180,6 +190,20 @@ findEventsByEventId: (eventId, callback) => {
             console.error('Error processing request:', error);
             return callback(error, null);
         }
+    },
+
+    logCollegeAction : (college_id, action) => {
+        const collegeLogs = {
+            college_id: college_id,
+            action: action,
+            date_time: new Date() // Optional: Add a timestamp for when the action was logged
+        };
+        pool.query("INSERT INTO college_logs SET ?", collegeLogs, (logErr, logRes) => {
+            if (logErr) {
+                console.log("error: ", logErr);
+                return;
+            }
+        });
     }
 };
 

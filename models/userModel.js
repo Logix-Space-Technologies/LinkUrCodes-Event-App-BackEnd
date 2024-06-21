@@ -4,8 +4,8 @@ require("dotenv").config()
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    password: '',
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    password:process.env.DB_PASS
 })
 
 const userModel = {
@@ -36,7 +36,7 @@ const userModel = {
         if (!term) {
             return callback(null, []); // Return an empty array if the search term is empty
         }
-        const query = 'SELECT * FROM user WHERE user_name LIKE ?';
+        const query = 'SELECT * FROM user WHERE user_name LIKE ? AND user_delete_status = 0';
         const searchTermPattern = `%${term}%`;
         pool.query(query, [searchTermPattern], callback);
     },
@@ -77,8 +77,31 @@ const userModel = {
             return callback(null, null);
         }
     });
-}
+},
+ updatePassword : (user_email, hashedPassword, callback) => {
+    const query = 'UPDATE user SET user_password = ? WHERE user_email = ?';
+    pool.query(query, [hashedPassword, user_email], callback);
+},
+    
+     findUserByEmail: (user_email, callback) => {
+        const query = 'SELECT * FROM user WHERE user_email = ?';
+        pool.query(query, [user_email], callback);
+    },
 
+     logUserAction : (user_id, action) => {
+        const userLog = {
+            user_id: user_id,
+            action: action,
+            date_time: new Date() // Optional: Add a timestamp for when the action was logged
+        };
+        pool.query("INSERT INTO user_logs SET ?", userLog, (logErr, logRes) => {
+            if (logErr) {
+                console.log("error: ", logErr);
+                return;
+            }
+        });
+    }
+    
 
 }
 

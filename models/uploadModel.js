@@ -4,8 +4,8 @@ require("dotenv").config()
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    password: '',
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    password:process.env.DB_PASS
 })
 
 const multer = require("multer");
@@ -13,7 +13,11 @@ const path = require("path");
 
 const EventImageStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/eventimages/');
+        if (file.mimetype === 'application/pdf') {
+            cb(null, 'uploads/eventpdfs/');
+        } else {
+            cb(null, 'uploads/eventimages/');
+        }
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -62,12 +66,12 @@ const StudFIleStorage = multer.diskStorage({
 });
 
 const ImagefileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'application/pdf') {
         cb(null, true);
     } else {
-        cb(new Error('Only JPEG and PNG images are allowed'), false);
+        cb(new Error('Only JPEG, PNG images, and PDF files are allowed'), false);
     }
-}
+};
 
 const PDFfileFilter = (req, file, cb) => {
     // Check if the file is a PDF
