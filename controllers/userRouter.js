@@ -480,7 +480,4 @@ router.put('/updatePassword', async (req, res) => {
     }
 });
 
-
-
-
 module.exports = router
