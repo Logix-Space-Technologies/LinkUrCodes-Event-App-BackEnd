@@ -57,7 +57,7 @@ router.post('/colleges/search', (req, res) => {
 router.post('/grant-permission/students', (req, res) => {
     const token = req.headers.token;
     console.log('Received token:', token);
-    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+    jwt.verify(token, "collegelogin", async (error, decoded) => {
         if (error) {
             console.error('Error verifying token: ' + error);
             res.status(401).json({ error: 'Unauthorized' });
@@ -80,32 +80,49 @@ router.post('/grant-permission/students', (req, res) => {
 router.post('/generate-certificate/college', async (req, res) => {
     const token = req.headers.token;
     console.log('Received token:', token);
-    jwt.verify(token, "collegelogin", async (error, decoded) => {
-        if (error) {
-            console.error('Error verifying token: ' + error);
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
-        }
-    const { certificate_college_id, certificate_name, Issued_By } = req.body;
     try {
-        await new Promise((resolve, reject) => {
-            certificateModel.checkCollegeCertificateRequestPermission(certificate_college_id, async (err, hasPermission) => {
+        const decoded = await new Promise((resolve, reject) => {
+            jwt.verify(token, "collegelogin", (error, decoded) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(decoded);
+                }
+            });
+        });
+        const { certificate_college_id, certificate_name, Issued_By, event_id } = req.body; // Expect single event_id
+        const hasPermission = await new Promise((resolve, reject) => {
+            certificateModel.checkCollegeCertificateRequestPermission(certificate_college_id, event_id, (err, hasPermission) => {
                 if (err) {
                     console.error('Error checking college certificate request permission: ' + err);
                     reject(err);
                     return;
                 }
-                if (!hasPermission) {
-                    res.status(403).json({ error: 'Permission denied. College does not have permission to generate certificate requests' });
+                resolve(hasPermission);
+            });
+        });
+        if (!hasPermission) {
+            res.status(403).json({ error: 'Permission denied. College does not have permission to generate certificate requests for this event' });
+            return;
+        }
+        console.log("Request Body:", req.body);
+        // Check if certificates for this event and college have already been generated
+        const existingCertificates = await new Promise((resolve, reject) => {
+            certificateModel.findCertificatesByEventAndCollege(event_id, certificate_college_id, (err, certificates) => {
+                if (err) {
+                    reject(err);
                     return;
                 }
-                resolve();
+                resolve(certificates);
             });
-
         });
-        console.log("Request Body:", req.body);
+        if (existingCertificates.length > 0) {
+            console.log('Certificates already generated for this event and college. Returning existing certificates.');
+            res.status(200).json({ message: 'Certificates retrieved successfully', certificates: existingCertificates });
+            return;
+        }
         const students = await new Promise((resolve, reject) => {
-            certificateModel.findStudentsByCollegeId(certificate_college_id, (err, students) => {
+            certificateModel.findStudentsByCollegeId(certificate_college_id, event_id, (err, students) => {
                 if (err) {
                     console.error('Error fetching students for college: ' + err);
                     reject(err);
@@ -115,94 +132,55 @@ router.post('/generate-certificate/college', async (req, res) => {
                 resolve(students);
             });
         });
-
         if (students.length === 0) {
             res.status(400).json({ error: 'No students found for the college' });
             return;
         }
-        const promises = [];
-        for (const student of students) {
-            console.log("Inserting certificates for student:", student.student_id);
-            try {
-                const events = await new Promise((resolve, reject) => {
-                    certificateModel.findEventsByStudentId(student.student_id, (err, events) => {
-                        if (err) {
-                            console.error('Error fetching events for student: ' + err);
-                            reject(err);
-                            return;
-                        }
-                        console.log("Events for student:", events);
-                        resolve(events);
-                    });
-                });
-
-                const eventIds = students.map(student => student.event_id);
-                console.log("Event !!!!!! : " +eventIds);
-
-try {
-    const eventsPaidForCollege = await certificateModel.checkEventsPaidForCollege(certificate_college_id, eventIds);
-    console.log("Event count !!!!!! : " +eventsPaidForCollege);
-    if (eventsPaidForCollege !== eventIds.length) {
-        res.status(403).json({ error: 'Permission denied. College has not paid for all events' });
-        return;
-    }
-                
-                for (const event of events) {
-                    try {
-                        console.log("Inserting certificate for event:", event.event_id);
-                        const insertResult = await new Promise((resolve, reject) => {
-                            certificateModel.insertCertificateCollege({
-                                certificate_private_event_id: event.event_id,
-                                certificate_college_id: certificate_college_id,
-                                certificate_name: certificate_name,
-                                Issued_By: Issued_By,
-                                status: 'approved'
-                            }, (err, insertResult) => {
-                                if (err) {
-                                    console.error('Error inserting certificate request: ' + err);
-                                    reject(err);
-                                } else {
-                                    console.log("Certificate inserted successfully for event:", event.event_id);
-                                    resolve(insertResult);
-                                }
-                            });
-                        });
-                        promises.push(insertResult);
-                    } catch (error) {
-                        console.error('Error inserting certificate for event:', error);
+        const insertPromises = students.map(student => {
+            console.log("Inserting certificate for student:", student.student_id);
+            return new Promise((resolve, reject) => {
+                certificateModel.insertCertificateCollege({
+                    certificate_private_event_id: event_id,
+                    certificate_student_id: student.student_id,
+                    certificate_name: certificate_name,
+                    Issued_By: Issued_By,
+                    status: 'approved'
+                }, (err, insertResult) => {
+                    if (err) {
+                        console.error('Error inserting certificate request: ' + err);
+                        reject(err);
+                    } else {
+                        console.log("Certificate inserted successfully for student:", student.student_id);
+                        resolve(insertResult);
                     }
-                }
-            } catch (error) {
-                console.error('Error fetching events for student:', error);
-            }
-        } catch (error) {
-            console.error('Error checking payment for college events:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-        }
-        await Promise.all(promises);
-
-        const certificates = [];
-    for (const student of students) {
-        const studentCertificates = await new Promise((resolve, reject) => {
-            certificateModel.findCertificatesByStudent(student.student_id, (err, certificates) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                resolve(certificates);
+                });
             });
         });
-        certificates.push(...studentCertificates);
-    }
+        await Promise.all(insertPromises);
+        // Fetch inserted certificates
+        const certificates = [];
+        for (const student of students) {
+            const studentCertificates = await new Promise((resolve, reject) => {
+                certificateModel.findCertificatesByStudent(student.student_id, (err, certificates) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve(certificates);
+                });
+            });
+            certificates.push(...studentCertificates);
+        }
         console.log('All certificate requests inserted successfully');
         res.status(200).json({ message: 'Certificates retrieved successfully', certificates: certificates });
-    } 
-    catch (error) {
-        console.error('Error generating certificate requests: ' + error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (error) {
+        console.error('Error processing request: ' + error);
+        if (error.name === 'JsonWebTokenError') {
+            res.status(401).json({ error: 'Unauthorized' });
+        } else {
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
-});
 });
 
 
@@ -212,94 +190,67 @@ try {
 router.post('/generate-certificate/student', async (req, res) => {
     const token = req.headers.token;
     console.log('Received token:', token);
-    jwt.verify(token, "stud-eventapp", async (error, decoded) => {
-        if (error) {
-            console.error('Error verifying token: ' + error);
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
-        }
-    const { certificate_student_id, certificate_name, Issued_By } = req.body;
-
+    
     try {
-        await new Promise((resolve, reject) => {
-            certificateModel.checkStudentCertificateRequestPermission(certificate_student_id, async (err, hasPermission) => {
+        const decoded = await new Promise((resolve, reject) => {
+            jwt.verify(token, "user-eventapp", (error, decoded) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(decoded);
+                }
+            });
+        });
+
+        const { certificate_student_id, certificate_name, event_id, Issued_By } = req.body;
+
+        const hasPermission = await new Promise((resolve, reject) => {
+            certificateModel.checkStudentCertificateRequestPermission(certificate_student_id, event_id, (err, hasPermission) => {
                 if (err) {
                     console.error('Error checking student certificate request permission: ' + err);
                     reject(err);
                     return;
                 }
-                if (!hasPermission) {
-                    res.status(403).json({ error: 'Permission denied. Student does not have permission to generate certificate requests' });
-                    return;
-                }
-                resolve();
+                resolve(hasPermission);
             });
         });
 
-        const privateEvents = await new Promise((resolve, reject) => {
-            certificateModel.findPrivateEventsByStudentId(certificate_student_id, (err, privateEvents) => {
-                if (err) {
-                    console.error('Error fetching private events for student: ' + err);
-                    reject(err);
-                    return;
-                }
-                resolve(privateEvents);
-            });
-        });
-
-        if (privateEvents.length === 0) {
-            res.status(400).json({ error: 'No private events found for the student' });
+        if (!hasPermission) {
+            res.status(403).json({ error: 'Permission denied. Student does not have permission to generate certificate requests' });
             return;
         }
 
-        console.log("Event count earlier !!!!!! : " + JSON.stringify(privateEvents));
+        const certificateData = {
+            certificate_private_event_id: event_id,
+            certificate_student_id: certificate_student_id,
+            certificate_name: certificate_name,
+            Issued_By: Issued_By,
+            status: 'approved'
+        };
 
-        try {
-            const eventsPaidForCollege = await certificateModel.checkEventsPaidForStudents(certificate_student_id, privateEvents);
-            console.log("Event count !!!!!! : " + eventsPaidForCollege);
-            if (eventsPaidForCollege !== privateEvents.length) {
-                res.status(403).json({ error: 'Permission denied. College has not paid for all events' });
+        certificateModel.insertCertificateStudent(certificateData, async (err, insertResult) => {
+            if (err) {
+                console.error('Error inserting certificate request: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
                 return;
             }
-
-            const certificates = await Promise.all(privateEvents.map(async privateEvent => {
-                return new Promise((resolve, reject) => {
-                    const certificateData = {
-                        certificate_private_event_id: privateEvent.event_id,
-                        certificate_student_id: certificate_student_id,
-                        certificate_name: certificate_name,
-                        Issued_By: Issued_By,
-                        status: 'approved'
-                    };
-
-                    certificateModel.insertCertificateStudent(certificateData, async (err, insertResult) => {
-                        if (err) {
-                            console.error('Error inserting certificate request: ' + err);
-                            reject(err);
-                        } else {
-                            try {
-                                const certificateDetails = await certificateModel.findCertificateDetails(certificate_student_id, privateEvent.event_id, certificate_name, Issued_By);
-                                resolve(certificateDetails);
-                            } catch (error) {
-                                console.error('Error fetching certificate details: ' + error);
-                                reject(error);
-                            }
-                        }
-                    });
-                });
-            }));
-
-            console.log('All certificate requests inserted successfully');
-            res.status(200).json({ message: 'Certificates retrieved successfully', certificates: certificates });
-        } catch (error) {
-            console.error('Error generating certificate requests: ' + error);
+            try {
+                const certificateDetails = await certificateModel.findCertificateDetails(certificate_student_id, event_id, certificate_name, Issued_By);
+                console.log('Certificate request inserted successfully');
+                res.status(200).json({ message: 'Certificate retrieved successfully', certificate: certificateDetails });
+            } catch (error) {
+                console.error('Error fetching certificate details: ' + error);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+    } catch (error) {
+        console.error('Error processing request: ' + error);
+        if (error.name === 'JsonWebTokenError') {
+            res.status(401).json({ error: 'Unauthorized' });
+        } else {
             res.status(500).json({ error: 'Internal server error' });
         }
-    } catch (error) {
-        console.error('Error generating certificate requests: ' + error);
-        res.status(500).json({ error: 'Internal server error' });
     }
-});
 });
 
 
