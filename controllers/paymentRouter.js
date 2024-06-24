@@ -19,31 +19,6 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET
 });
 
-// // Function to generate Razorpay signature
-// function generateRazorpaySignature(orderId, paymentId, secret) {
-//   const data = orderId + '|' + paymentId;
-//   const hmac = crypto.createHmac('sha256', secret);
-//   hmac.update(data);
-//   return hmac.digest('hex');
-// }
-
-// Router for creating a new order
-router.post('/create-order', (req, res) => {
-  const { user_id, payment_event_id, payment_amount, currency } = req.body;
-
-  // Convert payment_amount to the smallest currency unit
-  const amountInSmallestUnit = payment_amount * 100; // Assuming the currency is INR
-
-  razorpay.orders.create({ amount: amountInSmallestUnit, currency }, (err, order) => {
-    if (err) {
-      console.error('Failed to create Razorpay order:', err);
-      return res.status(500).send(err);
-    }
-    res.json(order);
-  });
-});
-
-
 // Function to generate Razorpay signature
 function generateRazorpaySignature(orderId, paymentId, secret) {
   const data = orderId + '|' + paymentId;
@@ -52,13 +27,27 @@ function generateRazorpaySignature(orderId, paymentId, secret) {
   return hmac.digest('hex');
 }
 
+router.post('/create-order', (req, res) => {
+  const { user_id, payment_event_id, payment_amount, currency } = req.body;
 
-// Route to capture payment
+  // Convert payment_amount to the smallest currency unit
+  const amountInSmallestUnit = Math.round(payment_amount * 100); // Ensure correct conversion
+
+  razorpay.orders.create({ amount: amountInSmallestUnit, currency }, (err, order) => {
+    if (err) {
+      console.error('Failed to create Razorpay order:', err);
+      return res.status(500).send(err);
+    }
+    res.json(order); // Respond with the entire order object
+  });
+});
+
+// Adjusted route to capture payment and insert details into the database
 router.post('/paymentCapture', (req, res) => {
   const key_secret = process.env.RAZORPAY_SECRET;
 
   // Extract the payment details from the request body
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, user_id, payment_event_id, payment_amount } = req.body;
 
   // Validate the request by computing the expected signature
   const expectedSignature = generateRazorpaySignature(razorpay_order_id, razorpay_payment_id, key_secret);
@@ -68,278 +57,40 @@ router.post('/paymentCapture', (req, res) => {
   console.log('Received Signature:', razorpay_signature);
 
   if (expectedSignature === razorpay_signature) {
-      console.log('Request is legit');
-      const paymentDetails = {
-        order_id,
-        payment_id,
-        status: 'paid', // Assuming status is 'paid' upon successful verification
-        created_at: new Date()
-      };
-    
-      // Insert payment details into database
-      paymentModel.insertPaymentUser(paymentDetails, (error, results) => {
-        if (error) {
-          return res.status(500).json({ success: false, message: 'Failed to insert payment details' });
-        }
-        res.json({ success: true, message: 'Payment verified and details inserted successfully' });
-      });
-      
-      // Respond with success and store information in a database
-      res.json({ status: 'ok', msg: 'Payment captured successfully' });
-    }
-  else {
-      // Respond with error for invalid signature
-      res.status(400).send('Invalid signature');
+    console.log('Request is legit');
+    const paymentDetails = {
+      order_id: razorpay_order_id,
+      payment_user_id: razorpay_payment_id,
+      user_id: user_id,
+      payment_event_id: payment_event_id,
+      payment_amount: payment_amount,
+      currency: 'INR', // Assuming INR as the currency
+      status: 'paid', // Assuming status is 'paid' upon successful verification
+      created_at: new Date(),
+      razorpay_signature: razorpay_signature,
+      notes: `Payment for event ${payment_event_id}`
+    };
+
+    // Insert payment details into the database
+    paymentModel.insertPaymentUser(paymentDetails, (error, results) => {
+      if (error) {
+        console.error('Failed to insert payment details:', error);
+        return res.status(500).json({ success: false, message: 'Failed to insert payment details' });
+      }
+      console.log('Inserted payment details successfully:', results);
+      res.json({ success: true, message: 'Payment verified and details inserted successfully' });
+    });
+  } else {
+    // Log the mismatch
+    console.error('Invalid signature. Payment verification failed.');
+    res.status(400).send('Invalid signature');
   }
 });
-
-
 
 router.get('/razorpay-key', (req, res) => {
   res.json({ key: process.env.RAZORPAY_KEY_ID });
 });
 
-
-
-
-// // Initialize Razorpay instance
-// const razorpay = new Razorpay({
-//   key_id: process.env.RAZORPAY_KEY_ID,
-//   key_secret: process.env.RAZORPAY_SECRET
-// });
-
-
-
-// Function to generate Razorpay signature
-// function generateRazorpaySignature(orderId, paymentId, secret) {
-//   const data = orderId + '|' + paymentId;
-//   const hmac = crypto.createHmac('sha256', secret);
-//   hmac.update(data);
-//   return hmac.digest('hex');
-// }
-
-// router.post('/create-order', (req, res) => {
-//   const { user_id, payment_event_id, payment_amount, currency } = req.body;
-
-//   // Convert payment_amount to the smallest currency unit
-//   const amountInSmallestUnit = payment_amount * 100; // Assuming the currency is INR
-
-//   razorpay.orders.create({ amount: amountInSmallestUnit, currency }, (err, order) => {
-//     if (!err) {
-//       const paymentUser = {
-//         user_id,
-//         payment_event_id,
-//         payment_amount,
-//         currency:'INR',
-//         order_id: order.id,
-//         status: 'created',
-//         created_at: new Date(),
-//         updated_at: new Date(),
-//       };
-
-//       paymentModel.insertPaymentUser(paymentUser, (error, results) => {
-//         if (error) {
-//           res.status(500).send(error);
-//         } else {
-//           res.json(order);
-//         }
-//       });
-//     } else {
-//       res.status(500).send(err);
-//     }
-//   });
-// });
-
-// router.post('/paymentCapture', (req, res) => {
-//   const { order_id, payment_id } = req.body;
-//   const razorpay_signature = req.headers['x-razorpay-signature'];
-//   const key_secret = process.env.RAZORPAY_SECRET;
-
-//   // Verification
-//   const hmac = crypto.createHmac('sha256', key_secret);
-//   hmac.update(`${order_id}|${payment_id}`);
-//   const generated_signature = hmac.digest('hex');
-
-//   // Compare signatures
-//   if (razorpay_signature === generated_signature) {
-//       // Signature verification passed
-//       paymentModel.updatePaymentUserStatus(order_id, payment_id, razorpay_signature, 'verified', (error, results) => {
-//           if (error) {
-//               res.status(500).send(error);
-//           } else {
-//               res.json({ success: true, message: "Payment has been verified" });
-//           }
-//       });
-//   } else {
-//       // Signature verification failed
-//       res.status(400).json({ success: false, message: "Payment verification failed" });
-//   }
-// });
-
-
-
-
-
-
-
-
-
-// // Route to create order
-// router.post('/create-order', async (req, res) => {
-//   const { event_public_id, payment_amount, currency, user_id } = req.body;
-
-//   try {
-//     if (!event_public_id || !payment_amount || !currency || !user_id) {
-//       return res.status(400).json({ success: false, message: "Missing required fields" });
-//     }
-
-//     const options = {
-//       amount: parseInt(payment_amount) * 100, // Razorpay amount is in paise
-//       currency,
-//       receipt: `receipt_${Date.now()}`,
-//     };
-
-//     const order = await razorpay.orders.create(options);
-
-//     // Log the order details in the console
-//     console.log('Razorpay Order:', order);
-
-//     // Insert payment details into the database
-//     const paymentData = {
-//       user_id,
-//       payment_event_id: event_public_id,
-//       payment_amount,
-//       currency,
-//       order_id: options.receipt,
-//       razorpay_order_id: order.id
-//     };
-
-//     paymentModel.insertPayment(paymentData, (err, results) => {
-//       if (err) {
-//         console.error('Error inserting payment details:', err);
-//         return res.status(500).json({ success: false, message: 'Error inserting payment details' });
-//       }
-
-//       res.json({
-//         success: true,
-//         order_id: order.id,
-//         amount: order.amount,
-//         currency: order.currency,
-//         event_public_id,
-//         user_id
-//       });
-//     });
-//   } catch (error) {
-//     console.error('Error creating order:', error); // Log the error
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// });
-
-// // Route to capture payment
-// router.post('/paymentCapture', (req, res) => {
-//   const key_secret = process.env.RAZORPAY_SECRET;
-
-//   // Extract the payment details from the request body
-//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-//   // Validate the request by computing the expected signature
-//   const expectedSignature = generateRazorpaySignature(razorpay_order_id, razorpay_payment_id, key_secret);
-
-//   // Log the expected and received signatures for debugging
-//   console.log('Expected Signature:', expectedSignature);
-//   console.log('Received Signature:', razorpay_signature);
-
-//   if (expectedSignature === razorpay_signature) {
-//     console.log('Request is legit');
-
-//     // Update payment details in the database
-//     const updateData = {
-//       razorpay_order_id,
-//       razorpay_payment_id,
-//       razorpay_signature
-//     };
-
-//     paymentModel.updatePayment(updateData, (err, results) => {
-//       if (err) {
-//         console.error('Error updating payment details:', err);
-//         return res.status(500).json({ success: false, message: 'Error updating payment details' });
-//       }
-
-//       res.json({ status: 'ok', msg: 'Payment captured successfully' });
-//     });
-//   } else {
-//     // Respond with error for invalid signature
-//     res.status(400).send('Invalid signature');
-//   }
-// });
-
-
-
-// router.post('/create-order', async (req, res) => {
-//   const { event_public_id, payment_amount, currency, user_id } = req.body;
-
-//   try {
-//     if (!event_public_id || !payment_amount || !currency || !user_id) {
-//       return res.status(400).json({ success: false, message: "Missing required fields" });
-//     }
-
-//     const options = {
-//       amount: parseInt(payment_amount) * 100, // Razorpay amount is in paise
-//       currency,
-//       receipt: `receipt_${Date.now()}`,
-//     };
-
-//     const order = await razorpay.orders.create(options);
-
-//     // Log the order details in the console
-//     console.log('Razorpay Order:', order);
-
-//       res.json({
-//         success: true,
-//         order_id: order.id,
-//         amount: order.amount,
-//         currency: order.currency,
-//         event_public_id,
-//         user_id
-//       });
-
-//   } catch (error) {
-//     console.error('Error creating order:', error); // Log the error
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// });
-
-
-
-
-
-
-
-// // Route to capture payment
-// router.post('/paymentCapture', (req, res) => {
-//   const key_secret = process.env.RAZORPAY_SECRET;
-
-//   // Extract the payment details from the request body
-//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-//   // Validate the request by computing the expected signature
-//   const expectedSignature = generateRazorpaySignature(razorpay_order_id, razorpay_payment_id, key_secret);
-
-//   // Log the expected and received signatures for debugging
-//   console.log('Expected Signature:', expectedSignature);
-//   console.log('Received Signature:', razorpay_signature);
-
-//   if (expectedSignature === razorpay_signature) {
-//       console.log('Request is legit');
-      
-//       // Respond with success and store information in a database
-//       res.json({ status: 'ok', msg: 'Payment captured successfully' });
-//     }
-//   else {
-//       // Respond with error for invalid signature
-//       res.status(400).send('Invalid signature');
-//   }
-// });
 
 
 
