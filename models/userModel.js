@@ -100,6 +100,11 @@ const userModel = {
                 return;
             }
         });
+    },
+    viewUserLogs:(callback)=>{
+        const query='SELECT * FROM user_logs';
+        pool.query(query,callback)
+
     }
     
 

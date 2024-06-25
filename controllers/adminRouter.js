@@ -5,7 +5,9 @@ const bcrypt = require("bcryptjs")
 const { error } = require("console")
 const router = express.Router()
 const jwt = require("jsonwebtoken")
-const validateModel=require("../models/validateModel")
+const validateModel = require("../models/validateModel")
+const userModel=require("../models/userModel")
+const departmentModel=require("../models/departmentModel")
 
 const hashPasswordGenerator = async (pass) => {
     console.log(pass)
@@ -29,7 +31,7 @@ router.post('/addadmin', async (req, res) => {
             if (error) {
                 return res.status(500).json({ message: error.message });
             }
-            adminModel.logAdminAction(results.insertId, 'Admin account created');  
+            adminModel.logAdminAction(results.insertId, 'Admin account created');
             res.json({ status: "success", data: results });
         });
     } catch (err) {
@@ -39,23 +41,23 @@ router.post('/addadmin', async (req, res) => {
 
 
 router.post('/viewadmin', (req, res) => {
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-    adminModel.viewAdmin((error, results) => {
-        if (error) {
-            return res.status(500).json({ message: error.message });
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            adminModel.viewAdmin((error, results) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                adminModel.logAdminAction(decoded.admin_id, 'View Admin');
+                res.json({ status: "success", data: results });
+            });
         }
-        adminModel.logAdminAction(decoded.admin_id, 'View Admin');
-        res.json({ status: "success", data: results });
-    });
-    }
-    else{
-        res.json({
-            "status":"Unauthorized user"
-        })
-    }
-})
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
 });
 
 
@@ -91,7 +93,61 @@ router.post('/loginadmin', (req, res) => {
     });
 });
 
+router.post('/viewadminlogs', (req, res) => {
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            adminModel.viewAdminLogs((error, results) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                res.json({ status: "success", data: results });
+            });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
+})
 
+router.post('/viewuserlogs', (req, res) => {
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.viewUserLogs((error, results) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                res.json({ status: "success", data: results });
+            });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
+})
 
+router.post('/viewfacultylogs', (req, res) => {
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            departmentModel.viewFacultyLogs((error, results) => {
+                if (error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                res.json({ status: "success", data: results });
+            });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
+})
 
 module.exports = router
