@@ -510,6 +510,4 @@ router.post('/viewPublicSession', (req, res) => {
     });
 });
 
-
-
 module.exports = router

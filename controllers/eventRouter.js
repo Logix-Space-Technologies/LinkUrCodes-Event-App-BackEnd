@@ -131,6 +131,8 @@ router.post('/view_user_public_events', (req, res) => {
     });
 })
 
+
+
 router.post("/add_private_events", uploadModel.EventImageUpload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'pdf', maxCount: 1 }
