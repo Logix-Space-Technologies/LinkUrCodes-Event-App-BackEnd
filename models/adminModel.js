@@ -72,7 +72,7 @@ const adminModel = {
     pool.query(query, callback);
   },
   viewAdminLogs: (callback) => {
-    const query = 'SELECT * FROM admin_logs';
+    const query = 'SELECT a.admin_username,al.action,al.date_time FROM admin_logs al JOIN admin a ON al.admin_id=a.admin_id';
     pool.query(query, callback);
   }
 };
