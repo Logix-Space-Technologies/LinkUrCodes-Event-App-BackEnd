@@ -106,7 +106,7 @@ const departmentModel = {
     });
   },
   viewFacultyLogs: (callback) => {
-    const query = 'SELECT * FROM faculty_logs';
+    const query = 'SELECT d.faculty_name,f.action,f.date_time FROM faculty_logs f JOIN department d ON f.department_id=d.department_id';
     pool.query(query, callback)
 
   }
