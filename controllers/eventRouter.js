@@ -784,6 +784,116 @@ router.post('/view_completed_public_events', (req, res) => {
     });
 })
 
+router.post('/addPublicSession', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+         const data = req.body;
+         const admin_id = decoded.admin_id;
+        publicEventModel.addSession(data, (err, results) => {
+            if (err) {
+                return res.json({ "status": "error", "message": err.message });
+            }
+            else {
+                const sessionId = results.insertId;
+                const eventID = req.body.event_public_id
+                const date = req.body.session_date
+
+
+                adminModel.logAdminAction(admin_id, `Added session for public event ID: ${sessionId} for event ID: ${eventID} on date: ${date}`);
+                // Fetching users
+                publicEventModel.findUsersByEvent(eventID, (error, users) => {
+                    if (error) {
+                        return res.json({ status: 'error', message: error });
+                    } else {
+                        let completed = 0;
+                        const totalUsers = users.length;
+                        if (totalUsers === 0) {
+                            return res.json({ status: "success", "message": "Session added successfully" });
+                        }
+
+                        users.forEach(student => {
+                            let userID = student.user_id;
+                            const newAttendance = {
+                                session_id: sessionId,
+                                user_id: userID,
+                                added_date: date
+                            };
+
+                            attendenceModel.addPublicAttendance(newAttendance, (err) => {
+                                if (err) {
+                                    console.error('Error adding attendance: ' + err);
+                                    return res.json({ status: 'error', message: error });
+                                }
+                                completed++;
+                                if (completed === totalUsers) {
+                                    // Respond with success after processing all students
+                                    return res.json({ "status": "success", "message": "Session and attendance added successfully" });
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+        });
+    });
+})
+
+router.post('/setPublicSessionComplete', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status:"Unauthorized",error: 'Unauthorized' });
+            return;
+        }
+        const session_public_id  = req.body;
+        console.log(session_public_id)
+        const admin_id = decoded.admin_id;
+        publicEventModel.setSessionComplete(session_public_id, (err, results) => {
+            if (err) {
+                return res.json({ "status": "error", "message": err.message });
+            }
+           adminModel.logAdminAction(admin_id, `Updated session status for public session`);
+            res.json({ "status": "success", "message": "Session status updated successfully" });
+        });
+    });
+});
+
+router.post('/viewPublicSession', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status: "Unauthorized", error: 'Unauthorized' });
+            return;
+        }
+        const { event_public_id } = req.body;
+        
+        publicEventModel.viewSession(event_public_id, (err, results) => {
+            if (err) {
+                return res.json({ "status": "error", "message": err.message });
+            }
+            
+            // Format the session_date for each result
+            const formattedResults = results.map(session => {
+                const sessionDate = new Date(session.session_date);
+                const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                session.session_date = formattedDate; // DD-MM-YYYY format
+                return session;
+            });
+
+            res.json({"data": formattedResults });
+        });
+    });
+});
 
 
 module.exports = router

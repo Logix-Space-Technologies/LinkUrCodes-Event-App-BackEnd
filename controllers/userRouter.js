@@ -5,6 +5,7 @@ const validateModel = require("../models/validateModel")
 const mailerModel = require("../models/mailerModel")
 const uploadModel = require("../models/uploadModel")
 const bcrypt = require("bcryptjs")
+const publicEventModel = require("../models/publicEventModel")
 
 
 const { error } = require("console");
@@ -44,7 +45,7 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
         if (!req.file) {
             return res.json({ status: "file not chosen", message: "Choose a file" });
         }
-        
+
         let { data } = { "data": req.body };
         let password = data.user_password;
         let email = data.user_email;
@@ -69,6 +70,7 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
             });
         }
         if (!validateModel.validatePassword(password)) {
+            console.log("pass")
             return res.json({
                 status: "check Password",
                 message: "Password should be 8 characters long with at least one uppercase, lowercase, special character, and a digit"
@@ -86,7 +88,7 @@ router.post('/signup', UploadModel.UserImageUpload.single('image'), async (req, 
                 let user_name = newData.user_name;
                 let textContent = `Dear ${user_name},\n\nYou have successfully registered.`;
                 let subjectheading = 'Successfully Registered';
-                
+
                 const htmlContent = `
                     <!DOCTYPE html>
                     <html>
@@ -222,24 +224,24 @@ router.post('/searchusers', (req, res) => {
 
 
 
-router.post('/viewusers',(req,res)=>{
-    const token=req.headers["token"]
-   jwt.verify(token,"eventAdmin",(error,decoded)=>{
-    if (decoded && decoded.adminUsername) {
-        userModel.viewUsers((error,results)=>{
-            if(error){
-              res.status(500).send('Error fetching users:'+error)
-              return
-            }
-            res.status(200).json(results);
-      
-          })
-    } else {
-        res.json({
-            "status":"Unauthorized user"
-        })
-    }
-   })
+router.post('/viewusers', (req, res) => {
+    const token = req.headers["token"]
+    jwt.verify(token, "eventAdmin", (error, decoded) => {
+        if (decoded && decoded.adminUsername) {
+            userModel.viewUsers((error, results) => {
+                if (error) {
+                    res.status(500).send('Error fetching users:' + error)
+                    return
+                }
+                res.status(200).json(results);
+
+            })
+        } else {
+            res.json({
+                "status": "Unauthorized user"
+            })
+        }
+    })
 })
 
 router.post('/delete-users', (req, res) => {
@@ -356,10 +358,10 @@ router.post("/forgotpassword", async (req, res) => {
 
         userModel.findUserByEmail(user_email, async (error, user) => {
             if (error) {
-                return res.json({ status: "success",message: error.message });
+                return res.json({ status: "success", message: error.message });
             }
             if (!user) {
-                return res.json({status: "Invalid user email", message: "Invalid user email" });
+                return res.json({ status: "Invalid user email", message: "Invalid user email" });
             }
             try {
                 // Generate a random 6-digit number
@@ -415,11 +417,11 @@ router.post("/forgotpassword", async (req, res) => {
 
                 return res.json({ status: "success", message: "Password reset message has been sent to your email" });
             } catch (error) {
-                return res.json({status: "error", message: error.message });
+                return res.json({ status: "error", message: error.message });
             }
         });
     } catch (error) {
-        return res.json({ status: "error",message: error.message });
+        return res.json({ status: "error", message: error.message });
     }
 });
 
@@ -430,7 +432,7 @@ router.put('/updatePassword', async (req, res) => {
         const { user_email, verification_code, user_password } = req.body;
         // Check if all required fields are provided
         if (!user_email || !verification_code || !user_password) {
-            return res.json({status: "all fields required", message: 'Email, verification code, and new password are required' });
+            return res.json({ status: "all fields required", message: 'Email, verification code, and new password are required' });
         }
 
         // Check if the email exists in the database
@@ -463,7 +465,7 @@ router.put('/updatePassword', async (req, res) => {
                 // Update the password in the database
                 userModel.updatePassword(user_email, hashedNewPassword, (error, updateResult) => {
                     if (error) {
-                        return res.json({status: 'error', message: error.message });
+                        return res.json({ status: 'error', message: error.message });
                     }
                     // Password updated successfully
                     res.json({ status: 'success', message: 'Password updated successfully' });
@@ -472,14 +474,41 @@ router.put('/updatePassword', async (req, res) => {
                     delete verificationCodes[user_email];
                 });
             } catch (error) {
-                return res.json({status: 'error', message: error.message });
+                return res.json({ status: 'error', message: error.message });
             }
         });
     } catch (err) {
-        res.json({status: 'error', message: err.message });
+        res.json({ status: 'error', message: err.message });
     }
 });
 
+router.post('/viewPublicSession', (req, res) => {
+    const token = req.headers["token"];
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.json({ status: "Unauthorized" });
+        }
+        const { event_public_id } = req.body;
+
+        publicEventModel.viewSession(event_public_id, (err, results) => {
+            if (err) {
+                return res.json({ "status": "error", "message": err.message });
+            }
+
+            // Format the session_date for each result
+            const formattedResults = results.map(session => {
+                const sessionDate = new Date(session.session_date);
+                const formattedDate = `${sessionDate.getDate().toString().padStart(2, '0')}-${(sessionDate.getMonth() + 1).toString().padStart(2, '0')}-${sessionDate.getFullYear()}`;
+                session.session_date = formattedDate; // DD-MM-YYYY format
+                return session;
+            });
+
+            res.json({ "data": formattedResults });
+        });
+    });
+});
 
 
 
