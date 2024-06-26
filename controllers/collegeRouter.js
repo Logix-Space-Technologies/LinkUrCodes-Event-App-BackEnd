@@ -280,7 +280,6 @@ router.post('/addFaculty', async (req, res) => {
 
                             // Send confirmation email
                             await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
-                            collegeModel.logFacultyAction(data.college_id, `Added Faculty: ${newData.department_name} `);
                             res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
                         } catch (emailError) {
                             res.status(500).json({ "status": "error sending mail", "error": emailError.message });
@@ -620,40 +619,26 @@ router.post('/update_faculty', (req, res) => {
 
 // Route to get a college by college name
 router.post('/searchCollege', (req, res) => {
-    const term = req.body.term; // Use req.body.term to retrieve college name
-    const token = req.headers["token"];
-
+    var term = req.body.term; // Use req.body.name to retrieve college name
+    const token = req.headers["token"]
     jwt.verify(token, "eventAdmin", (error, decoded) => {
-        if (error) {
-            return res.status(401).json({ "status": "error", "message": "Failed to verify token" });
-        }
-
         if (decoded && decoded.adminUsername) {
-            collegeModel.findCollegeByName(term, (findError, results) => {
-                if (findError) {
-                    console.error('Error retrieving college data:', findError);
-                    return res.status(500).send('Error retrieving college data');
+            collegeModel.findCollegeByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving college data');
+                    return;
                 }
-
                 if (results.length > 0) {
-                    // Assuming results is an array of colleges, log the action for the first result
-                    const collegeId = results[0].college_id;
-                    collegeModel.logCollegeAction(collegeId, 'Search College', (logError, logResult) => {
-                        if (logError) {
-                            console.error('Error logging college action:', logError);
-                            // Handle logging error, possibly return an error response
-                        } else {
-                            console.log('College search action logged successfully');
-                        }
-                    });
-
                     res.status(200).json(results);
                 } else {
                     res.status(404).send('No College found');
                 }
             });
-        } else {
-            res.status(403).json({ "status": "Unauthorized user" });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
         }
     });
 });
@@ -661,34 +646,23 @@ router.post('/searchCollege', (req, res) => {
 
 // Route to fetch all colleges and log the action
 router.post('/Viewcollege', (req, res) => {
-    // Fetch all colleges from the database
+
     collegeModel.findCollege((error, results) => {
         if (error) {
-            console.error('Error fetching college details:', error);
-            return res.status(500).send('Error fetching college details');
+            res.status(500).send('Error fetching college_details:' + error)
+            return
         }
-
-        // Verify admin token
-        const token = req.headers["token"];
-        jwt.verify(token, "eventAdmin", (verifyError, decoded) => {
-            if (verifyError) {
-                console.error('Error verifying token:', verifyError);
-                return res.status(401).json({ "status": "error", "message": "Failed to verify token" });
-            }
-
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
-                // Admin user authenticated, log the action
-                if (results.length > 0) {
-                    collegeModel.logCollegeAction(decoded.adminUsername , 'View College');
-                    res.status(200).json(results);
-                } else {
-                    res.status(404).send('No colleges found');
-                }
-            } else {
-                // Unauthorized user
-                res.status(403).json({ "status": "Unauthorized user" });
+                res.status(200).json(results);
             }
-        });
+            else {
+                res.json({
+                    "status": "Unauthorized user"
+                })
+            }
+        })
     });
 });
 
@@ -880,40 +854,23 @@ router.put('/update_college', uploadModel.CollegeImageupload.single('image'), (r
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
-        const token = req.headers["token"];
-
-        // Verify the admin token
-        jwt.verify(token, "eventAdmin", async (error, decoded) => {
-            if (error) {
-                console.error('Error verifying token:', error);
-                return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
-            }
-
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
-                // Delete the college by ID
-                collegeModel.deleteCollegeById(college_id, (deleteError, deleteResult) => {
-                    if (deleteError) {
-                        console.error('Error deleting college:', deleteError);
-                        return res.status(500).json({ error: 'Error deleting college.' });
+                collegeModel.deleteCollegeById(college_id, (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Error deleting college' });
                     }
-
-                    // Log the action of deleting the college
-                    collegeModel.logCollegeAction(decoded.adminUsername, `Deleted college with ID ${college_id}`, (logError, logResult) => {
-                        if (logError) {
-                            console.error('Error logging college action:', logError);
-                            // Even if logging fails, we should still return success for the delete action
-                        }
-                    });
-
-                    res.status(200).json({ status: 'College deleted successfully' });
+                    res.json({ status: 'College deleted successfully' });
                 });
-            } else {
-                return res.status(403).json({ status: 'Unauthorized user' });
             }
-        });
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
     } catch (error) {
-        console.error('Error processing request:', error);
-        return res.status(500).json({ error: 'An error occurred while deleting the college.' });
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while deleting the college' });
     }
 });
 
