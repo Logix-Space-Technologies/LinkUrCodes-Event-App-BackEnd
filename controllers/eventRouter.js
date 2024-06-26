@@ -855,7 +855,7 @@ router.post('/setPublicSessionComplete', (req, res) => {
             res.json({ status:"Unauthorized",error: 'Unauthorized' });
             return;
         }
-        const session_public_id  = req.body;
+        const session_public_id  = req.body.session_public_id
         console.log(session_public_id)
         const admin_id = decoded.admin_id;
         publicEventModel.setSessionComplete(session_public_id, (err, results) => {

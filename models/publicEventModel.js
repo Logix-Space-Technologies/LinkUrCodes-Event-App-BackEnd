@@ -78,15 +78,15 @@ const publicEventModel = {
         const query = `SELECT u.user_id,u.user_name,u.user_email, u.user_contact_no FROM user u JOIN payment_user pu ON u.user_id=pu.user_id WHERE pu.payment_event_id = ?`;
         pool.query(query, [eventId], callback);
     },
-    setSessionComplete: (session_public_id, callback) => {
-        const query = 'UPDATE session_public SET is_completed=1 WHERE session_public_id = ?';
-        pool.query(query, [session_public_id], (error, result) => {
-            if (error) {
-                console.error('Error executing query:', error);
-                return callback(error);
+    setSessionComplete : (session_public_id, callback) => {
+        const query = 'UPDATE session_public SET is_completed = 1 WHERE session_public_id = ?';
+        pool.query(query, [session_public_id], (err, results) => {
+            if (err) {
+                console.error('Error executing query:', err);
+                return callback(err);
             }
-            console.log('Query result:', result);
-            callback(null, result);
+            console.log('Query executed successfully:', results);
+            callback(null, results);
         });
     },
     viewSession:(eventId, callback) => {
