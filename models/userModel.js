@@ -100,6 +100,11 @@ const userModel = {
                 return;
             }
         });
+    },
+    viewUserLogs:(callback)=>{
+        const query='SELECT u.user_name,ul.action,ul.date_time FROM user_logs ul JOIN user u ON ul.user_id=u.user_id';
+        pool.query(query,callback)
+
     }
     
 
