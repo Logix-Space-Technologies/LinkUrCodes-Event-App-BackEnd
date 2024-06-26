@@ -218,7 +218,7 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
     const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
-            return res.status(401).json({ status: 'Unauthorized', message: 'Invalid or expired token' });
+            return res.json({ status: 'Unauthorized', message: 'Invalid or expired token' });
         }
         if (decoded && decoded.adminUsername) {
             let data = req.body;
@@ -244,19 +244,17 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
             if (req.files && req.files['pdf'] && req.files['pdf'][0] && req.files['pdf'][0].path) {
                 newData.event_private_syllabus = req.files['pdf'][0].path;
             }
-
-            console.log(newData);
             privateEventModel.updatePrivateEvents(event_id, newData, (error, result) => {
                 if (error) {
                     console.error('Error updating event:', error);
-                    return res.status(500).json({ status: 'Error', message: 'Failed to update the event' });
+                    return res.json({ status: 'Error', message: 'Failed to update the event' });
                 } else {
                     console.log('Event updated successfully');
-                    return res.status(200).json({ status: 'Event updated successfully' });
+                    return res.json({ status: 'success' });
                 }
             });
         } else {
-            res.status(401).json({
+            res.json({
                 "status": "Unauthorized",
                 "message": "Unauthorized user"
             });
@@ -697,10 +695,8 @@ router.post('/updateSession', (req, res) => {
 });
 
 router.post('/view_private_events_byId', (req, res) => {
-    console.log(req.headers["token"])
     const admintoken = req.headers["token"];
     const { event_private_id } = req.body;
-    console.log(event_private_id)
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
             console.log({ "status": "error", "message": "Failed to verify token" })
