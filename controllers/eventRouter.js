@@ -228,12 +228,11 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
     const token = req.headers["token"];
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
-            return res.status(401).json({ status: 'Unauthorized', message: 'Invalid or expired token' });
+            return res.json({ status: 'Unauthorized', message: 'Invalid or expired token' });
         }
         if (decoded && decoded.adminUsername) {
             let data = req.body;
             let event_id = data.event_private_id;
-            const admin_id = decoded.admin_id;
             const newData = {
                 event_private_name: data.event_private_name,
                 event_private_amount: data.event_private_amount,
@@ -255,20 +254,17 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
             if (req.files && req.files['pdf'] && req.files['pdf'][0] && req.files['pdf'][0].path) {
                 newData.event_private_syllabus = req.files['pdf'][0].path;
             }
-
-            console.log(newData);
             privateEventModel.updatePrivateEvents(event_id, newData, (error, result) => {
                 if (error) {
                     console.error('Error updating event:', error);
-                    return res.status(500).json({ status: 'Error', message: 'Failed to update the event' });
+                    return res.json({ status: 'Error', message: 'Failed to update the event' });
                 } else {
                     console.log('Event updated successfully');
-                    adminModel.logAdminAction(admin_id, `Updated private event '${newData.event_private_name}' for college ID: ${data.event_private_clgid}`);
-                    return res.status(200).json({ status: 'Event updated successfully' });
+                    return res.json({ status: 'success' });
                 }
             });
         } else {
-            res.status(401).json({
+            res.json({
                 "status": "Unauthorized",
                 "message": "Unauthorized user"
             });
@@ -896,6 +892,22 @@ router.post('/viewPublicSession', (req, res) => {
         });
     });
 });
+
+router.post('/view_private_events_byId', (req, res) => {
+    const admintoken = req.headers["token"];
+    const { event_private_id } = req.body;
+    jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" })
+            return res.json({ "status": "unauthorised user" });
+        }
+        if (decoded && decoded.adminUsername) {
+            privateEventModel.viewPrivateEventsById(event_private_id,(error, results) => {
+                res.json(results);
+            })
+        }
+    });
+})
 
 
 module.exports = router
