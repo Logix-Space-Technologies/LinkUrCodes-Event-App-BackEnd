@@ -131,6 +131,10 @@ const privateEventModel = {
             console.log('Query result:', result);
             callback(null, result);
         });
+    },
+    viewPrivateEventsById: (event_private_id,callback) => {
+        const query = 'SELECT * FROM event_private WHERE event_private_id=?';
+        pool.query(query,[event_private_id], callback);
     }
 
 }
