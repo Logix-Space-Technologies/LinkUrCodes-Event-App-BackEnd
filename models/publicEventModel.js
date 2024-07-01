@@ -92,6 +92,10 @@ const publicEventModel = {
     viewSession:(eventId, callback) => {
         const query = `SELECT * FROM session_public WHERE event_public_id = ?`;
         pool.query(query, [eventId], callback);
+    },
+    viewPublicEventsById: (event_public_id,callback) => {
+        const query = 'SELECT * FROM event_public WHERE event_public_id=?';
+        pool.query(query,[event_public_id], callback);
     }
 
 }

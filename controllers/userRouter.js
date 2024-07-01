@@ -6,6 +6,7 @@ const mailerModel = require("../models/mailerModel")
 const uploadModel = require("../models/uploadModel")
 const bcrypt = require("bcryptjs")
 const publicEventModel = require("../models/publicEventModel")
+const adminModel = require("../models/adminModel")
 
 
 const { error } = require("console");
@@ -205,7 +206,8 @@ router.post('/searchusers', (req, res) => {
 
                 if (results.length > 0) {
                     // Log the search action for the admin user
-                    userModel.logUserAction(decoded.adminUsername, 'Search Users');
+                    const admin_id = decoded.admin_id;
+                    adminModel.logAdminAction(admin_id, `Searched Users for name like ${term}`);
                     return res.status(200).json(results);
                 } else {
                     return res.status(404).json({
@@ -233,6 +235,8 @@ router.post('/viewusers', (req, res) => {
                     res.status(500).send('Error fetching users:' + error)
                     return
                 }
+                const admin_id = decoded.admin_id;
+                adminModel.logAdminAction(admin_id, `Viewed Users`);
                 res.status(200).json(results);
 
             })
@@ -259,6 +263,8 @@ router.post('/delete-users', (req, res) => {
                     res.status(500).json({ status: "success", error: 'Internal Server Error' });
                 } else {
                     if (result.affectedRows > 0) {
+                        const admin_id = decoded.admin_id;
+                        adminModel.logAdminAction(admin_id, `User deleted`);
                         console.log('User deleted successfully');
                         res.status(200).json({ status: "success", message: 'User deleted successfully' });
                     } else {
