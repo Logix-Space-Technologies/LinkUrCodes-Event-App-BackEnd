@@ -728,4 +728,27 @@ router.post('/complete_private_session', async (req, res) => {
 
 
 
+router.post('/view_user_reg_events', (req, res) => {
+    const token = req.headers["token"];
+
+    jwt.verify(token, "user-eventapp", async (error, decoded) => {
+        if (error) {
+            console.log({ "status": "error", "message": "Failed to verify token" });
+            return res.json({ "status": "unauthorised user" });
+        }
+        
+        if (decoded && decoded.user_id) {
+            let user_id=req.body.user_id
+            publicEventModel.viewRegPublicEvents(user_id, (error, results) => {
+                if (error) {
+                    console.error("Error fetching paid events:", error);
+                    return res.status(500).json({ "status": "error", "message": "Failed to fetch paid events" });
+                }
+                res.json(results);
+            });
+        }
+    });
+});
+
+
 module.exports = router
