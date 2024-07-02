@@ -23,8 +23,20 @@ router.post('/viewallfeedbackstud', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
-            feedbackModel.viewFeedbackStud((error, results) => {
-                res.json(results);
+            let event_id=req.body.feedback_event_id
+            feedbackModel.viewFeedbackStud(event_id,(error, results) => {
+                if (error) {
+                    console.error('Error fetching feedback data:', error);
+                    return res.json({status:"error", error: 'Error fetching feedback data' });
+                } else {
+                    if (results.length === 0) {
+                        // No feedback found for this session
+                        res.json({status:"no feedback", message: 'No Feedback For this event' });
+                    } else {
+                        console.log('Feedback data retrieved successfully:');
+                        res.json(results);
+                    }
+                }
             })
         }
     });
@@ -50,8 +62,20 @@ router.post('/viewallfeedbackuser', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
-            feedbackModel.viewFeedbackUser((error, results) => {
-                res.json(results);
+            let event_id=req.body.feedback_event_id
+            feedbackModel.viewFeedbackUser(event_id,(error, results) => {
+                if (error) {
+                    console.error('Error fetching feedback data:', error);
+                    return res.json({status:"error", error: 'Error fetching feedback data' });
+                } else {
+                    if (results.length === 0) {
+                        // No feedback found for this session
+                        res.json({status:"no feedback", message: 'No Feedback For this event' });
+                    } else {
+                        console.log('Feedback data retrieved successfully');
+                        res.json(results);
+                    }
+                }
             })
         }
     });

@@ -192,19 +192,6 @@ findEventsByEventId: (eventId, callback) => {
         }
     },
 
-    logCollegeAction : (college_id, action) => {
-        const collegeLogs = {
-            college_id: college_id,
-            action: action,
-            date_time: new Date() // Optional: Add a timestamp for when the action was logged
-        };
-        pool.query("INSERT INTO college_logs SET ?", collegeLogs, (logErr, logRes) => {
-            if (logErr) {
-                console.log("error: ", logErr);
-                return;
-            }
-        });
-    }
 };
 
 module.exports = collegeModel;
