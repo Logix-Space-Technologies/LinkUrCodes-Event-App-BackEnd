@@ -279,7 +279,6 @@ router.post('/addFaculty', async (req, res) => {
 
                             // Send confirmation email
                             await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
-                            collegeModel.logFacultyAction(data.college_id, `Added Faculty: ${newData.department_name} `);
                             res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
                         } catch (emailError) {
                             res.status(500).json({ "status": "error sending mail", "error": emailError.message });
@@ -619,21 +618,15 @@ router.post('/update_faculty', (req, res) => {
 
 // Route to get a college by college name
 router.post('/searchCollege', (req, res) => {
-    const term = req.body.term; // Use req.body.term to retrieve college name
-    const token = req.headers["token"];
-
+    var term = req.body.term; // Use req.body.name to retrieve college name
+    const token = req.headers["token"]
     jwt.verify(token, "eventAdmin", (error, decoded) => {
-        if (error) {
-            return res.status(401).json({ "status": "error", "message": "Failed to verify token" });
-        }
-
         if (decoded && decoded.adminUsername) {
-            collegeModel.findCollegeByName(term, (findError, results) => {
-                if (findError) {
-                    console.error('Error retrieving college data:', findError);
-                    return res.status(500).send('Error retrieving college data');
+            collegeModel.findCollegeByName(term, (error, results) => {
+                if (error) {
+                    res.status(500).send('Error retrieving college data');
+                    return;
                 }
-
                 if (results.length > 0) {
                     const admin_id = decoded.admin_id;
                     adminModel.logAdminAction(admin_id, `Searched college for name like ${term}`);
@@ -643,8 +636,11 @@ router.post('/searchCollege', (req, res) => {
                     res.status(404).send('No College found');
                 }
             });
-        } else {
-            res.status(403).json({ "status": "Unauthorized user" });
+        }
+        else {
+            res.json({
+                "status": "Unauthorized user"
+            })
         }
     });
 });
@@ -872,32 +868,24 @@ router.put('/update_college', uploadModel.CollegeImageupload.single('image'), (r
 router.post('/deleteCollege', async (req, res) => {
     try {
         const { college_id } = req.body;
-        const token = req.headers["token"];
-
-        // Verify the admin token
-        jwt.verify(token, "eventAdmin", async (error, decoded) => {
-            if (error) {
-                console.error('Error verifying token:', error);
-                return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
-            }
-
+        const token = req.headers["token"]
+        jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
-                // Delete the college by ID
-                collegeModel.deleteCollegeById(college_id, (deleteError, deleteResult) => {
-                    if (deleteError) {
-                        console.error('Error deleting college:', deleteError);
-                        return res.status(500).json({ error: 'Error deleting college.' });
+                collegeModel.deleteCollegeById(college_id, (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Error deleting college' });
                     }
-
                     res.status(200).json({ status: 'College deleted successfully' });
+                    res.json({ status: 'College deleted successfully' });
                 });
-            } else {
-                return res.status(403).json({ status: 'Unauthorized user' });
             }
-        });
+            else {
+                return res.json({ "status": "unauthorised user" });
+            }
+        })
     } catch (error) {
-        console.error('Error processing request:', error);
-        return res.status(500).json({ error: 'An error occurred while deleting the college.' });
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while deleting the college' });
     }
 });
 
