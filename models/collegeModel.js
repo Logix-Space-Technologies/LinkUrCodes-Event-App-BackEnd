@@ -34,13 +34,15 @@ insertCollege: (collegeData, callback) => {
 
   
 
-    findCollegeByName: (term, callback) => {
-        // SELECT * FROM college WHERE user_email LIKE ? OR user_name LIKE ?
-        const query = 'SELECT * FROM college WHERE college_name LIKE ?';
-        const searchTermPattern = `%${term}%`;
-        pool.query(query, [searchTermPattern], callback);
-    },
-
+findCollegeByName: (term, callback) => {
+    const query = `
+        SELECT * 
+        FROM college 
+        WHERE college_name LIKE ?  AND delete_status = 0
+    `;
+    const searchTermPattern = `%${term}%`;
+    pool.query(query, [searchTermPattern], callback);
+},
     findCollegeByEmail: (college_email) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM college WHERE college_email = ?';
@@ -190,19 +192,6 @@ findEventsByEventId: (eventId, callback) => {
         }
     },
 
-    logCollegeAction : (college_id, action) => {
-        const collegeLogs = {
-            college_id: college_id,
-            action: action,
-            date_time: new Date() // Optional: Add a timestamp for when the action was logged
-        };
-        pool.query("INSERT INTO college_logs SET ?", collegeLogs, (logErr, logRes) => {
-            if (logErr) {
-                console.log("error: ", logErr);
-                return;
-            }
-        });
-    }
 };
 
 module.exports = collegeModel;

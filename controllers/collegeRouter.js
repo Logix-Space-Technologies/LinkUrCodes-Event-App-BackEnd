@@ -54,7 +54,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
         let { data } = { "data": req.body };
         const imagePath = req.file.path;
 
-      
+
         const newData = {
             college_name: data.college_name,
             college_email: data.college_email,
@@ -65,7 +65,7 @@ router.post('/addCollege', uploadModel.CollegeImageupload.single('image'), async
             college_addedby: data.college_addedby,
             college_updatedby: data.college_addedby
         }
-        
+
         const token = req.headers["token"];
         jwt.verify(token, "eventAdmin", (error, decoded) => {
             if (decoded && decoded.adminUsername) {
@@ -176,7 +176,6 @@ router.post('/addDepartment', async (req, res) => {
 
                             // Send confirmation email
                             await mailerModel.sendEmail(faculty_email, 'Successfully Registered', htmlContent, textContent);
-                            collegeModel.logCollegeAction(data.college_id, `Added Department: ${newData.department_name} `);
                             res.json({ "status": "success", "message": "Department added, message has been sent to the faculty's email" });
                         } catch (emailError) {
                             res.status(500).json({ "status": "error sending mail", "error": emailError.message });
@@ -362,6 +361,7 @@ router.post('/viewFaculty', (req, res) => {
             }
 
             // If results found, return the results
+            departmentModel.logFacultyAction(decoded.admin_id, 'View Faculty');
             return res.status(200).json(results);
         });
     });
@@ -388,6 +388,7 @@ router.post('/viewFacultyProfile', (req, res) => {
                 }
 
                 // If results found, return the results
+                departmentModel.logFacultyAction(results.department_id, 'View FacultyProfile');
                 return res.status(200).json(results);
             });
         }
@@ -400,7 +401,7 @@ router.put('/updateDepartmentPassword', async (req, res) => {
         console.log(req.body)
         // Check if all required fields are provided
         if (!faculty_email || !verification_code || !faculty_password) {
-            return res.json({ status: "all fields required",message: 'Email, verification code, and new password are required' });
+            return res.json({ status: "all fields required", message: 'Email, verification code, and new password are required' });
         }
 
         // Check if the email exists in the database
@@ -466,7 +467,7 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
         departmentModel.findFacultyByEmail(faculty_email, async (error, faculty) => {
             if (error) {
-                return res.json({ status: "error",error: error.message });
+                return res.json({ status: "error", error: error.message });
             }
             if (!faculty) {
                 return res.json({ status: "inavaild email", error: "Invalid faculty email" });
@@ -535,34 +536,48 @@ router.post("/forgotDepartmentpassword", async (req, res) => {
 
 router.post('/update_faculty', (req, res) => {
     const collegetoken = req.headers["collegetoken"];
+
     jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
         if (error) {
             return res.json({ "status": "error", "message": "Failed to verify token" });
         }
+
         if (decoded && decoded.faculty_email) {
             const id = req.body.id;
             const newData = {
                 faculty_name: req.body.faculty_name,
                 faculty_email: req.body.faculty_email,
-                faculty_phone:req.body.faculty_phone
-            }
-            departmentModel.updateFaculty(newData, id, (error, result) => {
-                if (error) {
-                    console.error('Error updating event:', error);
-                    res.json({ "status": "error", error: 'Internal Server Error' });
-                } else {
-                    console.log('faculty updated successfully');
-                    res.json({ "status": "success", message: 'faculty updated successfully' });
+                faculty_phone: req.body.faculty_phone
+            };
+
+            console.log('New faculty data:', newData);
+
+            departmentModel.updateFaculty(newData, id, (updateError, updateResult) => {
+                if (updateError) {
+                    console.error('Error updating faculty:', updateError);
+                    return res.json({ "status": "error", error: 'Internal Server Error' });
                 }
+
+                console.log('Faculty updated successfully');
+
+                // Assuming decoded.department_id is the correct department_id
+                departmentModel.logFacultyAction(id, 'Faculty Update', (logError, logResult) => {
+                    if (logError) {
+                        console.error('Error logging faculty action:', logError);
+                        // Handle logging error, possibly return an error response
+                    } else {
+                        console.log('Faculty action logged successfully');
+                    }
+                });
+
+                return res.json({ "status": "success", message: 'Faculty updated successfully' });
             });
+        } else {
+            res.json({ "status": "Unauthorized user" });
         }
-        else {
-            res.json({
-                "status": "Unauthorized user"
-            })
-        }
-    })
+    });
 });
+
 
 
 
@@ -601,7 +616,7 @@ router.post('/update_faculty', (req, res) => {
 //     }
 // });
 
-// Rote to get a college by college name
+// Route to get a college by college name
 router.post('/searchCollege', (req, res) => {
     var term = req.body.term; // Use req.body.name to retrieve college name
     const token = req.headers["token"]
@@ -613,8 +628,11 @@ router.post('/searchCollege', (req, res) => {
                     return;
                 }
                 if (results.length > 0) {
+                    const admin_id = decoded.admin_id;
+                    adminModel.logAdminAction(admin_id, `Searched college for name like ${term}`);
                     res.status(200).json(results);
                 } else {
+                    adminModel.logAdminAction(admin_id, `Searched college for name like ${term}`);
                     res.status(404).send('No College found');
                 }
             });
@@ -627,26 +645,42 @@ router.post('/searchCollege', (req, res) => {
     });
 });
 
-router.post('/Viewcollege', (req, res) => {
 
+// Route to fetch all colleges and log the action
+router.post('/Viewcollege', (req, res) => {
+    // Fetch all colleges from the database
     collegeModel.findCollege((error, results) => {
         if (error) {
-            res.status(500).send('Error fetching college_details:' + error)
-            return
+            console.error('Error fetching college details:', error);
+            return res.status(500).send('Error fetching college details');
         }
-        const token = req.headers["token"]
-        jwt.verify(token, "eventAdmin", (error, decoded) => {
+
+        // Verify admin token
+        const token = req.headers["token"];
+        jwt.verify(token, "eventAdmin", (verifyError, decoded) => {
+            if (verifyError) {
+                console.error('Error verifying token:', verifyError);
+                return res.status(401).json({ "status": "error", "message": "Failed to verify token" });
+            }
+
             if (decoded && decoded.adminUsername) {
-                res.json(results);
+                // Admin user authenticated, log the action
+                if (results.length > 0) {
+                    const admin_id = decoded.admin_id;
+                adminModel.logAdminAction(admin_id, `Viewed colleges`);
+                    res.status(200).json(results);
+                } else {
+                    res.status(404).send('No colleges found');
+                }
+            } else {
+                // Unauthorized user
+                res.status(403).json({ "status": "Unauthorized user" });
             }
-            else {
-                res.json({
-                    "status": "Unauthorized user"
-                })
-            }
-        })
+        });
     });
 });
+
+
 // The following /Viewcollegedetail is created to test jwt token
 router.post('/Viewcollegedetail', (req, res) => {
     const collegetoken = req.headers["collegetoken"];
@@ -841,6 +875,7 @@ router.post('/deleteCollege', async (req, res) => {
                     if (err) {
                         return res.status(500).json({ error: 'Error deleting college' });
                     }
+                    res.status(200).json({ status: 'College deleted successfully' });
                     res.json({ status: 'College deleted successfully' });
                 });
             }
@@ -853,6 +888,8 @@ router.post('/deleteCollege', async (req, res) => {
         res.status(500).json({ error: 'An error occurred while deleting the college' });
     }
 });
+
+
 
 router.post('/resetPassword', async (req, res) => {
     try {

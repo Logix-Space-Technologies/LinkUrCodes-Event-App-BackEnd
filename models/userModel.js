@@ -36,7 +36,7 @@ const userModel = {
         if (!term) {
             return callback(null, []); // Return an empty array if the search term is empty
         }
-        const query = 'SELECT * FROM user WHERE user_name LIKE ?';
+        const query = 'SELECT * FROM user WHERE user_name LIKE ? AND user_delete_status = 0';
         const searchTermPattern = `%${term}%`;
         pool.query(query, [searchTermPattern], callback);
     },
@@ -100,6 +100,11 @@ const userModel = {
                 return;
             }
         });
+    },
+    viewUserLogs:(callback)=>{
+        const query='SELECT u.user_name,ul.action,ul.date_time FROM user_logs ul JOIN user u ON ul.user_id=u.user_id';
+        pool.query(query,callback)
+
     }
     
 
