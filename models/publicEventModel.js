@@ -55,9 +55,9 @@ const publicEventModel = {
         const query = 'SELECT e.event_public_id, e.event_public_name, e.event_public_amount, e.event_public_description, e.event_public_date, e.event_public_time, e.event_public_image, e.event_syllabus, e.event_venue, a_added.admin_username as event_addedby, a_updated.admin_username as event_updatedby, e.event_added_date, e.event_updated_date, CASE WHEN e.delete_status = 0 THEN "active" ELSE "deleted" END AS delete_status, CASE WHEN e.cancel_status = 0 THEN "active" ELSE "cancelled" END AS cancel_status FROM event_public e JOIN admin a_added ON e.event_addedby = a_added.admin_id JOIN admin a_updated ON e.event_updatedby = a_updated.admin_id where e.delete_status=1 and e.cancel_status=1 ORDER BY e.event_public_id';
         pool.query(query, callback);
     },
-    viewRegPublicEvents:(callback)=>{
-        const query='SELECT e.event_public_name,e.event_public_description,e.event_public_date, e.event_public_time,e.event_public_image,e.event_syllabus,e.event_public_duration,e.event_public_online,e.event_public_offline,e.event_public_recorded FROM event_public e JOIN payment_user p ON e.event_public_id = p.payment_event_id WHERE user_id=?'
-        pool.query(query, (error, results) => {
+     viewRegPublicEvents :(email, callback) => {
+        const query = `SELECT e.event_public_name, e.event_public_description, e.event_public_date, e.event_public_time, e.event_public_image, e.event_syllabus, e.event_public_duration, e.event_public_online, e.event_public_offline, e.event_public_recorded FROM event_public e JOIN payment_user p ON e.event_public_id = p.payment_event_id JOIN user u ON p.user_id = u.user_id WHERE u.user_email = ?`; 
+        pool.query(query, [email], (error, results) => {
             if (error) {
                 return callback(error, null);
             }

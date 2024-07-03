@@ -729,26 +729,35 @@ router.post('/complete_private_session', async (req, res) => {
 
 
 router.post('/view_user_reg_events', (req, res) => {
-    const token = req.headers["token"];
+    const token = req.headers['token'];
 
-    jwt.verify(token, "user-eventapp", async (error, decoded) => {
+    if (!token) {
+        console.log("No token provided");
+        return res.status(401).json({ "status": "unauthorized", "message": "No token provided" });
+    }
+
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" });
-            return res.json({ "status": "unauthorised user" });
+            console.log("Failed to verify token:", error);
+            return res.status(401).json({ "status": "unauthorized", "message": "Failed to verify token" });
         }
-        
-        if (decoded && decoded.user_id) {
-            let user_id=req.body.user_id
-            publicEventModel.viewRegPublicEvents(user_id, (error, results) => {
+
+        if (decoded && decoded.email) {
+            const email = decoded.email;
+            // console.log("Token decoded, email:", email);
+
+            publicEventModel.viewRegPublicEvents(email, (error, results) => {
                 if (error) {
-                    console.error("Error fetching paid events:", error);
-                    return res.status(500).json({ "status": "error", "message": "Failed to fetch paid events" });
+                    console.error("Error fetching registered events:", error);
+                    return res.status(500).json({ "status": "error", "message": "Failed to fetch registered events" });
                 }
-                res.json(results);
+                res.json({ "status": "success", "events": results });
             });
+        } else {
+            console.log("Invalid token payload, decoded:", decoded);
+            res.status(400).json({ "status": "error", "message": "Invalid token payload" });
         }
     });
 });
-
 
 module.exports = router
