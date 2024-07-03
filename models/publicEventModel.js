@@ -63,10 +63,7 @@ const publicEventModel = {
             }
             callback(null, results);
         });
-    }
-
-    
-
+    },
     setEventComplete: (event_public_id, callback) => {
         const query = 'UPDATE event_public SET is_completed=1 WHERE event_public_id = ?';
         pool.query(query, [event_public_id], (error, result) => {
