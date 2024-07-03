@@ -982,4 +982,36 @@ router.post('/view_public_events_byId', (req, res) => {
 })
 
 
+router.post('/view_user_reg_events', (req, res) => {
+    const token = req.headers['token'];
+
+    if (!token) {
+        console.log("No token provided");
+        return res.status(401).json({ "status": "unauthorized", "message": "No token provided" });
+    }
+
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.log("Failed to verify token:", error);
+            return res.status(401).json({ "status": "unauthorized", "message": "Failed to verify token" });
+        }
+
+        if (decoded && decoded.email) {
+            const email = decoded.email;
+            // console.log("Token decoded, email:", email);
+
+            publicEventModel.viewRegPublicEvents(email, (error, results) => {
+                if (error) {
+                    console.error("Error fetching registered events:", error);
+                    return res.status(500).json({ "status": "error", "message": "Failed to fetch registered events" });
+                }
+                res.json({ "status": "success", "events": results });
+            });
+        } else {
+            console.log("Invalid token payload, decoded:", decoded);
+            res.status(400).json({ "status": "error", "message": "Invalid token payload" });
+        }
+    });
+});
+
 module.exports = router
