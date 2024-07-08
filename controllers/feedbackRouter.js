@@ -5,13 +5,22 @@ const jwt = require("jsonwebtoken")
 
 //student feedback
 router.post("/addfeedbackstud", async (req, res) => {
-    let data = req.body
-    feedbackModel.insertFeedbackStud(data, (error, results) => {
+    const token = req.headers["token"];
+
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            return res.status(500).json({ message: error.message });
+            console.error('Error verifying token:', error);
+            return res.json({ status: "Unauthorized" });
         }
-        res.json({ status: "success" });
-    });
+        let data = req.body
+        feedbackModel.insertFeedbackStud(data, (error, results) => {
+            if (error) {
+                return res.json({ status: "error", message: error.message });
+            }
+            res.json({ status: "success" });
+        });
+    })
 })
 
 router.post('/viewallfeedbackstud', (req, res) => {
@@ -22,15 +31,15 @@ router.post('/viewallfeedbackstud', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
-            let event_id=req.body.feedback_event_id
-            feedbackModel.viewFeedbackStud(event_id,(error, results) => {
+            let event_id = req.body.feedback_event_id
+            feedbackModel.viewFeedbackStud(event_id, (error, results) => {
                 if (error) {
                     console.error('Error fetching feedback data:', error);
-                    return res.json({status:"error", error: 'Error fetching feedback data' });
+                    return res.json({ status: "error", error: 'Error fetching feedback data' });
                 } else {
                     if (results.length === 0) {
                         // No feedback found for this session
-                        res.json({status:"no feedback", message: 'No Feedback For this event' });
+                        res.json({ status: "no feedback", message: 'No Feedback For this event' });
                     } else {
                         console.log('Feedback data retrieved successfully:');
                         res.json(results);
@@ -43,13 +52,21 @@ router.post('/viewallfeedbackstud', (req, res) => {
 
 //user feedback
 router.post("/addfeedbackuser", async (req, res) => {
-    let data = req.body
-    feedbackModel.insertFeedbackUser(data, (error, results) => {
+    const token = req.headers["token"];
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            return res.status(500).json({ message: error.message });
+            console.error('Error verifying token:', error);
+            return res.json({ status: "Unauthorized" });
         }
-        res.json({ status: "success" });
-    });
+        let data = req.body
+        feedbackModel.insertFeedbackUser(data, (error, results) => {
+            if (error) {
+                return res.json({ status: "error", message: error.message });
+            }
+            res.json({ status: "success", results });
+        });
+    })
 })
 
 router.post('/viewallfeedbackuser', (req, res) => {
@@ -60,15 +77,15 @@ router.post('/viewallfeedbackuser', (req, res) => {
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
-            let event_id=req.body.feedback_event_id
-            feedbackModel.viewFeedbackUser(event_id,(error, results) => {
+            let event_id = req.body.feedback_event_id
+            feedbackModel.viewFeedbackUser(event_id, (error, results) => {
                 if (error) {
                     console.error('Error fetching feedback data:', error);
-                    return res.json({status:"error", error: 'Error fetching feedback data' });
+                    return res.json({ status: "error", error: 'Error fetching feedback data' });
                 } else {
                     if (results.length === 0) {
                         // No feedback found for this session
-                        res.json({status:"no feedback", message: 'No Feedback For this event' });
+                        res.json({ status: "no feedback", message: 'No Feedback For this event' });
                     } else {
                         console.log('Feedback data retrieved successfully');
                         res.json(results);

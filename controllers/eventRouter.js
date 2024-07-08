@@ -364,7 +364,7 @@ router.post('/search-user_public-events', (req, res) => {
     const token = req.headers["token"]
     jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (decoded && decoded.email) {
-            publicEventModel.searchPublicEvents(eventName, (err, results) => {
+            publicEventModel.searchPublicEventsUser(eventName, (err, results) => {
                 if (err) {
                     console.error('Error searching for events:', err);
                     return res.status(500).json({ error: 'Internal server error' });
