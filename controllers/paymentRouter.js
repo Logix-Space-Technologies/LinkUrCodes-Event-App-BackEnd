@@ -92,14 +92,6 @@ router.get('/razorpay-key', (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
 router.post('/userpaymenthistory', async (req, res) => {
   const admintoken = req.headers["token"];
   jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
@@ -249,6 +241,33 @@ router.post('/viewPaymentsCollege', (req, res) => {
   });
 });
 
+router.post('/viewuserpaymenthistory', async (req, res) => {
+  const token = req.headers["token"];
+  if (!token) {
+    return res.status(403).json({ status: "error", message: "Token is required" });
+  }
+
+  jwt.verify(token, "user-eventapp", async (error, decoded) => {
+    if (error) {
+      console.error("Failed to verify token:", error);
+      return res.status(401).json({ status: "unauthorised user" });
+    }
+
+    if (decoded && decoded.email) {
+      
+      paymentModel.viewPaymentHistory(email, (error, results) => {
+        if (error) {
+          console.error("Error fetching user payments:", error);
+          return res.status(500).send('Error fetching user payments:' + error);
+        }
+
+        res.status(200).json(results);
+      });
+    } else {
+      res.status(400).json({ status: "error", message: "Invalid token payload" });
+    }
+  });
+});
 
 
 module.exports = router;

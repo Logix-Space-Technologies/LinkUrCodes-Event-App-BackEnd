@@ -21,9 +21,38 @@ const paymentModel = {
       callback(null, results);
     });
   },
+  
     viewPayments: (callback) => {
         const query = 'SELECT * FROM payment_user';
         pool.query(query, callback)
-    }
+    },
+
+viewPaymentHistory: (email, callback) => {
+    const query = `
+      SELECT 
+        pu.payment_amount, 
+        pu.payment_date, 
+        pu.status, 
+        ep.event_public_name, 
+        ep.event_public_image 
+      FROM 
+        payment_user pu 
+      JOIN 
+        event_public ep ON pu.payment_event_id = ep.event_public_id 
+      JOIN 
+        user u ON pu.user_id = u.user_id 
+      WHERE 
+        u.user_email = ?
+    `;
+    
+    pool.query(query, [email], (error, results) => {
+      if (error) {
+        return callback(error, null);
+      }
+      
+      // Return all payment history records for the user
+      return callback(null, results);
+    });
+  }
 }
 module.exports = paymentModel;
