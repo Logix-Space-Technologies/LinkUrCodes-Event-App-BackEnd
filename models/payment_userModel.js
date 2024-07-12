@@ -43,6 +43,7 @@ viewPaymentHistory: (email, callback) => {
         user u ON pu.user_id = u.user_id 
       WHERE 
         u.user_email = ?
+      ORDER BY pu.payment_date DESC
     `;
     
     pool.query(query, [email], (error, results) => {

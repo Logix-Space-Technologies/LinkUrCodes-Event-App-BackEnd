@@ -254,11 +254,11 @@ router.post('/viewuserpaymenthistory', async (req, res) => {
     }
 
     if (decoded && decoded.email) {
-      
+      const email=decoded.email
       paymentModel.viewPaymentHistory(email, (error, results) => {
         if (error) {
           console.error("Error fetching user payments:", error);
-          return res.status(500).send('Error fetching user payments:' + error);
+          return res.json({status: "error",'Error fetching user payments': error});
         }
 
         res.status(200).json(results);
