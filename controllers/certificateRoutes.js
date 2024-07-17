@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const certificateModel = require('../models/certificate');
 const jwt = require('jsonwebtoken');
+const publicEventModel = require('../models/publicEventModel')
 
 
 //admin
@@ -36,20 +37,20 @@ router.post('/colleges/search', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const searchKeyword = req.body.q;
-    if (!searchKeyword) {
-        res.status(400).json({ error: 'Search keyword is required' });
-        return;
-    }
-    certificateModel.findAllColleges(searchKeyword, (err, colleges) => {
-        if (err) {
-            console.error('Error searching colleges: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
+        const searchKeyword = req.body.q;
+        if (!searchKeyword) {
+            res.status(400).json({ error: 'Search keyword is required' });
             return;
         }
-        res.status(200).json(colleges);
+        certificateModel.findAllColleges(searchKeyword, (err, colleges) => {
+            if (err) {
+                console.error('Error searching colleges: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(colleges);
+        });
     });
-});
 });
 
 
@@ -63,22 +64,22 @@ router.post('/grant-permission/students', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { college_id } = req.body;
-    certificateModel.updateCollegePermission(college_id, 1, (err, result) => {
-        if (err) {
-            console.error('Error granting permission for college: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json({ message: 'Permission granted for college successfully' });
+        const { college_id } = req.body;
+        certificateModel.updateCollegePermission(college_id, 1, (err, result) => {
+            if (err) {
+                console.error('Error granting permission for college: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json({ message: 'Permission granted for college successfully' });
+        });
     });
-});
 });
 
 
 //college
 router.post('/generate-certificate/college', async (req, res) => {
-    const token = req.headers.token;
+    const token = req.headers.collegetoken;
     console.log('Received token:', token);
     try {
         const decoded = await new Promise((resolve, reject) => {
@@ -190,7 +191,7 @@ router.post('/generate-certificate/college', async (req, res) => {
 router.post('/generate-certificate/student', async (req, res) => {
     const token = req.headers.token;
     console.log('Received token:', token);
-    
+
     try {
         const decoded = await new Promise((resolve, reject) => {
             jwt.verify(token, "user-eventapp", (error, decoded) => {
@@ -266,50 +267,50 @@ router.post('/generate-certificate/user', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { certificate_user_id, certificate_name , Issued_By } = req.body;
-    certificateModel.findPublicEventsByUserId(certificate_user_id, (err, publicEvents) => {
-        if (err) {
-            console.error('Error fetching public events for user: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        console.log(publicEvents);
-        if (publicEvents.length === 0) {
-            res.status(400).json({ error: 'No public events found for the user' });
-            return;
-        }
-        const publicEventIds = publicEvents.map(event => event.payment_event_id);
-        console.log(publicEventIds);
-        const promises = publicEventIds.map(publicEventId => {
-            return new Promise((resolve, reject) => {
-        certificateModel.insertCertificateUser({
-        certificate_user_id: certificate_user_id,
-        certificate_public_event_id: publicEventId,
-        certificate_name: certificate_name,
-        Issued_By: Issued_By,
-        status: 'pending'
-    }, (err, insertResult) => {
-        if (err) {
-            console.error('Error inserting certificate request: ' + err);
-            reject(err);
-        } else {
-            resolve(insertResult);
-        }
-    });
-});
-});
+        const { certificate_user_id, certificate_name, Issued_By } = req.body;
+        certificateModel.findPublicEventsByUserId(certificate_user_id, (err, publicEvents) => {
+            if (err) {
+                console.error('Error fetching public events for user: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            console.log(publicEvents);
+            if (publicEvents.length === 0) {
+                res.status(400).json({ error: 'No public events found for the user' });
+                return;
+            }
+            const publicEventIds = publicEvents.map(event => event.payment_event_id);
+            console.log(publicEventIds);
+            const promises = publicEventIds.map(publicEventId => {
+                return new Promise((resolve, reject) => {
+                    certificateModel.insertCertificateUser({
+                        certificate_user_id: certificate_user_id,
+                        certificate_public_event_id: publicEventId,
+                        certificate_name: certificate_name,
+                        Issued_By: Issued_By,
+                        status: 'pending'
+                    }, (err, insertResult) => {
+                        if (err) {
+                            console.error('Error inserting certificate request: ' + err);
+                            reject(err);
+                        } else {
+                            resolve(insertResult);
+                        }
+                    });
+                });
+            });
 
-Promise.all(promises)
-.then(() => {
-    console.log('All certificate requests inserted successfully');
-    res.status(200).json({ message: 'Certificate requests generated successfully' });
-})
-.catch(err => {
-    console.error('Error inserting certificate requests: ' + err);
-    res.status(500).json({ error: 'Internal server error' });
-});
-});
-});
+            Promise.all(promises)
+                .then(() => {
+                    console.log('All certificate requests inserted successfully');
+                    res.status(200).json({ message: 'Certificate requests generated successfully' });
+                })
+                .catch(err => {
+                    console.error('Error inserting certificate requests: ' + err);
+                    res.status(500).json({ error: 'Internal server error' });
+                });
+        });
+    });
 });
 
 
@@ -323,15 +324,15 @@ router.post('/requests/private_college', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    certificateModel.findCertificatesByCollegePrivateEvent((err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByCollegePrivateEvent((err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -345,15 +346,15 @@ router.post('/requests/private_student', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    certificateModel.findCertificatesByPrivateEvent((err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByPrivateEvent((err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -368,15 +369,15 @@ router.post('/requests/public_user', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    certificateModel.findCertificatesByPublicEvent((err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByPublicEvent((err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -391,19 +392,19 @@ router.post('/certificates/college', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { college_id } = req.body;
-    if (!college_id) {
-        return res.status(400).json({ error: 'College ID is required' });
-    }
-    certificateModel.findCertificatesByCollege(college_id, (err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
+        const { college_id } = req.body;
+        if (!college_id) {
+            return res.status(400).json({ error: 'College ID is required' });
         }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByCollege(college_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -418,19 +419,19 @@ router.post('/certificates/user', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { user_id } = req.body;
-    if (!user_id) {
-        return res.status(400).json({ error: 'User ID is required' });
-    }
-    certificateModel.findCertificatesByUsers(user_id, (err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
+        const { user_id } = req.body;
+        if (!user_id) {
+            return res.status(400).json({ error: 'User ID is required' });
         }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByUsers(user_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -445,19 +446,19 @@ router.post('/certificates/student', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { student_id } = req.body;
-    if (!student_id) {
-        return res.status(400).json({ error: 'Student ID is required' });
-    }
-    certificateModel.findCertificatesByStudents(student_id, (err, results) => {
-        if (err) {
-            console.error('Error fetching certificate requests: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
+        const { student_id } = req.body;
+        if (!student_id) {
+            return res.status(400).json({ error: 'Student ID is required' });
         }
-        res.status(200).json(results);
+        certificateModel.findCertificatesByStudents(student_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json(results);
+        });
     });
-});
 });
 
 
@@ -472,16 +473,16 @@ router.post('/approve-request/user', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { certificate_user_id } = req.body;
-    certificateModel.updateCertificateStatusUser(certificate_user_id, 'approved', (err, result) => {
-        if (err) {
-            console.error('Error approving request: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json({ message: 'Certificate request approved successfully' });
+        const { certificate_user_id } = req.body;
+        certificateModel.updateCertificateStatusUser(certificate_user_id, 'approved', (err, result) => {
+            if (err) {
+                console.error('Error approving request: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json({ message: 'Certificate request approved successfully' });
+        });
     });
-});
 });
 
 
@@ -496,17 +497,181 @@ router.post('/deny-request/user', (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-    const { certificate_user_id } = req.body;
-    certificateModel.updateCertificateStatusUser(certificate_user_id, 'denied', (err, result) => {
-        if (err) {
-            console.error('Error denying request: ' + err);
-            res.status(500).json({ error: 'Internal server error' });
-            return;
-        }
-        res.status(200).json({ message: 'Certificate request denied successfully' });
+        const { certificate_user_id } = req.body;
+        certificateModel.updateCertificateStatusUser(certificate_user_id, 'denied', (err, result) => {
+            if (err) {
+                console.error('Error denying request: ' + err);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json({ message: 'Certificate request denied successfully' });
+        });
     });
 });
+
+
+
+//generate certificate for user by admin
+router.post('/generate-certificate-user', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status: 'Unauthorized' });
+            return;
+        }
+        const eventID = req.body.event_id;
+        // Check if certificates for this event and college have already been generated
+        const existingCertificates = await new Promise((resolve, reject) => {
+            certificateModel.findExistingUserCertificate(eventID, (error, certificates) => {
+                if (error) {
+                    return res.json({ status: 'error', message: error });
+                }
+                resolve(certificates);
+            });
+        });
+        if (existingCertificates.length > 0) {
+            console.log('Certificates already generated for this event and college.');
+            res.json({status:"Certificates already generated", message: 'Certificates retrieved successfully' });
+            return;
+        }
+        publicEventModel.findUsersByEvent(eventID, (error, users) => {
+            if (error) {
+                return res.json({ status: 'error', message: error });
+            } else  {
+                let completed = 0;
+                const totalUsers = users.length;
+                if (totalUsers === 0) {
+                    return res.json({ status: "success no users", "message": "Certificate successfully generated" });
+                }
+                certificateModel.getCounter((error, result) => {
+                    let counter = result[0].value
+                    const date = new Date();
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+                    const yyyymm = year.toString() + month;
+                    users.forEach(user => {
+                        const newCounter = "LST"+yyyymm + counter; //certificate number
+                        counter++;
+                        let userID = user.user_id;
+                        const newData = {
+                            certificate_public_event_id: eventID,
+                            certificate_user_id: userID,
+                            certificate_no: newCounter,
+                            Issued_By: decoded.admin_id
+                        };
+                        certificateModel.insertCertificateUser(newData, (err, insertResult) => {
+                            if (err) {
+                                return res.json({ "status": "error", "message": err });
+                            } else {
+                            completed++;
+                            if (completed === totalUsers) {
+                                // Respond with success after processing all students
+                                function updateCounterWithRetry(counter, retryCount = 5) {
+                                    certificateModel.updateCounter(counter, (error, res) => {
+                                        if (error) {
+                                            console.error(`Failed to update counter: ${error.message}`);
+                                            if (retryCount > 0) {
+                                                console.log(`Retrying... (${retryCount} attempts left)`);
+                                                updateCounterWithRetry(counter, retryCount - 1);
+                                            } else {
+                                                console.error('Exceeded maximum retry attempts.');
+                                            }
+                                        } else {
+                                            console.log('Counter updated successfully:');
+                                        }
+                                    });
+                                }
+                                updateCounterWithRetry(counter);
+                                return res.json({ "status": "success", "message": "Certificate successfully generated" });
+                            }
+                        }
+                        });
+                    })
+                });
+            };
+        })
+    });
+})
+
+//view user certificate by admin
+router.post('/view-certificates-user-ByEvent', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status: 'Unauthorized' });
+            return;
+        }
+        const {event_id}  = req.body;
+        if (!event_id) {
+            return res.json({status:"event id is required", error: 'user ID is required' });
+        }
+        certificateModel.ViewCertificateUserByEvent(event_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                return res.json({status:"error", error: 'Internal server error' });
+            }
+            if(results.length>0){
+                const formattedResults = results.map(certificate => {
+                    const issued_date = new Date(certificate.issued_date);
+                    const expiration_date = new Date(certificate.expiration_date);
+                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                    const expirationDate = `${expiration_date.getDate().toString().padStart(2, '0')}-${(expiration_date.getMonth() + 1).toString().padStart(2, '0')}-${expiration_date.getFullYear()}`;
+                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                    certificate.expiration_date = expirationDate; // DD-MM-YYYY format
+                    return certificate;
+                  });
+                res.json(formattedResults);
+            }
+            else {
+                res.json({status:"no certificates found",message:"no certificates for event found"})
+            }
+            
+        });
+    });
 });
+
+//view user certificate by user
+router.post('/view-certificate-user', (req, res) => {
+    const token = req.headers["token"];
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.json({ status: "Unauthorized" });
+        }
+        const {user_id,event_id}  = req.body;
+        if (!event_id || !user_id) {
+            return res.json({status:"event & user id is required", error: 'event & user ID is required' });
+        }
+        certificateModel.ViewCertificateUser(event_id,user_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                return res.json({status:"error", error: 'Internal server error' });
+            }
+            if(results.length>0){
+                const formattedResults = results.map(certificate => {
+                    const issued_date = new Date(certificate.issued_date);
+                    const expiration_date = new Date(certificate.expiration_date);
+                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                    const expirationDate = `${expiration_date.getDate().toString().padStart(2, '0')}-${(expiration_date.getMonth() + 1).toString().padStart(2, '0')}-${expiration_date.getFullYear()}`;
+                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                    certificate.expiration_date = expirationDate; // DD-MM-YYYY format
+                    return certificate;
+                  });
+                res.json(formattedResults);
+            }
+            else {
+                res.json({status:"no certificates found",message:"no certificates for event found"})
+            }
+            
+        });
+    });
+});
+
 
 
 module.exports = router;
