@@ -310,10 +310,14 @@ const certificateModel = {
         const query = `UPDATE counter SET value= ?`;
         pool.query(query, [value], callback);
     },
+    markGenerated: (value, callback) => {
+        const query = `UPDATE event_public SET certificate_generated=1 WHERE event_public_id= ?`;
+        pool.query(query, [value], callback); 
+    },
     ViewCertificateUserByEvent: (event, callback) => {
         const query = `SELECT c.certificate_id, c.certificate_public_event_id,c.certificate_user_id,e.event_public_name,
                     e.event_public_duration,u.user_name,c.certificate_no,c.issued_date, c.Issued_By as admin_id,
-                    a.admin_username as Issued_By, c.expiration_date 
+                    a.admin_username as Issued_By 
                     FROM certificate_user c 
                     JOIN user u on c.certificate_user_id=u.user_id 
                     JOIN event_public e on e.event_public_id=c.certificate_public_event_id 
@@ -328,7 +332,7 @@ const certificateModel = {
     ViewCertificateUser: (event_id,user_id, callback) => {
         const query = `SELECT c.certificate_id, c.certificate_public_event_id,c.certificate_user_id,e.event_public_name,
                     e.event_public_duration,u.user_name,c.certificate_no,c.issued_date, c.Issued_By as admin_id,
-                    a.admin_username as Issued_By, c.expiration_date 
+                    a.admin_username as Issued_By 
                     FROM certificate_user c 
                     JOIN user u on c.certificate_user_id=u.user_id 
                     JOIN event_public e on e.event_public_id=c.certificate_public_event_id 

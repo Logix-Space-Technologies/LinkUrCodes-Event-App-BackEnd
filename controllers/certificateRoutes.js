@@ -543,7 +543,7 @@ router.post('/generate-certificate-user', (req, res) => {
                 let completed = 0;
                 const totalUsers = users.length;
                 if (totalUsers === 0) {
-                    return res.json({ status: "success no users", "message": "Certificate successfully generated" });
+                    return res.json({ status: "no users", "message": "Certificate not generated" });
                 }
                 certificateModel.getCounter((error, result) => {
                     let counter = result[0].value
@@ -584,6 +584,22 @@ router.post('/generate-certificate-user', (req, res) => {
                                     });
                                 }
                                 updateCounterWithRetry(counter);
+                                function markCertificateGenrated(event, retryCount = 5) {
+                                    certificateModel.markGenerated(event, (error, res) => {
+                                        if (error) {
+                                            console.error(`Failed to update event: ${error.message}`);
+                                            if (retryCount > 0) {
+                                                console.log(`Retrying... (${retryCount} attempts left)`);
+                                                markCertificateGenrated(event, retryCount - 1);
+                                            } else {
+                                                console.error('Exceeded maximum retry attempts.');
+                                            }
+                                        } else {
+                                            console.log('Marked Certificate generated successfully:');
+                                        }
+                                    });
+                                }
+                                markCertificateGenrated(eventID)
                                 return res.json({ "status": "success", "message": "Certificate successfully generated" });
                             }
                         }
@@ -617,11 +633,8 @@ router.post('/view-certificates-user-ByEvent', (req, res) => {
             if(results.length>0){
                 const formattedResults = results.map(certificate => {
                     const issued_date = new Date(certificate.issued_date);
-                    const expiration_date = new Date(certificate.expiration_date);
                     const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
-                    const expirationDate = `${expiration_date.getDate().toString().padStart(2, '0')}-${(expiration_date.getMonth() + 1).toString().padStart(2, '0')}-${expiration_date.getFullYear()}`;
                     certificate.issued_date = issuedDate; // DD-MM-YYYY format
-                    certificate.expiration_date = expirationDate; // DD-MM-YYYY format
                     return certificate;
                   });
                 res.json(formattedResults);
@@ -655,11 +668,8 @@ router.post('/view-certificate-user', (req, res) => {
             if(results.length>0){
                 const formattedResults = results.map(certificate => {
                     const issued_date = new Date(certificate.issued_date);
-                    const expiration_date = new Date(certificate.expiration_date);
                     const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
-                    const expirationDate = `${expiration_date.getDate().toString().padStart(2, '0')}-${(expiration_date.getMonth() + 1).toString().padStart(2, '0')}-${expiration_date.getFullYear()}`;
                     certificate.issued_date = issuedDate; // DD-MM-YYYY format
-                    certificate.expiration_date = expirationDate; // DD-MM-YYYY format
                     return certificate;
                   });
                 res.json(formattedResults);
