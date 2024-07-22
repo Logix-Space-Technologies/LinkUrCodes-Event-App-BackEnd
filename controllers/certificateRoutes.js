@@ -414,7 +414,16 @@ router.post('/generate-certificate-user', (req, res) => {
             return;
         }
         const eventID = req.body.event_id;
-        // Check if certificates for this event and college have already been generated
+        //check event completed or not
+        certificateModel.checkEventCompleteOrNot(eventID,(error,done)=>{
+            if (error) {
+                return res.json({ status: 'error', message: error });
+            }
+            if(done[0]['is_completed']==0){
+                return res.json({ status: 'event not completed'});
+            }
+        })
+       // Check if certificates for this event and college have already been generated
         const existingCertificates = await new Promise((resolve, reject) => {
             certificateModel.findExistingUserCertificate(eventID, (error, certificates) => {
                 if (error) {
@@ -425,7 +434,7 @@ router.post('/generate-certificate-user', (req, res) => {
         });
         if (existingCertificates.length > 0) {
             console.log('Certificates already generated for this event and college.');
-            res.json({ status: "Certificates already generated", message: 'Certificates retrieved successfully' });
+            res.json({ status: "Certificates already generated" });
             return;
         }
         publicEventModel.findUsersByEvent(eventID, (error, users) => {
@@ -710,6 +719,122 @@ router.post('/revoke-certificate-permission', (req, res) => {
 });
 
 //generate certificate for students by admin
+router.post('/generate-certificate-students', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status: 'Unauthorized' });
+            return;
+        }
+        const eventID = req.body.event_id;
+        const collegeId=req.body.college_id;
+        //check event completed or not
+        certificateModel.checkPrivateEventCompleteOrNot(eventID,(error,done)=>{
+            if (error) {
+                return res.json({ status: 'error', message: error });
+            }
+            if(done[0]['is_completed']===0){
+                return res.json({ status: 'event not completed'});
+            }
+        })
+        certificateModel.collegePayementStatus(collegeId,eventID,(error,paymentStatus)=>{
+            if (error) {
+                return res.json({ status: 'error', message: error });
+            }
+            if(paymentStatus[0]['COUNT(*)']===0){
+                return res.json({ status: 'payment details not found'});
+            }
+        })
+       // Check if certificates for this event and college have already been generated
+        const existingStudentCertificates = await new Promise((resolve, reject) => {
+            certificateModel.findExistingStudentCertificate(eventID, (error, certificates) => {
+                if (error) {
+                    return res.json({ status: 'error', message: error });
+                }
+                resolve(certificates);
+            });
+        });
+        if (existingStudentCertificates.length > 0) {
+            console.log('Certificates already generated for this event and college.');
+            res.json({ status: "Certificates already generated" });
+            return;
+        }
+        certificateModel.findStudentsByEvent(eventID, (error, students) => {
+            if (error) {
+                return res.json({ status: 'error', message: error });
+            } else {
+                let completed = 0;
+                const totalstudents = students.length;
+                if (totalstudents === 0) {
+                    return res.json({ status: "no students", "message": "Certificate not generated" });
+                }
+                certificateModel.getCounter((error, result) => {
+                    let counter = result[0].value
+                    const date = new Date();
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const yyyymm = year.toString() + month;
+                    students.forEach(student => {
+                        const newCounter = "LST" + yyyymm + counter; //certificate number
+                        counter++;
+                        let studentID = student.student_id;
+                        const newData = {
+                            certificate_private_event_id: eventID,
+                            certificate_student_id: studentID,
+                            certificate_no: newCounter,
+                            Issued_By: decoded.admin_id
+                        };
+                        certificateModel.insertCertificateStudent(newData, (err, insertResult) => {
+                            if (err) {
+                                return res.json({ "status": "error", "message": err });
+                            } else {
+                                completed++;
+                                if (completed === totalstudents) {
+                                    // Respond with success after processing all students
+                                    function updateCounterWithRetry(counter, retryCount = 5) {
+                                        certificateModel.updateCounter(counter, (error, res) => {
+                                            if (error) {
+                                                console.error(`Failed to update counter: ${error.message}`);
+                                                if (retryCount > 0) {
+                                                    console.log(`Retrying... (${retryCount} attempts left)`);
+                                                    updateCounterWithRetry(counter, retryCount - 1);
+                                                } else {
+                                                    console.error('Exceeded maximum retry attempts.');
+                                                }
+                                            } else {
+                                                console.log('Counter updated successfully:');
+                                            }
+                                        });
+                                    }
+                                    updateCounterWithRetry(counter);
+                                    function markCertificateGenrated(event, retryCount = 5) {
+                                        certificateModel.markPrivateGenerated(event, (error, res) => {
+                                            if (error) {
+                                                console.error(`Failed to update event: ${error.message}`);
+                                                if (retryCount > 0) {
+                                                    console.log(`Retrying... (${retryCount} attempts left)`);
+                                                    markCertificateGenrated(event, retryCount - 1);
+                                                } else {
+                                                    console.error('Exceeded maximum retry attempts.');
+                                                }
+                                            } else {
+                                                console.log('Marked Certificate generated successfully:');
+                                            }
+                                        });
+                                    }
+                                    markCertificateGenrated(eventID)
+                                    return res.json({ "status": "success", "message": "Certificate successfully generated" });
+                                }
+                            }
+                        });
+                    })
+                });
+            };
+        })
+    });
+})
 
 
 

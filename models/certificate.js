@@ -307,6 +307,10 @@ const certificateModel = {
         const query = `SELECT * FROM certificate_user WHERE certificate_public_event_id = ?`;
         pool.query(query, [event], callback);
     },
+    checkEventCompleteOrNot:(event,callback)=>{
+        const query = `SELECT is_completed FROM event_public WHERE event_public_id = ?`;
+        pool.query(query, [event], callback);
+    },
     ViewCertificateUser: (event_id,user_id, callback) => {
         const query = `SELECT c.certificate_id, c.certificate_public_event_id,c.certificate_user_id,e.event_public_name,
                     e.event_public_duration,u.user_name,c.certificate_no,c.issued_date, c.Issued_By as admin_id,
@@ -352,6 +356,28 @@ const certificateModel = {
         const query = `UPDATE certificate_permission SET student_access = 0 
                        WHERE permission_id= ? AND event_id = ?`;
         pool.query(query, [permission,event], callback);
+    },
+    checkPrivateEventCompleteOrNot:(event,callback)=>{
+        const query = `SELECT is_completed FROM event_private 
+                        WHERE event_private_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    collegePayementStatus:(college,event,callback)=>{
+        const query=`SELECT COUNT(*) FROM payment_college 
+                    WHERE college_id= ? AND private_event_id= ?`
+        pool.query(query, [college,event], callback);
+    },
+    findExistingStudentCertificate:(event,callback)=>{
+        const query = `SELECT * FROM certificate_stud WHERE certificate_private_event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    findStudentsByEvent: (eventId, callback) => {
+        const query = `SELECT * FROM student WHERE event_id= ?`;
+        pool.query(query, [eventId], callback);
+    },
+    markPrivateGenerated: (value, callback) => {
+        const query = `UPDATE event_private SET certificate_generated=1 WHERE event_private_id= ?`;
+        pool.query(query, [value], callback); 
     }
 
 
