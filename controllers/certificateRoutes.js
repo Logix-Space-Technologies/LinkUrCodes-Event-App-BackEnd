@@ -622,7 +622,7 @@ router.post('/request-certificate', (req, res) => {
     })
 });
 
-//approve certificate request by faculty(college) 
+//approve certificate request by admin
 router.post('/approve-certificate-request', (req, res) => {
     const token = req.headers.token;
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
@@ -642,7 +642,7 @@ router.post('/approve-certificate-request', (req, res) => {
     });
 });
 
-//reject certificate request by faculty(college) 
+//reject certificate request by admin 
 router.post('/reject-certificate-request', (req, res) => {
     const token = req.headers.token;
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
@@ -835,6 +835,157 @@ router.post('/generate-certificate-students', (req, res) => {
         })
     });
 })
+
+//view certificate requests done by faculty(college) by admin
+router.post('/view-certificate-requests', (req, res) => {
+    const token = req.headers.token;
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ error: 'Unauthorized' });
+            return;
+        }
+        certificateModel.viewCertificateRequests((err, result) => {
+            if (err) {
+                res.json({ status: "error" });
+                return;
+            }
+            if(result.length > 0){
+                res.json( result );
+            }
+            else{
+                res.json({ status:"no requests" });
+            }
+        });
+    });
+});
+
+//view certificate requests by faculty(college) 
+router.post('/view-certificate-requests-by-college', (req, res) => {
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            return res.json({ status: "Unauthorized " });
+        }
+        const college_id=req.body.college_id
+        certificateModel.viewCertificateRequestsCollege(college_id,(err, result) => {
+            if (err) {
+                res.json({ status: "error" });
+                return;
+            }
+            if(result.length > 0){
+                res.json( result );
+            }
+            else{
+                res.json({ status:"no requests" });
+            }
+        });
+    });
+});
+
+//view student certificate by admin
+router.post('/view-certificates-student-ByEvent', (req, res) => {
+    const token = req.headers.token;
+    console.log('Received token:', token);
+    jwt.verify(token, "eventAdmin", async (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token: ' + error);
+            res.json({ status: 'Unauthorized' });
+            return;
+        }
+        const { event_id } = req.body;
+        if (!event_id) {
+            return res.json({ status: "event id is required", error: 'user ID is required' });
+        }
+        certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                return res.json({ status: "error", error: 'Internal server error' });
+            }
+            if (results.length > 0) {
+                const formattedResults = results.map(certificate => {
+                    const issued_date = new Date(certificate.issued_date);
+                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                    return certificate;
+                });
+                res.json(formattedResults);
+            }
+            else {
+                res.json({ status: "no certificates found", message: "no certificates for event found" })
+            }
+
+        });
+    });
+});
+
+//view student certificate by faculty / college
+router.post('/view-students-certificates-ByEvent', (req, res) => {
+    const collegetoken = req.headers["collegetoken"];
+    jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
+        if (error) {
+            return res.json({ status: "Unauthorized " });
+        }
+        const { event_id } = req.body;
+        if (!event_id) {
+            return res.json({ status: "event id is required", error: 'user ID is required' });
+        }
+        certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                return res.json({ status: "error", error: 'Internal server error' });
+            }
+            if (results.length > 0) {
+                const formattedResults = results.map(certificate => {
+                    const issued_date = new Date(certificate.issued_date);
+                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                    return certificate;
+                });
+                res.json(formattedResults);
+            }
+            else {
+                res.json({ status: "no certificates found", message: "no certificates for event found" })
+            }
+
+        });
+    });
+});
+
+//view student certificate by student
+router.post('/view-certificate-student', (req, res) => {
+    const token = req.headers["token"];
+    // Verify the token
+    jwt.verify(token, "user-eventapp", (error, decoded) => {
+        if (error) {
+            console.error('Error verifying token:', error);
+            return res.json({ status: "Unauthorized" });
+        }
+        const { email_id, event_id } = req.body;
+        if (!event_id || !email_id) {
+            return res.json({ status: "event & user id is required", error: 'event & user ID is required' });
+        }
+        certificateModel.ViewCertificateStudent(event_id, email_id, (err, results) => {
+            if (err) {
+                console.error('Error fetching certificate requests: ' + err);
+                return res.json({ status: "error", error: 'Internal server error' });
+            }
+            if (results.length > 0) {
+                const formattedResults = results.map(certificate => {
+                    const issued_date = new Date(certificate.issued_date);
+                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                    return certificate;
+                });
+                res.json(formattedResults);
+            }
+            else {
+                res.json({ status: "no certificates found", message: "no certificates for event found" })
+            }
+
+        });
+    });
+});
 
 
 
