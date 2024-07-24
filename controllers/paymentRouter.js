@@ -100,7 +100,7 @@ router.post('/userpaymenthistory', async (req, res) => {
       return res.json({ "status": "unauthorised user" });
     }
     if (decoded && decoded.adminUsername) {
-      paymentModel.viewPayments((error, results) => {
+      paymentModel.viewUserPaymentHistory((error, results) => {
         if (error) {
           res.status(500).send('Error fetching payments:' + error)
           return
