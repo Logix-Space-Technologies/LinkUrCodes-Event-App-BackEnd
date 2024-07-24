@@ -427,6 +427,16 @@ const certificateModel = {
                     JOIN admin a on c.Issued_By=a.admin_id 
                     WHERE c.certificate_private_event_id = ? AND s.student_email = ? `;
         pool.query(query, [event,email], callback);
+    },
+    checkCollegePermissions:(event,callback)=>{
+        const query = `SELECT certificate_request FROM certificate_permission
+                       WHERE event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    checkStudentPermissions:(event,callback)=>{
+        const query = `SELECT student_access FROM certificate_permission
+                       WHERE event_id = ?`;
+        pool.query(query, [event], callback);
     }
 
 

@@ -930,25 +930,38 @@ router.post('/view-students-certificates-ByEvent', (req, res) => {
         if (!event_id) {
             return res.json({ status: "event id is required", error: 'user ID is required' });
         }
-        certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
-            if (err) {
-                console.error('Error fetching certificate requests: ' + err);
-                return res.json({ status: "error", error: 'Internal server error' });
+        certificateModel.checkCollegePermissions(event_id, (error, permission) => {
+            if (error) {
+                return res.json({ status: "error" });
             }
-            if (results.length > 0) {
-                const formattedResults = results.map(certificate => {
-                    const issued_date = new Date(certificate.issued_date);
-                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
-                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
-                    return certificate;
+            if(permission==""){
+                return res.json({ status: "no event found" });
+            }
+            else if (permission[0]['certificate_request'] == "Approved") {
+                certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
+                    if (err) {
+                        console.error('Error fetching certificate requests: ' + err);
+                        return res.json({ status: "error", error: 'Internal server error' });
+                    }
+                    if (results.length > 0) {
+                        const formattedResults = results.map(certificate => {
+                            const issued_date = new Date(certificate.issued_date);
+                            const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                            certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                            return certificate;
+                        });
+                        res.json(formattedResults);
+                    }
+                    else {
+                        res.json({ status: "no certificates found", message: "no certificates for event found" })
+                    }
+        
                 });
-                res.json(formattedResults);
+            } else {
+                res.json({ status: "no permission" })
             }
-            else {
-                res.json({ status: "no certificates found", message: "no certificates for event found" })
-            }
-
-        });
+        })
+        
     });
 });
 
@@ -961,29 +974,39 @@ router.post('/view-certificate-student', (req, res) => {
             console.error('Error verifying token:', error);
             return res.json({ status: "Unauthorized" });
         }
-        const { email_id, event_id } = req.body;
+         const { email_id, event_id } = req.body;
         if (!event_id || !email_id) {
             return res.json({ status: "event & user id is required", error: 'event & user ID is required' });
         }
-        certificateModel.ViewCertificateStudent(event_id, email_id, (err, results) => {
-            if (err) {
-                console.error('Error fetching certificate requests: ' + err);
-                return res.json({ status: "error", error: 'Internal server error' });
-            }
-            if (results.length > 0) {
-                const formattedResults = results.map(certificate => {
-                    const issued_date = new Date(certificate.issued_date);
-                    const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
-                    certificate.issued_date = issuedDate; // DD-MM-YYYY format
-                    return certificate;
-                });
-                res.json(formattedResults);
-            }
-            else {
-                res.json({ status: "no certificates found", message: "no certificates for event found" })
-            }
-
-        });
+    certificateModel.checkStudentPermissions(event_id, (error, permission) => {
+        if (error) {
+            return res.json({ status: "error" });
+        }
+       
+        if(permission==""){
+            return res.json({ status: "no event found" });
+        }else if (permission[0]['student_access'] == 1) {
+            certificateModel.ViewCertificateStudent(event_id, email_id, (err, results) => {
+                if (err) {
+                    console.error('Error fetching certificate requests: ' + err);
+                    return res.json({ status: "error", error: 'Internal server error' });
+                }
+                if (results.length > 0) {
+                    const formattedResults = results.map(certificate => {
+                        const issued_date = new Date(certificate.issued_date);
+                        const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                        certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                        return certificate;
+                    });
+                    res.json(formattedResults);
+                }
+                else {
+                    res.json({ status: "no certificates found", message: "no certificates for event found" })
+                }
+            });
+        }
+    })
+       
     });
 });
 
