@@ -433,7 +433,7 @@ router.post('/generate-certificate-user', (req, res) => {
             });
         });
         if (existingCertificates.length > 0) {
-            console.log('Certificates already generated for this event and college.');
+            console.log('Certificates already generated for this event');
             res.json({ status: "Certificates already generated" });
             return;
         }
