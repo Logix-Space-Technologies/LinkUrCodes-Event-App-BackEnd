@@ -5,7 +5,7 @@ const pool = mysql.createPool({
     user: process.env.DB_USER,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
-    password:process.env.DB_PASS
+    password: process.env.DB_PASS
 });
 
 const certificateModel = {
@@ -38,13 +38,13 @@ const certificateModel = {
         pool.query(query, callback);
     },
     findAllColleges: (searchKeyword, callback) => {
-    let query = 'SELECT * FROM college';
-    const params = [];
-    if (searchKeyword) {
-        query += ' WHERE college_name LIKE ?';
-        params.push('%' + searchKeyword + '%');
-    }
-    pool.query(query, params, callback);
+        let query = 'SELECT * FROM college';
+        const params = [];
+        if (searchKeyword) {
+            query += ' WHERE college_name LIKE ?';
+            params.push('%' + searchKeyword + '%');
+        }
+        pool.query(query, params, callback);
     },
     findStudentsByCollegeId: (college_id, callback) => {
         const query = `
@@ -53,10 +53,6 @@ const certificateModel = {
             WHERE student_college_id = ?
         `;
         pool.query(query, [college_id], callback);
-    },
-    findCertificatesByPublicEvent: (callback) => {
-        const query = `SELECT u.user_name AS Name,u.user_email AS Email,e.event_public_name AS Event,c.certificate_name,c.issued_date,c.Issued_By, c.status,c.expiration_date, CASE WHEN p.user_id IS NOT NULL THEN 'paid' ELSE 'not paid' END AS Payment_Status FROM certificate_user c INNER JOIN user u ON c.certificate_user_id = u.user_id INNER JOIN event_public e ON c.certificate_public_event_id = e.event_public_id LEFT JOIN payment_user p ON u.user_id = p.user_id WHERE c.status = 'pending'`;
-        pool.query(query, callback);
     },
     findCertificatesByCollegePrivateEvent: (callback) => {
         const query = `SELECT DISTINCT s.student_name,s.student_email,s.student_admno,c.college_name,ep.event_private_name,cc.certificate_name,cc.issued_date,
@@ -68,16 +64,6 @@ const certificateModel = {
         const query = `SELECT s.student_name AS student_name,s.student_email AS student_email,s.student_admno AS student_admn,cl.college_name AS college_name,e.event_private_name AS event_private_name,cs.certificate_name AS certificate_name,cs.issued_date AS issued_date,
         cs.Issued_By AS Issued_By,cs.status AS status,cs.expiration_date AS expiration_date,CASE WHEN pc.college_id IS NOT NULL THEN 'paid' ELSE 'not paid' END AS payment_status FROM certificate_stud cs INNER JOIN student s ON cs.certificate_student_id = s.student_id INNER JOIN event_private e ON cs.certificate_private_event_id = e.event_private_id INNER JOIN college cl ON s.student_college_id = cl.college_id LEFT JOIN payment_college pc ON cl.college_id = pc.college_id AND e.event_private_id = pc.private_event_id WHERE cs.status = 'pending'`;
         pool.query(query, callback);
-    },
-    findCertificatesByUsers: (user_id,callback) => {
-        const query = `
-        SELECT u.user_name as Name,u.user_email as Email,e.event_public_name as Event,c.certificate_name,c.issued_date,c.Issued_By,c.status,c.expiration_date
-        FROM certificate_user c
-        INNER JOIN user u ON c.certificate_user_id = u.user_id
-        INNER JOIN event_public e ON c.certificate_public_event_id = e.event_public_id
-        where u.user_id = ?
-        `;
-        pool.query(query,[user_id], callback);
     },
     findCertificatesByStudents: (student_id, callback) => {
         const query = `
@@ -106,7 +92,7 @@ const certificateModel = {
             }
             callback(null, certificates);
         });
-    },    
+    },
     findCertificatesByCollege: (college_id, callback) => {
         const query = `
         SELECT DISTINCT s.student_name AS Name, s.student_email AS Email, s.student_admno AS Admno, cl.college_name AS College,e.event_private_name AS Event, c.certificate_name, c.issued_date, c.Issued_By, c.status, c.expiration_date 
@@ -155,14 +141,6 @@ const certificateModel = {
         `;
         pool.query(query, [studentId], callback);
     },
-    findPublicEventsByUserId: (user_id, callback) => {
-        const query = `
-            SELECT payment_event_id
-            FROM payment_user
-            WHERE user_id = ?
-        `;
-        pool.query(query, [user_id], callback);
-    },
     findExistingCertificateRequests: (studentIds, eventIds, callback) => {
         const query = 'SELECT * FROM certificate_college WHERE certificate_college_id IN (?) AND certificate_private_event_id IN (?)';
         pool.query(query, [studentIds, eventIds], callback);
@@ -190,7 +168,7 @@ const certificateModel = {
             }
             callback(null, students);
         });
-    },    
+    },
     checkCollegeCertificateRequestPermission: (collegeId, eventId, callback) => {
         const sql = `
             SELECT COUNT(*) AS hasPermission
@@ -202,7 +180,7 @@ const certificateModel = {
             AND payment_college.status = 'paid'
             AND event_private.event_private_id = ?
         `;
-    
+
         pool.query(sql, [collegeId, collegeId, eventId], (err, result) => {
             if (err) {
                 callback(err, null);
@@ -220,10 +198,10 @@ const certificateModel = {
             INNER JOIN student s ON e.event_private_id = s.event_id 
             WHERE s.student_id = ? AND e.event_private_id = ?
         `;
-    
+
         console.log('SQL query:', sql);
         console.log('Parameters:', [certificate_student_id, event_id]);
-    
+
         pool.query(sql, [certificate_student_id, event_id], (err, result) => {
             if (err) {
                 console.error('Error executing SQL query:', err);
@@ -231,7 +209,7 @@ const certificateModel = {
                 return;
             }
             console.log('Query result:', result);
-    
+
             if (result.length === 0) {
                 console.log('No matching record found');
                 callback(null, false); // No permission if no matching record found
@@ -241,7 +219,7 @@ const certificateModel = {
             console.log('Has permission:', hasPermission);
             callback(null, hasPermission);
         });
-    },    
+    },
     checkEventsPaidForCollege: (college_id, eventIds) => {
         return new Promise((resolve, reject) => {
             let count = 0;
@@ -301,7 +279,167 @@ const certificateModel = {
                 }
             });
         });
-    }    
+    },
+    getCounter: (callback) => {
+        const query = `SELECT value FROM counter`;
+        pool.query(query, callback);
+    },
+    updateCounter: (value, callback) => {
+        const query = `UPDATE counter SET value= ?`;
+        pool.query(query, [value], callback);
+    },
+    markGenerated: (value, callback) => {
+        const query = `UPDATE event_public SET certificate_generated=1 WHERE event_public_id= ?`;
+        pool.query(query, [value], callback);
+    },
+    ViewCertificateUserByEvent: (event, callback) => {
+        const query = `SELECT c.certificate_id, c.certificate_public_event_id,c.certificate_user_id,e.event_public_name,
+                    e.event_public_duration,u.user_name,c.certificate_no,c.issued_date, c.Issued_By as admin_id,
+                    a.admin_username as Issued_By 
+                    FROM certificate_user c 
+                    JOIN user u on c.certificate_user_id=u.user_id 
+                    JOIN event_public e on e.event_public_id=c.certificate_public_event_id 
+                    JOIN admin a on c.Issued_By=a.admin_id 
+                    WHERE c.certificate_public_event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    findExistingUserCertificate: (event, callback) => {
+        const query = `SELECT * FROM certificate_user WHERE certificate_public_event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    checkEventCompleteOrNot: (event, callback) => {
+        const query = `SELECT is_completed FROM event_public WHERE event_public_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    ViewCertificateUser: (event_id, user_id, callback) => {
+        const query = `SELECT c.certificate_id, c.certificate_public_event_id,c.certificate_user_id,e.event_public_name,
+                    e.event_public_duration,u.user_name,c.certificate_no,c.issued_date, c.Issued_By as admin_id,
+                    a.admin_username as Issued_By 
+                    FROM certificate_user c 
+                    JOIN user u on c.certificate_user_id=u.user_id 
+                    JOIN event_public e on e.event_public_id=c.certificate_public_event_id 
+                    JOIN admin a on c.Issued_By=a.admin_id 
+                    WHERE c.certificate_public_event_id = ? 
+                    AND c.certificate_user_id = ?`;
+        pool.query(query, [event_id, user_id], callback);
+    },
+    requestCertificate: (data, callback) => {
+        const query = `INSERT INTO certificate_permission SET ?`;
+        pool.query(query, [data], callback);
+    },
+    checkCertificateReq: (event, college, callback) => {
+        const query = `SELECT COUNT(*) FROM certificate_permission 
+                       WHERE event_id = ? AND college_id = ?`;
+        pool.query(query, [event, college], callback);
+    },
+    approveRequest: (permission, event, callback) => {
+        const query = `UPDATE certificate_permission SET certificate_request = "Approved" 
+                       WHERE permission_id= ? AND event_id = ?`;
+        pool.query(query, [permission, event], callback);
+    },
+    rejectRequest: (permission, event, callback) => {
+        const query = `UPDATE certificate_permission SET certificate_request = "Rejected" 
+                       WHERE permission_id= ? AND event_id = ?`;
+        pool.query(query, [permission, event], callback);
+    },
+    checkPermission: (permission, event, callback) => {
+        const query = `SELECT certificate_request FROM certificate_permission
+                       WHERE permission_id= ? AND event_id = ?`;
+        pool.query(query, [permission, event], callback);
+    },
+    grantPermission: (permission, event, callback) => {
+        const query = `UPDATE certificate_permission SET student_access = 1 
+                       WHERE permission_id= ? AND event_id = ?`;
+        pool.query(query, [permission, event], callback);
+    },
+    revokePermission: (permission, event, callback) => {
+        const query = `UPDATE certificate_permission SET student_access = 0 
+                       WHERE permission_id= ? AND event_id = ?`;
+        pool.query(query, [permission, event], callback);
+    },
+    checkPrivateEventCompleteOrNot: (event, callback) => {
+        const query = `SELECT is_completed FROM event_private 
+                        WHERE event_private_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    collegePayementStatus: (college, event, callback) => {
+        const query = `SELECT COUNT(*) FROM payment_college 
+                    WHERE college_id= ? AND private_event_id= ?`
+        pool.query(query, [college, event], callback);
+    },
+    findExistingStudentCertificate: (event, callback) => {
+        const query = `SELECT * FROM certificate_stud WHERE certificate_private_event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    findStudentsByEvent: (eventId, callback) => {
+        const query = `SELECT * FROM student WHERE event_id= ?`;
+        pool.query(query, [eventId], callback);
+    },
+    markPrivateGenerated: (value, callback) => {
+        const query = `UPDATE event_private SET certificate_generated=1 WHERE event_private_id= ?`;
+        pool.query(query, [value], callback);
+    },
+    viewCertificateRequests: (callback) => {
+        const query = `SELECT c.permission_id, c.event_id, c.college_id, c.faculty_id, c.certificate_request, 
+                        c.student_access,e.event_private_name,clg.college_name,d.faculty_name AS requested_by
+                        FROM certificate_permission c 
+                        JOIN event_private e ON c.event_id=e.event_private_id 
+                        JOIN college clg on c.college_id=clg.college_id 
+                        JOIN department d on c.faculty_id=d.department_id 
+                        ORDER BY c.permission_id DESC
+                        `;
+        pool.query(query, callback);
+    },
+    viewCertificateRequestsCollege: (college,callback) => {
+        const query = `SELECT c.permission_id, c.event_id, c.college_id, c.faculty_id, c.certificate_request, 
+                        c.student_access,e.event_private_name,clg.college_name,d.faculty_name AS requested_by
+                        FROM certificate_permission c 
+                        JOIN event_private e ON c.event_id=e.event_private_id 
+                        JOIN college clg on c.college_id=clg.college_id 
+                        JOIN department d on c.faculty_id=d.department_id 
+                        WHERE c.college_id = ?
+                        ORDER BY c.permission_id DESC
+                        `;
+        pool.query(query,[college], callback);
+    },
+    ViewCertificateStudentByEvent: (event, callback) => {
+        const query = `SELECT c.certificate_id, c.certificate_private_event_id,c.certificate_student_id,e.event_private_name,
+                    e.event_private_duration,s.student_name,c.certificate_no,c.issued_date,clg.college_name,
+                    c.Issued_By as admin_id,
+                    a.admin_username as Issued_By 
+                    FROM certificate_stud c 
+                    JOIN student s on c.certificate_student_id=s.student_id 
+                    JOIN event_private e on e.event_private_id=c.certificate_private_event_id 
+                    JOIN college clg ON e.event_private_clgid=clg.college_id
+                    JOIN admin a on c.Issued_By=a.admin_id 
+                    WHERE c.certificate_private_event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    ViewCertificateStudent: (event,email, callback) => {
+        const query = `SELECT c.certificate_id, c.certificate_private_event_id,c.certificate_student_id,e.event_private_name,
+                    e.event_private_duration,s.student_name,c.certificate_no,c.issued_date,clg.college_name,
+                    c.Issued_By as admin_id,
+                    a.admin_username as Issued_By 
+                    FROM certificate_stud c 
+                    JOIN student s on c.certificate_student_id=s.student_id 
+                    JOIN event_private e on e.event_private_id=c.certificate_private_event_id 
+                    JOIN college clg ON e.event_private_clgid=clg.college_id
+                    JOIN admin a on c.Issued_By=a.admin_id 
+                    WHERE c.certificate_private_event_id = ? AND s.student_email = ? `;
+        pool.query(query, [event,email], callback);
+    },
+    checkCollegePermissions:(event,callback)=>{
+        const query = `SELECT certificate_request FROM certificate_permission
+                       WHERE event_id = ?`;
+        pool.query(query, [event], callback);
+    },
+    checkStudentPermissions:(event,callback)=>{
+        const query = `SELECT student_access FROM certificate_permission
+                       WHERE event_id = ?`;
+        pool.query(query, [event], callback);
+    }
+
+
 };
 
 module.exports = certificateModel;

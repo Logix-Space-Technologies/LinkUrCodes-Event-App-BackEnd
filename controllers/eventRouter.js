@@ -1005,6 +1005,7 @@ router.post('/view_user_reg_events', (req, res) => {
                     console.error("Error fetching registered events:", error);
                     return res.status(500).json({ "status": "error", "message": "Failed to fetch registered events" });
                 }
+                console.log(results)
                 res.json({ "status": "success", "events": results });
             });
         } else {
