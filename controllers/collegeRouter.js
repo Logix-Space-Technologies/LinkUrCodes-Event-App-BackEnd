@@ -770,14 +770,22 @@ router.post('/student/add', async (req, res) => {
 
 
 
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
+const validatePhoneNumber = (phoneNumber) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    return phoneRegex.test(phoneNumber);
+};
+
 router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), async (req, res) => {
     try {
-        console.log('Received file:', req.file.originalname);
         if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            return res.status(400).json({ status: "error", error: 'No file uploaded' });
         }
         const collegetoken = req.headers["collegetoken"];
-        console.log('Received token:', collegetoken);
         jwt.verify(collegetoken, "collegelogin", async (error, decoded) => {
             if (decoded && decoded.faculty_email) {
                 const workbook = xlsx.readFile(req.file.path);
@@ -785,37 +793,50 @@ router.post('/studentupload', uploadModel.StudentFileUpload.single('file'), asyn
                 const worksheet = workbook.Sheets[sheetName];
                 const data = xlsx.utils.sheet_to_json(worksheet);
                 const eventId = req.body.event_id;
-                const newStudentData = data.map(student => ({
-                    student_name: student.student_name,
-                    student_rollno: student.student_rollno,
-                    student_admno: student.student_admno,
-                    student_email: student.student_email,
-                    student_phone_no: student.student_phone_no,
-                    student_password: student.student_admno.toString(),
-                    event_id: eventId
-                }))
-                try {
-                    const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', newStudentData);
-                    console.log('Successfully inserted students:', response.data);
-                    res.status(200).json({ status: 'Success', message: 'Students inserted', data: response.data });
-                } catch (apiError) {
-                    console.error('API Request Error:', apiError.response ? apiError.response.data : apiError.message);
-                    res.status(400).json({ error: 'Failed to insert students via the API.' });
+
+                const validStudentData = [];
+                const invalidStudentData = [];
+
+                data.forEach(student => {
+                    if (validateEmail(student.student_email) && validatePhoneNumber(student.student_phone_no)) {
+                        validStudentData.push({
+                            student_name: student.student_name,
+                            student_rollno: student.student_rollno,
+                            student_admno: student.student_admno,
+                            student_email: student.student_email,
+                            student_phone_no: student.student_phone_no,
+                            student_password: student.student_admno.toString(),
+                            event_id: eventId
+                        });
+                    } else {
+                        invalidStudentData.push(student);
+                    }
+                });
+
+                if (validStudentData.length > 0) {
+                    try {
+                        const response = await axios.post('http://localhost:8085/api/student/addstudentuploaded', validStudentData);
+                        res.json({status: 'Success', message: 'Students inserted', invalidData: invalidStudentData.length > 0 ? invalidStudentData : null});
+                       
+                    } catch (apiError) {
+                        res.json({status: "error",error: 'Failed to insert students via the API.',invalidData: invalidStudentData.length > 0 ? invalidStudentData : null});
+                    }
+                } else {
+                    res.json({status: "error",error: 'No valid student data to insert.',invalidData: invalidStudentData});
                 }
+            } else {
+                return res.json({ status: "Unauthorized user" });
             }
-            else {
-                return res.status(401).json({ "status": "Unauthorized user" });
-            }
-        })
+        });
     } catch (error) {
-        console.error('Processing Error:', error.message);
-        res.status(500).json({ error: 'An error occurred while processing the file.' });
+        res.json({ status: "error", error: 'An error occurred while processing the file.' });
     } finally {
         fs.unlink(req.file.path, (unlinkError) => {
             if (unlinkError) console.error('Error deleting file:', unlinkError);
         });
     }
 });
+
 
 
 router.post('/getallevents', (req, res) => {
