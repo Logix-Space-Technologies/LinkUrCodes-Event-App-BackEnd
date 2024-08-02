@@ -9,24 +9,22 @@ const publicEventModel = require('../models/publicEventModel')
 //generate certificate for user by admin
 router.post('/generate-certificate-user', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: 'Unauthorized' });
             return;
         }
         const eventID = req.body.event_id;
         //check event completed or not
-        certificateModel.checkEventCompleteOrNot(eventID,(error,done)=>{
+        certificateModel.checkEventCompleteOrNot(eventID, (error, done) => {
             if (error) {
                 return res.json({ status: 'error', message: error });
             }
-            if(done[0]['is_completed']==0){
-                return res.json({ status: 'event not completed'});
+            if (done[0]['is_completed'] == 0) {
+                return res.json({ status: 'event not completed' });
             }
         })
-       // Check if certificates for this event and college have already been generated
+        // Check if certificates for this event and college have already been generated
         const existingCertificates = await new Promise((resolve, reject) => {
             certificateModel.findExistingUserCertificate(eventID, (error, certificates) => {
                 if (error) {
@@ -36,7 +34,6 @@ router.post('/generate-certificate-user', (req, res) => {
             });
         });
         if (existingCertificates.length > 0) {
-            console.log('Certificates already generated for this event');
             res.json({ status: "Certificates already generated" });
             return;
         }
@@ -118,10 +115,8 @@ router.post('/generate-certificate-user', (req, res) => {
 //view user certificate by admin
 router.post('/view-certificates-user-ByEvent', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: 'Unauthorized' });
             return;
         }
@@ -131,7 +126,6 @@ router.post('/view-certificates-user-ByEvent', (req, res) => {
         }
         certificateModel.ViewCertificateUserByEvent(event_id, (err, results) => {
             if (err) {
-                console.error('Error fetching certificate requests: ' + err);
                 return res.json({ status: "error", error: 'Internal server error' });
             }
             if (results.length > 0) {
@@ -157,7 +151,6 @@ router.post('/view-certificate-user', (req, res) => {
     // Verify the token
     jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            console.error('Error verifying token:', error);
             return res.json({ status: "Unauthorized" });
         }
         const { user_id, event_id } = req.body;
@@ -166,7 +159,6 @@ router.post('/view-certificate-user', (req, res) => {
         }
         certificateModel.ViewCertificateUser(event_id, user_id, (err, results) => {
             if (err) {
-                console.error('Error fetching certificate requests: ' + err);
                 return res.json({ status: "error", error: 'Internal server error' });
             }
             if (results.length > 0) {
@@ -230,7 +222,6 @@ router.post('/approve-certificate-request', (req, res) => {
     const token = req.headers.token;
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ error: 'Unauthorized' });
             return;
         }
@@ -250,7 +241,6 @@ router.post('/reject-certificate-request', (req, res) => {
     const token = req.headers.token;
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ error: 'Unauthorized' });
             return;
         }
@@ -324,11 +314,9 @@ router.post('/revoke-certificate-permission', (req, res) => {
 //generate certificate for students by admin
 router.post('/generate-certificate-students', async (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
-    
+
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             return res.json({ status: 'Unauthorized' });
         }
 
@@ -429,7 +417,7 @@ router.post('/generate-certificate-students', async (req, res) => {
                 });
 
                 await new Promise((resolve, reject) => {
-                    certificateModel.markPrivateGenerated(eventID, (err,result) => {
+                    certificateModel.markPrivateGenerated(eventID, (err, result) => {
                         if (err) reject(err);
                         resolve();
                     });
@@ -453,7 +441,6 @@ router.post('/view-certificate-requests', (req, res) => {
     const token = req.headers.token;
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ error: 'Unauthorized' });
             return;
         }
@@ -462,11 +449,11 @@ router.post('/view-certificate-requests', (req, res) => {
                 res.json({ status: "error" });
                 return;
             }
-            if(result.length > 0){
-                res.json( result );
+            if (result.length > 0) {
+                res.json(result);
             }
-            else{
-                res.json({ status:"no requests" });
+            else {
+                res.json({ status: "no requests" });
             }
         });
     });
@@ -479,17 +466,17 @@ router.post('/view-certificate-requests-by-college', (req, res) => {
         if (error) {
             return res.json({ status: "Unauthorized " });
         }
-        const college_id=req.body.college_id
-        certificateModel.viewCertificateRequestsCollege(college_id,(err, result) => {
+        const college_id = req.body.college_id
+        certificateModel.viewCertificateRequestsCollege(college_id, (err, result) => {
             if (err) {
                 res.json({ status: "error" });
                 return;
             }
-            if(result.length > 0){
-                res.json( result );
+            if (result.length > 0) {
+                res.json(result);
             }
-            else{
-                res.json({ status:"no requests" });
+            else {
+                res.json({ status: "no requests" });
             }
         });
     });
@@ -498,10 +485,8 @@ router.post('/view-certificate-requests-by-college', (req, res) => {
 //view student certificate by admin
 router.post('/view-certificates-student-ByEvent', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: 'Unauthorized' });
             return;
         }
@@ -511,7 +496,6 @@ router.post('/view-certificates-student-ByEvent', (req, res) => {
         }
         certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
             if (err) {
-                console.error('Error fetching certificate requests: ' + err);
                 return res.json({ status: "error", error: 'Internal server error' });
             }
             if (results.length > 0) {
@@ -546,13 +530,12 @@ router.post('/view-students-certificates-ByEvent', (req, res) => {
             if (error) {
                 return res.json({ status: "error" });
             }
-            if(permission==""){//no request fount
+            if (permission == "") {//no request fount
                 return res.json({ status: "no request found" });
             }
             else if (permission[0]['certificate_request'] == "Approved") {
                 certificateModel.ViewCertificateStudentByEvent(event_id, (err, results) => {
                     if (err) {
-                        console.error('Error fetching certificate requests: ' + err);
                         return res.json({ status: "error", error: 'Internal server error' });
                     }
                     if (results.length > 0) {
@@ -567,13 +550,13 @@ router.post('/view-students-certificates-ByEvent', (req, res) => {
                     else {
                         res.json({ status: "no certificates found", message: "no certificates for event found" })
                     }
-        
+
                 });
             } else {
                 res.json({ status: "no permission" })
             }
         })
-        
+
     });
 });
 
@@ -583,45 +566,43 @@ router.post('/view-certificate-student', (req, res) => {
     // Verify the token
     jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            console.error('Error verifying token:', error);
             return res.json({ status: "Unauthorized" });
         }
-         const { email_id, event_id } = req.body;
+        const { email_id, event_id } = req.body;
         if (!event_id || !email_id) {
             return res.json({ status: "event & email id is required", error: 'event & user ID is required' });
         }
-    certificateModel.checkStudentPermissions(event_id, (error, permission) => {
-        if (error) {
-            return res.json({ status: "error" });
-        }
-       
-        if(permission==""){//no request found
-            return res.json({ status: "no request found" });
-        }else if (permission[0]['student_access'] == 1) {
-            certificateModel.ViewCertificateStudent(event_id, email_id, (err, results) => {
-                if (err) {
-                    console.error('Error fetching certificate requests: ' + err);
-                    return res.json({ status: "error", error: 'Internal server error' });
-                }
-                if (results.length > 0) {
-                    const formattedResults = results.map(certificate => {
-                        const issued_date = new Date(certificate.issued_date);
-                        const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
-                        certificate.issued_date = issuedDate; // DD-MM-YYYY format
-                        return certificate;
-                    });
-                    res.json(formattedResults);
-                }
-                else {
-                    res.json({ status: "no certificates found", message: "no certificates for event found" })
-                }
-            });
-        }
-        else {
-            res.json({ status: "no permission" })
-        }
-    })
-       
+        certificateModel.checkStudentPermissions(event_id, (error, permission) => {
+            if (error) {
+                return res.json({ status: "error" });
+            }
+
+            if (permission == "") {//no request found
+                return res.json({ status: "no request found" });
+            } else if (permission[0]['student_access'] == 1) {
+                certificateModel.ViewCertificateStudent(event_id, email_id, (err, results) => {
+                    if (err) {
+                        return res.json({ status: "error", error: 'Internal server error' });
+                    }
+                    if (results.length > 0) {
+                        const formattedResults = results.map(certificate => {
+                            const issued_date = new Date(certificate.issued_date);
+                            const issuedDate = `${issued_date.getDate().toString().padStart(2, '0')}-${(issued_date.getMonth() + 1).toString().padStart(2, '0')}-${issued_date.getFullYear()}`;
+                            certificate.issued_date = issuedDate; // DD-MM-YYYY format
+                            return certificate;
+                        });
+                        res.json(formattedResults);
+                    }
+                    else {
+                        res.json({ status: "no certificates found", message: "no certificates for event found" })
+                    }
+                });
+            }
+            else {
+                res.json({ status: "no permission" })
+            }
+        })
+
     });
 });
 
