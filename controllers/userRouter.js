@@ -379,7 +379,7 @@ router.post("/forgotpassword", async (req, res) => {
                     timestamp: Date.now()
                 };
 
-                let user_name = user.user_name;
+                let user_name = user[0].user_name;
                 let sending_email = user_email;
                 let textContent = `Dear ${user_name},\n\nYou have requested to reset your password. Your verification code is: ${randomCode}.\n\nPlease use this code to reset your password. If you did not request this, please contact the administrator.`;
 
