@@ -9,41 +9,6 @@ const collegeModel = require('../models/collegeModel');
 const attendenceModel = require('../models/attendenceModel');
 const adminModel = require("../models/adminModel")
 
-// router.post("/add_public_events", uploadModel.EventImageUpload.single('image'), async (req, res) => {
-//     let data = req.body
-//     console.log(data)
-//     const token=req.headers["token"]
-//    jwt.verify(token,"eventAdmin",(error,decoded)=>{
-//     if (decoded && decoded.adminUsername) {
-
-//         const imagePath = req.file.path; //image path
-//          let data = req.body
-//          const newData = {
-//              event_public_name: data.event_public_name,
-//              event_public_amount: data.event_public_amount,
-//              event_public_description: data.event_public_description,
-//              event_public_date: data.event_public_date,
-//              event_public_time: data.event_public_time,
-//              event_public_image: imagePath,
-//              event_syllabus:data.event_syllabus,
-//              event_venue:data.event_venue,
-//              event_addedby: data.event_addedby,
-//              event_updatedby: data.event_addedby
-//          }
-//     publicEventModel.insertPublicEvents(newData, (error, results) => {
-//         if (error) {
-//             return res.status(500).json({ message: error.message });
-//         }
-//         res.json({ status: "success"});
-//     });
-//     }
-//     else{
-//         res.json({
-//             "status":"Unauthorized user"
-//         })
-//     }
-// })
-// })
 
 router.post("/add_public_events", uploadModel.EventImageUpload.fields([
     { name: 'image', maxCount: 1 },
@@ -107,7 +72,6 @@ router.post('/view_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -122,7 +86,6 @@ router.post('/view_user_public_events', (req, res) => {
     const token = req.headers["token"];
     jwt.verify(token, "user-eventapp", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.email) {
@@ -185,7 +148,6 @@ router.post('/view_private_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -202,7 +164,6 @@ router.post('/view-student-private-events', (req, res) => {
     // Verify the token
     jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            console.error('Error verifying token:', error);
             return res.status(401).json({ status: "Unauthorized" });
         }
 
@@ -212,7 +173,6 @@ router.post('/view-student-private-events', (req, res) => {
         // Fetch private events registered by the student
         privateEventModel.viewStudentPrivateEvents(student_email, (error, events) => {
             if (error) {
-                console.error('Error fetching events:', error);
                 return res.status(500).json({ status: "Internal Server Error" });
             }
 
@@ -259,12 +219,11 @@ router.post('/update_private_events', uploadModel.EventImageUpload.fields([{ nam
             }
             privateEventModel.updatePrivateEvents(event_id, newData, (error, result) => {
                 if (error) {
-                    console.error('Error updating event:', error);
                     return res.json({ status: 'Error', message: 'Failed to update the event' });
                 } else {
                     const admin_id = decoded.admin_id;
                     adminModel.logAdminAction(admin_id, `Private event updated for ${data.event_private_name}`);
-                    console.log('Event updated successfully');
+                    
                     return res.json({ status: 'success' });
                 }
             });
@@ -312,12 +271,11 @@ router.post('/update_public_events', uploadModel.EventImageUpload.fields([{ name
             }
             publicEventModel.updatePublicEvents(event_public_id, newData, (error, result) => {
                 if (error) {
-                    console.error('Error updating event:', error);
                     res.json({ status: "error", error: 'Internal Server Error' });
                 } else {
                     const admin_id = decoded.admin_id;
                     adminModel.logAdminAction(admin_id, `Public event updated for ${data.event_public_name}`);
-                    console.log('Event updated successfully');
+                   
                     res.json({ status: "success", message: "success" });
                 }
             });
@@ -340,7 +298,6 @@ router.post('/search-public-events', (req, res) => {
         if (decoded && decoded.adminUsername) {
             publicEventModel.searchPublicEvents(eventName, (err, results) => {
                 if (err) {
-                    console.error('Error searching for events:', err);
                     return res.status(500).json({ status: "error", error: 'Internal server error' });
                 }
                 const admin_id = decoded.admin_id;
@@ -366,7 +323,6 @@ router.post('/search-user_public-events', (req, res) => {
         if (decoded && decoded.email) {
             publicEventModel.searchPublicEventsUser(eventName, (err, results) => {
                 if (err) {
-                    console.error('Error searching for events:', err);
                     return res.status(500).json({ error: 'Internal server error' });
                 }
                 res.json(results);
@@ -390,7 +346,6 @@ router.post('/search-private-events', (req, res) => {
         if (decoded && decoded.adminUsername) {
             privateEventModel.searchPrivateEvents(eventName, (err, results) => {
                 if (err) {
-                    console.error('Error searching for events:', err);
                     return res.status(500).json({ error: 'Internal server error' });
                 }
                 const admin_id = decoded.admin_id;
@@ -426,7 +381,6 @@ router.post('/delete_private_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -451,7 +405,6 @@ router.post('/retrive_private_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -460,7 +413,6 @@ router.post('/view_active_private_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -477,7 +429,6 @@ router.post('/view_deleted_private_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -515,7 +466,6 @@ router.post('/delete_public_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -540,7 +490,6 @@ router.post('/retrive_public_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -550,7 +499,6 @@ router.post('/view_active_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -567,7 +515,6 @@ router.post('/view_deleted_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -606,7 +553,6 @@ router.post('/complete_private_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -615,7 +561,6 @@ router.post('/view_completed_private_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -637,7 +582,6 @@ router.post('/view_notcompleted_private_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -655,10 +599,8 @@ router.post('/view_notcompleted_private_events', (req, res) => {
 
 router.post('/addSession', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
@@ -696,7 +638,6 @@ router.post('/addSession', (req, res) => {
 
                             attendenceModel.addAttendance(newAttendance, (err) => {
                                 if (err) {
-                                    console.error('Error adding attendance: ' + err);
                                     return res.json({ status: 'error', message: error });
                                 }
                                 completed++;
@@ -717,10 +658,8 @@ router.post('/addSession', (req, res) => {
 
 router.post('/viewSession', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: "Unauthorized", error: 'Unauthorized' });
             return;
         }
@@ -746,10 +685,8 @@ router.post('/viewSession', (req, res) => {
 
 router.post('/updateSession', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: "Unauthorized", error: 'Unauthorized' });
             return;
         }
@@ -785,7 +722,6 @@ router.post('/complete_private_session', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -810,7 +746,6 @@ router.post('/complete_public_event', async (req, res) => {
             }
         })
     } catch (error) {
-        console.error(error);
         res.json({ status: 'error', error: 'An error occurred while deleting the college' });
     }
 });
@@ -819,7 +754,6 @@ router.post('/view_completed_public_events', (req, res) => {
     const admintoken = req.headers["token"];
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -839,10 +773,8 @@ router.post('/view_completed_public_events', (req, res) => {
 
 router.post('/addPublicSession', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
@@ -880,7 +812,6 @@ router.post('/addPublicSession', (req, res) => {
 
                             attendenceModel.addPublicAttendance(newAttendance, (err) => {
                                 if (err) {
-                                    console.error('Error adding attendance: ' + err);
                                     return res.json({ status: 'error', message: error });
                                 }
                                 completed++;
@@ -899,15 +830,12 @@ router.post('/addPublicSession', (req, res) => {
 
 router.post('/setPublicSessionComplete', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: "Unauthorized", error: 'Unauthorized' });
             return;
         }
         const session_public_id = req.body.session_public_id
-        console.log(session_public_id)
         const admin_id = decoded.admin_id;
         publicEventModel.setSessionComplete(session_public_id, (err, results) => {
             if (err) {
@@ -921,10 +849,8 @@ router.post('/setPublicSessionComplete', (req, res) => {
 
 router.post('/viewPublicSession', (req, res) => {
     const token = req.headers.token;
-    console.log('Received token:', token);
     jwt.verify(token, "eventAdmin", (error, decoded) => {
         if (error) {
-            console.error('Error verifying token: ' + error);
             res.json({ status: "Unauthorized", error: 'Unauthorized' });
             return;
         }
@@ -954,7 +880,6 @@ router.post('/view_private_events_byId', (req, res) => {
     const { event_private_id } = req.body;
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -970,7 +895,6 @@ router.post('/view_public_events_byId', (req, res) => {
     const { event_public_id } = req.body;
     jwt.verify(admintoken, "eventAdmin", async (error, decoded) => {
         if (error) {
-            console.log({ "status": "error", "message": "Failed to verify token" })
             return res.json({ "status": "unauthorised user" });
         }
         if (decoded && decoded.adminUsername) {
@@ -986,30 +910,24 @@ router.post('/view_user_reg_events', (req, res) => {
     const token = req.headers['token'];
 
     if (!token) {
-        console.log("No token provided");
         return res.status(401).json({ "status": "unauthorized", "message": "No token provided" });
     }
 
     jwt.verify(token, "user-eventapp", (error, decoded) => {
         if (error) {
-            console.log("Failed to verify token:", error);
             return res.status(401).json({ "status": "unauthorized", "message": "Failed to verify token" });
         }
 
         if (decoded && decoded.email) {
             const email = decoded.email;
-            // console.log("Token decoded, email:", email);
 
             publicEventModel.viewRegPublicEvents(email, (error, results) => {
                 if (error) {
-                    console.error("Error fetching registered events:", error);
                     return res.status(500).json({ "status": "error", "message": "Failed to fetch registered events" });
                 }
-                console.log(results)
                 res.json({ "status": "success", "events": results });
             });
         } else {
-            console.log("Invalid token payload, decoded:", decoded);
             res.status(400).json({ "status": "error", "message": "Invalid token payload" });
         }
     });
